@@ -65,6 +65,7 @@
 #include "ardour/types.h"
 #include "ardour/utils.h"
 #include "ardour/plugin.h"
+#include "ardour/reactive_action_document_loader.h"
 #include "ardour/reactive_action_slot_runner.h"
 #include "ardour/session_handle.h"
 #include "ardour/system_exec.h"
@@ -312,6 +313,7 @@ public:
 	void trigger_cue_row (int r);
 	void trigger_reactive_action (int slot);
 	void reload_reactive_action_document ();
+	void show_reactive_action_document_status ();
 	void stop_all_cues (bool immediately);
 	void stop_cues (int c, bool immediately);
 
@@ -650,7 +652,9 @@ private:
 	void setup_action_tooltips ();
 	bool ensure_reactive_action_document ();
 	bool load_reactive_action_document (bool report_success);
+	bool reload_reactive_action_document_from_disk (bool report_success);
 	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
+	ARDOUR::ReactiveActionDocumentLoadResult _reactive_action_document_load_result;
 	std::string _reactive_action_document_session_path;
 
 	void setup_session_options ();

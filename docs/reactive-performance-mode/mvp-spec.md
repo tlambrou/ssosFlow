@@ -138,6 +138,7 @@ If a configured file exists but cannot be read or parsed, Reactive Performance M
 The existing Generic MIDI action names remain stable:
 
 - `Reactive/reload-action-document`
+- `Reactive/show-action-document-status`
 - `Reactive/trigger-action-0`
 - `Reactive/trigger-action-1`
 - `Reactive/trigger-action-2`
@@ -150,6 +151,8 @@ The existing Generic MIDI action names remain stable:
 The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots.
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
+
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, and last load error. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 ## Performance UI
 
