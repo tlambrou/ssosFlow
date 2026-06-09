@@ -147,6 +147,8 @@ Phase 5f adds explicit mode arming at the `ReactiveActionSlotRunner` boundary. T
 
 Phase 5g turns the status dialog from a read-only diagnostic into the first performance-safe control surface. `ReactiveActionSlotRunner` now exposes bounded control rows for the first controller-facing slots with action identity, primary trigger, availability, enabled state, and button labels. The existing status dialog renders those rows as eight large trigger controls plus an Enable/Disable Mode control, using the same slot execution and mode-toggle paths as controller actions and refreshing all read models after each interaction. A dedicated Cue-page panel and controller feedback remain follow-up work.
 
+Phase 5h adds that dedicated Cue-page panel as a thin GTK scaffold instead of moving reactive engine ownership. `ReactivePerformancePanel` is hosted above the trigger strip grid, exposes eight large slot buttons, and calls the same `ARDOUR_UI` slot, mode-toggle, reload, and status-dialog methods that already back Generic MIDI and action bindings. This keeps normal Cue behavior unchanged while establishing the eventual panel location. Live read-model rendering and controller feedback remain follow-up work.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

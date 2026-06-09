@@ -188,11 +188,16 @@ TriggerPage::TriggerPage ()
 
 	/* Top-level Layout */
 	content_app_bar.add (_application_bar);
-	content_main.add (_strip_group_box);
+	_main_packer.set_spacing (2);
+	_main_packer.pack_start (_reactive_performance_panel, false, false);
+	_main_packer.pack_start (_strip_group_box, true, true);
+	content_main.add (_main_packer);
 	content_att_bottom.add (hpacker);
 	content_att_right.add (_sidebar_vbox);
 
 	/* Show all */
+	_main_packer.show ();
+	_reactive_performance_panel.show_all ();
 	_strip_group_box.show ();
 	_strip_scroller.show ();
 	_strip_packer.show ();
