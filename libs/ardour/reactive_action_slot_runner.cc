@@ -133,6 +133,31 @@ controller_feedback_value (bool available, bool enabled, bool latest_attempted)
 	return latest_attempted ? 127 : 32;
 }
 
+static bool
+valid_controller_feedback_binding (ReactiveControllerFeedbackBinding const& binding)
+{
+	if (binding.channel < 1 || binding.channel > 16 || binding.number < 0 || binding.number > 127) {
+		return false;
+	}
+
+	return binding.type == ReactiveControllerFeedbackBinding::Note ||
+		binding.type == ReactiveControllerFeedbackBinding::ControlChange;
+}
+
+static unsigned char
+controller_feedback_status_byte (ReactiveControllerFeedbackBinding const& binding)
+{
+	unsigned char const midi_channel = static_cast<unsigned char> (binding.channel - 1);
+	unsigned char const message_type = binding.type == ReactiveControllerFeedbackBinding::ControlChange ? 0xb0 : 0x90;
+	return static_cast<unsigned char> (message_type | (midi_channel & 0x0f));
+}
+
+static unsigned char
+bounded_controller_feedback_value (int value)
+{
+	return static_cast<unsigned char> (std::max (0, std::min (127, value)));
+}
+
 } // namespace
 
 bool
@@ -274,25 +299,39 @@ ReactiveActionSlotRunner::controller_feedback_summary (size_t max_slots) const
 
 	summary.reserve (max_slots);
 
-	size_t const count = _loaded ? action_count () : 0;
 	for (size_t slot = 0; slot < max_slots; ++slot) {
-		ReactiveControllerFeedbackSummary row;
-		row.slot = slot;
-		if (_loaded && slot < count) {
-			ReactiveAction const& action = _engine.document ().actions ()[slot];
-			row.action_name = action.name;
-			row.primary_trigger = primary_trigger_label (action);
-			row.available = true;
-			row.enabled = _performance_enabled;
-			row.latest_attempted = _performance_enabled &&
-				_last_execution_status.attempted &&
-				_last_execution_status.slot == slot;
-		}
-		row.value = controller_feedback_value (row.available, row.enabled, row.latest_attempted);
-		summary.push_back (row);
+		summary.push_back (controller_feedback_summary_row (slot));
 	}
 
 	return summary;
+}
+
+std::vector<ReactiveControllerFeedbackMidiMessage>
+ReactiveActionSlotRunner::controller_feedback_midi_messages (std::vector<ReactiveControllerFeedbackBinding> const& bindings) const
+{
+	std::vector<ReactiveControllerFeedbackMidiMessage> messages;
+	if (bindings.empty ()) {
+		return messages;
+	}
+
+	messages.reserve (bindings.size ());
+
+	for (std::vector<ReactiveControllerFeedbackBinding>::const_iterator binding = bindings.begin (); binding != bindings.end (); ++binding) {
+		if (!valid_controller_feedback_binding (*binding)) {
+			continue;
+		}
+
+		ReactiveControllerFeedbackSummary const row = controller_feedback_summary_row (binding->slot);
+		ReactiveControllerFeedbackMidiMessage message;
+		message.slot = binding->slot;
+		message.bytes.reserve (3);
+		message.bytes.push_back (controller_feedback_status_byte (*binding));
+		message.bytes.push_back (static_cast<unsigned char> (binding->number));
+		message.bytes.push_back (bounded_controller_feedback_value (row.value));
+		messages.push_back (message);
+	}
+
+	return messages;
 }
 
 std::vector<ReactiveMacroSlotSummary>
@@ -611,6 +650,28 @@ void
 ReactiveActionSlotRunner::clear_next_action_preview ()
 {
 	_next_action_preview = ReactiveActionPreviewSummary ();
+}
+
+ReactiveControllerFeedbackSummary
+ReactiveActionSlotRunner::controller_feedback_summary_row (size_t slot) const
+{
+	ReactiveControllerFeedbackSummary row;
+	row.slot = slot;
+
+	size_t const count = _loaded ? action_count () : 0;
+	if (_loaded && slot < count) {
+		ReactiveAction const& action = _engine.document ().actions ()[slot];
+		row.action_name = action.name;
+		row.primary_trigger = primary_trigger_label (action);
+		row.available = true;
+		row.enabled = _performance_enabled;
+		row.latest_attempted = _performance_enabled &&
+			_last_execution_status.attempted &&
+			_last_execution_status.slot == slot;
+	}
+
+	row.value = controller_feedback_value (row.available, row.enabled, row.latest_attempted);
+	return row;
 }
 
 ReactiveExecutionResult

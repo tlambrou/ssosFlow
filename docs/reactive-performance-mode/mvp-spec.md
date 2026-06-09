@@ -302,7 +302,7 @@ Phase 6m exposes route insertion through the reactive action path:
 - Execute that command through `ReactiveActionExecutor` and `ReactiveSessionTarget`, using `Session::get_remote_nth_route()` for the controller-facing route index.
 - Call `ReactiveRhythmRouteInserter::ensure_inserted()` and treat an already-present insert as success.
 - Return clear action-target errors for missing routes and route insertion failures.
-- Keep UI buttons, controller feedback messages, script preset installation, and demo-session routing as follow-up work.
+- Keep UI buttons, controller output-port wiring, script preset installation, and demo-session routing as follow-up work.
 
 Phase 6n makes the built-in MVP fallback a small playable rhythm demo:
 
@@ -324,7 +324,7 @@ Phase 6p adds the first execution-status read model for UI and controller feedba
 - Missing documents, out-of-range slots, and target failures are recorded as status, not only returned to the caller.
 - Clearing or loading an action document resets stale execution status.
 - The Reactive Performance status dialog includes this latest execution summary.
-- Actual MIDI feedback output remains a follow-up so this slice stays backend-first and reusable.
+- Actual MIDI output-port wiring remains a follow-up so this slice stays backend-first and reusable.
 
 Phase 6q adds route-scoped rhythm parameter actions:
 
@@ -478,7 +478,7 @@ Phase 5j adds controller-driven panel refresh feedback:
 - `ReactiveActionSlotRunner::performance_control_summary(...)` prefixes the latest attempted slot's large-control label with `> ` after manual or MIDI-triggered execution, giving the panel a compact performance feedback marker.
 - `ARDOUR_UI::ReactivePerformanceChanged` is emitted after Reactive slot execution, MIDI-byte execution, mode toggles, and document reloads.
 - `ReactivePerformancePanel` observes that signal on the GUI context, so controller-triggered Reactive actions refresh the Cue-page controls without a mouse interaction.
-- Controller LED/output feedback remains follow-up work.
+- Controller LED byte generation and output-port wiring remain follow-up work at this phase.
 
 Phase 5k adds the first controller-feedback read model:
 
@@ -486,7 +486,16 @@ Phase 5k adds the first controller-feedback read model:
 - Feedback values are deterministic for the MVP: unavailable or disabled rows report `0`, enabled idle rows report `32`, and the latest attempted enabled row reports `127`.
 - Manual slot execution and MIDI-triggered execution both move the latest-attempted feedback row.
 - Disabled Reactive Performance Mode keeps feedback rows available but disabled and reports zero output values.
-- Actual MIDI/LED output remains follow-up work; this slice only creates the tested data source that an output adapter can consume.
+- Actual MIDI/LED byte generation and output-port wiring remain follow-up work at this phase; this slice only creates the tested data source that an output adapter can consume.
+
+Phase 5l bridges the controller-feedback read model to raw MIDI messages:
+
+- `ReactiveControllerFeedbackBinding` describes a slot-to-controller output binding for note or CC feedback using musician-facing MIDI channels `1` through `16`.
+- `ReactiveActionSlotRunner::controller_feedback_midi_messages(...)` turns those bindings into deterministic three-byte note/CC feedback messages.
+- The generated values reuse the Phase 5k rules: unavailable or disabled rows send `0`, enabled idle rows send `32`, and the latest attempted enabled row sends `127`.
+- Mapped empty slots still generate zero-valued messages so controller LEDs can be cleared when an action document changes.
+- Invalid channel or note/CC numbers are ignored instead of producing malformed bytes.
+- Actual Generic MIDI output-port wiring remains follow-up work; this slice proves the reusable byte adapter that surface code can consume.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 

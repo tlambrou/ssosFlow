@@ -136,6 +136,38 @@ load_two_action_document (ReactiveActionSlotRunner& runner)
 	CPPUNIT_ASSERT (error.empty ());
 }
 
+static ReactiveControllerFeedbackBinding
+feedback_note_binding (size_t slot, int channel, int number)
+{
+	ReactiveControllerFeedbackBinding binding;
+	binding.slot = slot;
+	binding.type = ReactiveControllerFeedbackBinding::Note;
+	binding.channel = channel;
+	binding.number = number;
+	return binding;
+}
+
+static ReactiveControllerFeedbackBinding
+feedback_cc_binding (size_t slot, int channel, int number)
+{
+	ReactiveControllerFeedbackBinding binding;
+	binding.slot = slot;
+	binding.type = ReactiveControllerFeedbackBinding::ControlChange;
+	binding.channel = channel;
+	binding.number = number;
+	return binding;
+}
+
+static void
+assert_feedback_message (ReactiveControllerFeedbackMidiMessage const& message, size_t slot, unsigned char status, unsigned char number, unsigned char value)
+{
+	CPPUNIT_ASSERT_EQUAL (slot, message.slot);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), message.bytes.size ());
+	CPPUNIT_ASSERT_EQUAL (status, message.bytes[0]);
+	CPPUNIT_ASSERT_EQUAL (number, message.bytes[1]);
+	CPPUNIT_ASSERT_EQUAL (value, message.bytes[2]);
+}
+
 } // namespace
 
 void
@@ -712,6 +744,76 @@ ReactiveActionSlotRunnerTest::controllerFeedbackSummarizesLatestAttempt ()
 	CPPUNIT_ASSERT_EQUAL (false, feedback[1].enabled);
 	CPPUNIT_ASSERT_EQUAL (false, feedback[1].latest_attempted);
 	CPPUNIT_ASSERT_EQUAL (0, feedback[1].value);
+}
+
+void
+ReactiveActionSlotRunnerTest::controllerFeedbackMidiMessagesFollowSlotFeedbackState ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION manual.two\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveControllerFeedbackBinding> bindings;
+	bindings.push_back (feedback_note_binding (0, 10, 36));
+	bindings.push_back (feedback_cc_binding (1, 1, 22));
+	bindings.push_back (feedback_note_binding (2, 10, 38));
+
+	std::vector<ReactiveControllerFeedbackMidiMessage> messages = runner.controller_feedback_midi_messages (bindings);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), messages.size ());
+	assert_feedback_message (messages[0], 0, 0x99, 36, 32);
+	assert_feedback_message (messages[1], 1, 0xb0, 22, 32);
+	assert_feedback_message (messages[2], 2, 0x99, 38, 0);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target).ok);
+	messages = runner.controller_feedback_midi_messages (bindings);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), messages.size ());
+	assert_feedback_message (messages[0], 0, 0x99, 36, 127);
+	assert_feedback_message (messages[1], 1, 0xb0, 22, 32);
+	assert_feedback_message (messages[2], 2, 0x99, 38, 0);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+	messages = runner.controller_feedback_midi_messages (bindings);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), messages.size ());
+	assert_feedback_message (messages[0], 0, 0x99, 36, 32);
+	assert_feedback_message (messages[1], 1, 0xb0, 22, 127);
+	assert_feedback_message (messages[2], 2, 0x99, 38, 0);
+
+	runner.set_performance_enabled (false);
+	messages = runner.controller_feedback_midi_messages (bindings);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), messages.size ());
+	assert_feedback_message (messages[0], 0, 0x99, 36, 0);
+	assert_feedback_message (messages[1], 1, 0xb0, 22, 0);
+	assert_feedback_message (messages[2], 2, 0x99, 38, 0);
+}
+
+void
+ReactiveActionSlotRunnerTest::controllerFeedbackMidiMessagesIgnoreInvalidBindings ()
+{
+	ReactiveActionSlotRunner runner;
+	std::string error;
+	load_two_action_document (runner);
+
+	std::vector<ReactiveControllerFeedbackBinding> bindings;
+	bindings.push_back (feedback_note_binding (0, 1, 0));
+	bindings.push_back (feedback_note_binding (1, 0, 36));
+	bindings.push_back (feedback_note_binding (1, 17, 36));
+	bindings.push_back (feedback_note_binding (1, 10, -1));
+	bindings.push_back (feedback_cc_binding (1, 10, 128));
+
+	std::vector<ReactiveControllerFeedbackMidiMessage> messages = runner.controller_feedback_midi_messages (bindings);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), messages.size ());
+	assert_feedback_message (messages[0], 0, 0x90, 0, 32);
 }
 
 void

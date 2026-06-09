@@ -44,6 +44,23 @@ struct LIBARDOUR_API ReactiveControllerFeedbackSummary {
 	int value = 0;
 };
 
+struct LIBARDOUR_API ReactiveControllerFeedbackBinding {
+	enum Type {
+		Note,
+		ControlChange
+	};
+
+	size_t slot = 0;
+	Type type = Note;
+	int channel = 0;
+	int number = 0;
+};
+
+struct LIBARDOUR_API ReactiveControllerFeedbackMidiMessage {
+	size_t slot = 0;
+	std::vector<unsigned char> bytes;
+};
+
 struct LIBARDOUR_API ReactiveMacroSlotSummary {
 	size_t slot = 0;
 	std::string name;
@@ -80,6 +97,7 @@ public:
 	std::vector<ReactiveActionSlotSummary> action_bank_summary (size_t max_slots) const;
 	std::vector<ReactivePerformanceControlSummary> performance_control_summary (size_t max_slots) const;
 	std::vector<ReactiveControllerFeedbackSummary> controller_feedback_summary (size_t max_slots) const;
+	std::vector<ReactiveControllerFeedbackMidiMessage> controller_feedback_midi_messages (std::vector<ReactiveControllerFeedbackBinding> const&) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
 	ReactiveActionPreviewSummary preview_slot (size_t slot) const;
@@ -105,6 +123,7 @@ public:
 private:
 	void clear_last_execution_status ();
 	void clear_next_action_preview ();
+	ReactiveControllerFeedbackSummary controller_feedback_summary_row (size_t slot) const;
 	ReactiveExecutionResult record_execution_status (size_t slot, std::string const& action_name, ReactiveExecutionResult const& result);
 
 	ReactiveActionEngine _engine;
