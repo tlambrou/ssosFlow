@@ -163,7 +163,9 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, and last load error. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
-The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots. A live MIDI/control-surface adapter that feeds controller events directly into this runner remains follow-up work.
+The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots.
+
+`ReactiveMidiEvent::from_midi_bytes(...)` maps 3-byte note-on and control-change controller messages into this event model. Raw MIDI status channels are converted to the musician-facing 1-based channel numbers used by action syntax, so status `0x99` maps to `ch=10`. Note-off, note-on with velocity 0, unsupported statuses, short messages, and null buffers are ignored. A live MIDI/control-surface adapter that feeds controller events directly into this runner remains follow-up work.
 
 ## Performance UI
 
@@ -346,6 +348,13 @@ Phase 4b adds backend MIDI-trigger execution from loaded action documents:
 - Use the first matching action in document order while preserving explicit numbered slot execution.
 - Record last-execution status for matched MIDI-triggered actions.
 - Keep live controller-event plumbing as a follow-up to avoid changing Ardour behavior outside explicit Reactive paths.
+
+Phase 4c adds controller MIDI-byte mapping:
+
+- Parse 3-byte note-on and control-change messages into `ReactiveMidiEvent`.
+- Convert raw MIDI channels from 0-based status nibbles to 1-based action syntax channels.
+- Ignore note-off, note-on with velocity 0, unsupported statuses, short messages, and null buffers.
+- Keep this as a backend bridge for a later live MIDI/control-surface adapter.
 
 Phase 5: add minimal Reactive Performance UI panel.
 

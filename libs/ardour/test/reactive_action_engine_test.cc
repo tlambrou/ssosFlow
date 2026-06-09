@@ -44,6 +44,68 @@ ReactiveActionEngineTest::matchMidiNoteTrigger ()
 }
 
 void
+ReactiveActionEngineTest::mapMidiNoteBytesToTriggerEvent ()
+{
+	ReactiveMidiEvent event;
+	unsigned char const bytes[] = { 0x99, 36, 100 };
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveMidiEvent::from_midi_bytes (bytes, 3, event));
+	CPPUNIT_ASSERT_EQUAL (ReactiveMidiEvent::NoteOn, event.type);
+	CPPUNIT_ASSERT_EQUAL (10, event.channel);
+	CPPUNIT_ASSERT_EQUAL (36, event.number);
+	CPPUNIT_ASSERT_EQUAL (100, event.value);
+
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_midi_event (event);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), matches[0].action->name);
+}
+
+void
+ReactiveActionEngineTest::mapMidiCCBytesToTriggerEvent ()
+{
+	ReactiveMidiEvent event;
+	unsigned char const bytes[] = { 0xb0, 22, 64 };
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveMidiEvent::from_midi_bytes (bytes, 3, event));
+	CPPUNIT_ASSERT_EQUAL (ReactiveMidiEvent::ControlChange, event.type);
+	CPPUNIT_ASSERT_EQUAL (1, event.channel);
+	CPPUNIT_ASSERT_EQUAL (22, event.number);
+	CPPUNIT_ASSERT_EQUAL (64, event.value);
+
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION knob.high\n"
+		"TRIGGER midi cc ch=1 cc=22 value>63\n"
+		"DO macro filter 0.80\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_midi_event (event);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.high"), matches[0].action->name);
+}
+
+void
+ReactiveActionEngineTest::ignoreUnsupportedMidiBytes ()
+{
+	ReactiveMidiEvent event;
+	unsigned char const note_off[] = { 0x89, 36, 0 };
+	unsigned char const zero_velocity_note_on[] = { 0x99, 36, 0 };
+	unsigned char const pitch_bend[] = { 0xe0, 0, 64 };
+	unsigned char const short_message[] = { 0x99, 36 };
+
+	CPPUNIT_ASSERT_EQUAL (false, ReactiveMidiEvent::from_midi_bytes (note_off, 3, event));
+	CPPUNIT_ASSERT_EQUAL (false, ReactiveMidiEvent::from_midi_bytes (zero_velocity_note_on, 3, event));
+	CPPUNIT_ASSERT_EQUAL (false, ReactiveMidiEvent::from_midi_bytes (pitch_bend, 3, event));
+	CPPUNIT_ASSERT_EQUAL (false, ReactiveMidiEvent::from_midi_bytes (short_message, 2, event));
+	CPPUNIT_ASSERT_EQUAL (false, ReactiveMidiEvent::from_midi_bytes (0, 3, event));
+}
+
+void
 ReactiveActionEngineTest::ignoreMismatchedMidiNote ()
 {
 	ReactiveActionEngine engine = engine_from_source (

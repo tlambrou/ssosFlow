@@ -123,6 +123,8 @@ Phase 6q adds `DO rhythm route <route-index> <param> <value>` for route-scoped r
 
 Phase 4b connects the existing note/CC trigger matcher to executable loaded action documents through `ReactiveActionSlotRunner::execute_midi_event(...)`. This keeps the first MIDI-trigger path backend-only: parsed `ReactiveMidiEvent` values can execute the first matching action in document order and update the same last-execution status used by numbered slots. A later control-surface or MIDI-port adapter should feed live controller events into this API without doing parser, filesystem, or action-planning work on a realtime path.
 
+Phase 4c adds `ReactiveMidiEvent::from_midi_bytes(...)` as the reusable controller-byte bridge for that backend path. It accepts only 3-byte note-on and control-change messages, converts raw MIDI status channels to the action-file's 1-based `ch=` convention, and ignores note-off, zero-velocity note-on, short, null, and unsupported messages. This keeps low-level MIDI parsing out of the future live adapter and preserves a clear boundary before integrating with Ardour's control-surface or MIDI-port callbacks.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.
