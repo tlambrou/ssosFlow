@@ -219,6 +219,13 @@ Phase 6f adds frame-derived step selection for buffer processing:
 - Cover a density/priority case where frame-derived downbeat priority, not event order, chooses the forwarded note.
 - Leave transport-tempo conversion, processor insertion, LuaProc wrapping, and demo routing for follow-up work.
 
+Phase 6g adds tempo-derived step sizing:
+
+- Calculate frames per rhythm step from sample rate, BPM, and steps-per-beat using deterministic rounding.
+- Normalize invalid tempo inputs to avoid divide-by-zero or zero-frame steps.
+- Allow the frame step source to be configured from tempo settings while preserving the explicit frames-per-step path.
+- Leave Ardour TempoMap/transport wiring, processor insertion, LuaProc wrapping, and demo routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
