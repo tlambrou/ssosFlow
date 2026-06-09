@@ -22,6 +22,7 @@ public:
 	bool fail_trigger = false;
 	bool fail_trigger_stop = false;
 	bool fail_scene_apply = false;
+	bool fail_rhythm_insert = false;
 	std::vector<std::string> calls;
 
 protected:
@@ -79,6 +80,16 @@ protected:
 	void session_store_nth_mixer_scene (int index)
 	{
 		calls.push_back (compose_one ("scene-store", index));
+	}
+
+	bool session_insert_reactive_rhythm (int route, std::string& error)
+	{
+		calls.push_back (compose_one ("rhythm-insert", route));
+		if (fail_rhythm_insert) {
+			error = "missing route";
+			return false;
+		}
+		return true;
 	}
 
 private:
@@ -173,4 +184,20 @@ ReactiveSessionTargetTest::acceptNonSessionStateCommands ()
 	CPPUNIT_ASSERT_EQUAL (true, target.rhythm ("density", 0.50, error));
 	CPPUNIT_ASSERT (target.calls.empty ());
 	CPPUNIT_ASSERT (error.empty ());
+}
+
+void
+ReactiveSessionTargetTest::mapRhythmInsert ()
+{
+	RecordingSessionTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (4, error));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:4"), target.calls[0]);
+	CPPUNIT_ASSERT (error.empty ());
+
+	target.fail_rhythm_insert = true;
+	CPPUNIT_ASSERT_EQUAL (false, target.rhythm_insert (9, error));
+	CPPUNIT_ASSERT (error.find ("missing route") != std::string::npos);
 }

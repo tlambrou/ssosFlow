@@ -109,7 +109,9 @@ The MVP scaffold is therefore `ReactiveRhythmInsertionPlanner`: it chooses LuaPr
 
 Phase 6i packages the first script at `share/scripts/reactive_rhythm_state_mvp.lua`. It is a bundled LuaProc MIDI processor named `Reactive Rhythm State MVP`, requests `time_info`, exposes density/chance/priority/rotation/latching controls, passes non-note MIDI through, and tracks forwarded note-ons to avoid stuck-note releases. Its automated coverage proves discovery, load, insertion as a `PluginInsert`, active processing through the LuaProc harness, event-level behavior through `unit-test-reactive_rhythm_luaproc_harness`, and real Ardour `BufferSet`/`MidiBuffer` processing through `unit-test-reactive_rhythm_luaproc_plugininsert`.
 
-Phase 6l adds `ReactiveRhythmRouteInserter`, a narrow C++ helper that locates the bundled LuaProc script, inserts it into a MIDI route through Ardour's normal `PluginInsert` and `Route::add_processor` path, configures one MIDI input/output, and returns an existing insert on repeated calls. UI commands, controller-triggered insertion, script presets, live route mutation policy, and demo-session routing remain follow-up work.
+Phase 6l adds `ReactiveRhythmRouteInserter`, a narrow C++ helper that locates the bundled LuaProc script, inserts it into a MIDI route through Ardour's normal `PluginInsert` and `Route::add_processor` path, configures one MIDI input/output, and returns an existing insert on repeated calls.
+
+Phase 6m exposes that helper through the declarative action path as `DO rhythm insert <route-index>`. The parser treats insertion as distinct from numeric rhythm parameter updates, the executor dispatches it through `ReactiveActionTarget::rhythm_insert`, and `ReactiveSessionTarget` resolves the controller-facing route index with `Session::get_remote_nth_route()` before calling `ReactiveRhythmRouteInserter::ensure_inserted()`. UI buttons, controller feedback messages, script presets, live route mutation policy beyond this explicit command, and demo-session routing remain follow-up work.
 
 ### 5. Use SessionEvent carefully
 

@@ -44,7 +44,8 @@ struct LIBARDOUR_API ReactiveCommand {
 		SceneStore,
 		Macro,
 		State,
-		Rhythm
+		Rhythm,
+		RhythmInsert
 	};
 
 	Type type = Cue;

@@ -58,6 +58,7 @@ ACTION drums.mutate
 TRIGGER midi cc ch=1 cc=22 value>63
 QUANTIZE 0|1|0
 CHAIN random
+DO rhythm insert 0
 DO rhythm density 0.35
 DO rhythm density 0.55
 DO rhythm density 0.80
@@ -87,6 +88,7 @@ Required MVP commands:
 - `macro <name> <value> [ramp <bbt-offset>]`
 - `state <name> <value>`
 - `rhythm <param> <value>`
+- `rhythm insert <route-index>`
 
 Required chain modes:
 
@@ -259,7 +261,15 @@ Phase 6l adds a route-level LuaProc insertion helper:
 - Add `ReactiveRhythmRouteInserter` to locate the bundled `Reactive Rhythm State MVP` LuaProc script and insert it into a MIDI route through Ardour's normal `PluginInsert` and `Route::add_processor` path.
 - Configure the inserted processor for one MIDI input and one MIDI output, and verify it remains active and discoverable in the route processor list.
 - Make repeated helper calls return the existing insert instead of creating duplicates.
-- Keep UI commands, controller-triggered insertion, script preset installation, live route mutation policy, and demo-session routing as follow-up work.
+- Keep action commands, UI commands, controller-triggered insertion, script preset installation, live route mutation policy, and demo-session routing as follow-up work.
+
+Phase 6m exposes route insertion through the reactive action path:
+
+- Parse `DO rhythm insert <route-index>` as a distinct command from numeric rhythm parameter updates.
+- Execute that command through `ReactiveActionExecutor` and `ReactiveSessionTarget`, using `Session::get_remote_nth_route()` for the controller-facing route index.
+- Call `ReactiveRhythmRouteInserter::ensure_inserted()` and treat an already-present insert as success.
+- Return clear action-target errors for missing routes and route insertion failures.
+- Keep UI buttons, controller feedback messages, script preset installation, and demo-session routing as follow-up work.
 
 Parameters:
 
