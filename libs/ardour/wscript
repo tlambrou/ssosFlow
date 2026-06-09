@@ -197,6 +197,7 @@ libardour_sources = [
         'reactive_rhythm_chance_source.cc',
         'reactive_rhythm.cc',
         'reactive_rhythm_insertion_plan.cc',
+        'reactive_rhythm_route_inserter.cc',
         'reactive_rhythm_midi_byte_adapter.cc',
         'reactive_rhythm_midi_buffer_adapter.cc',
         'reactive_rhythm_midi_adapter.cc',
@@ -665,6 +666,7 @@ def build(bld):
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_insertion_plan', 'test_reactive_rhythm_insertion_plan', ['test/reactive_rhythm_insertion_plan_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_luaproc_harness', 'test_reactive_rhythm_luaproc_harness', ['test/reactive_rhythm_luaproc_harness_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_luaproc_plugininsert', 'test_reactive_rhythm_luaproc_plugininsert', ['test/reactive_rhythm_luaproc_plugininsert_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_route_inserter', 'test_reactive_rhythm_route_inserter', ['test/reactive_rhythm_route_inserter_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm', 'test_reactive_rhythm', ['test/reactive_rhythm_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_byte_adapter', 'test_reactive_rhythm_midi_byte_adapter', ['test/reactive_rhythm_midi_byte_adapter_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_buffer_adapter', 'test_reactive_rhythm_midi_buffer_adapter', ['test/reactive_rhythm_midi_buffer_adapter_test.cc'])
@@ -702,6 +704,7 @@ def build(bld):
             'test/reactive_rhythm_insertion_plan_test.cc',
             'test/reactive_rhythm_luaproc_harness_test.cc',
             'test/reactive_rhythm_luaproc_plugininsert_test.cc',
+            'test/reactive_rhythm_route_inserter_test.cc',
             'test/reactive_rhythm_test.cc',
             'test/reactive_rhythm_midi_byte_adapter_test.cc',
             'test/reactive_rhythm_midi_buffer_adapter_test.cc',
