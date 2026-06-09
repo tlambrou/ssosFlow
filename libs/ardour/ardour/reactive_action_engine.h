@@ -50,6 +50,7 @@ public:
 	/* MVP helper: returns an allocating vector, so it is not yet suitable for a realtime MIDI path. */
 	std::vector<ReactiveActionMatch> match_midi_event (ReactiveMidiEvent const&) const;
 
+	ReactiveActionPlan preview_action (std::string const& name) const;
 	ReactiveActionPlan trigger_action (std::string const& name);
 	double macro_value (std::string const& name) const;
 	std::string state_value (std::string const& name) const;

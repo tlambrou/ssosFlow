@@ -129,6 +129,51 @@ ReactiveActionEngine::match_midi_event (ReactiveMidiEvent const& event) const
 }
 
 ReactiveActionPlan
+ReactiveActionEngine::preview_action (std::string const& name) const
+{
+	ReactiveActionPlan plan;
+	std::vector<ReactiveAction> const& actions = _document.actions ();
+	ReactiveAction const* action = 0;
+
+	for (size_t action_index = 0; action_index < actions.size (); ++action_index) {
+		if (actions[action_index].name == name) {
+			action = &actions[action_index];
+			plan.action_index = action_index;
+			break;
+		}
+	}
+
+	if (!action) {
+		plan.error = "unknown action '" + name + "'";
+		return plan;
+	}
+
+	plan.ok = true;
+	plan.action_name = action->name;
+	plan.chain_mode = action->chain_mode;
+	plan.quantize = action->quantize;
+
+	if (action->chain_mode == ReactiveChainMode::Sequential) {
+		if (!action->commands.empty ()) {
+			size_t position = 0;
+			std::map<std::string, size_t>::const_iterator found = _sequential_positions.find (action->name);
+			if (found != _sequential_positions.end ()) {
+				position = found->second;
+			}
+			plan.commands.push_back (action->commands[position % action->commands.size ()]);
+		}
+	} else if (action->chain_mode == ReactiveChainMode::Random) {
+		if (!action->commands.empty ()) {
+			plan.commands.push_back (action->commands.front ());
+		}
+	} else {
+		plan.commands = action->commands;
+	}
+
+	return plan;
+}
+
+ReactiveActionPlan
 ReactiveActionEngine::trigger_action (std::string const& name)
 {
 	ReactiveActionPlan plan;

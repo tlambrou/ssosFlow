@@ -42,6 +42,47 @@ primary_trigger_label (ReactiveAction const& action)
 	return format_trigger_label (action.triggers.front ());
 }
 
+static std::string
+format_chain_mode (ReactiveChainMode mode)
+{
+	switch (mode) {
+	case ReactiveChainMode::Sequential:
+		return "sequential";
+	case ReactiveChainMode::Random:
+		return "random";
+	case ReactiveChainMode::All:
+		break;
+	}
+
+	return "all";
+}
+
+static std::string
+format_bbt_offset (Temporal::BBT_Offset const& offset)
+{
+	std::ostringstream text;
+	text << offset.bars << "|" << offset.beats << "|" << offset.ticks;
+	return text.str ();
+}
+
+static ReactiveActionPreviewSummary
+preview_summary_from_plan (size_t slot, ReactiveAction const& action, ReactiveActionPlan const& plan)
+{
+	ReactiveActionPreviewSummary preview;
+	if (!plan.ok) {
+		return preview;
+	}
+
+	preview.available = true;
+	preview.slot = slot;
+	preview.action_name = action.name;
+	preview.primary_trigger = primary_trigger_label (action);
+	preview.chain_mode = format_chain_mode (plan.chain_mode);
+	preview.quantize = format_bbt_offset (plan.quantize);
+	preview.command_count = plan.commands.size ();
+	return preview;
+}
+
 static bool
 contains_name (std::vector<std::string> const& names, std::string const& name)
 {
@@ -99,6 +140,7 @@ ReactiveActionSlotRunner::load_document (ReactiveActionDocument const& document,
 
 	_loaded = true;
 	clear_last_execution_status ();
+	clear_next_action_preview ();
 	error.clear ();
 	return true;
 }
@@ -108,6 +150,7 @@ ReactiveActionSlotRunner::clear ()
 {
 	_engine = ReactiveActionEngine ();
 	clear_last_execution_status ();
+	clear_next_action_preview ();
 	_loaded = false;
 }
 
@@ -197,6 +240,37 @@ ReactiveActionSlotRunner::state_bank_summary (size_t max_slots) const
 	return summary;
 }
 
+ReactiveActionPreviewSummary
+ReactiveActionSlotRunner::preview_slot (size_t slot) const
+{
+	if (!_loaded || slot >= action_count ()) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	ReactiveAction const& action = _engine.document ().actions ()[slot];
+	return preview_summary_from_plan (slot, action, _engine.preview_action (action.name));
+}
+
+ReactiveActionPreviewSummary
+ReactiveActionSlotRunner::preview_midi_event (ReactiveMidiEvent const& event) const
+{
+	if (!_loaded) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	std::vector<ReactiveActionMatch> const matches = _engine.match_midi_event (event);
+	if (matches.empty ()) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	if (!match.action) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	return preview_summary_from_plan (match.action_index, *match.action, _engine.preview_action (match.action->name));
+}
+
 ReactiveExecutionResult
 ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& target)
 {
@@ -204,6 +278,7 @@ ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& targe
 
 	if (!_loaded) {
 		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
 		return record_execution_status (slot, std::string (), result);
 	}
 
@@ -211,12 +286,14 @@ ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& targe
 		std::ostringstream msg;
 		msg << "reactive action slot " << slot << " is out of range";
 		result.error = msg.str ();
+		clear_next_action_preview ();
 		return record_execution_status (slot, std::string (), result);
 	}
 
 	std::string const name = action_name (slot);
 	ReactiveActionPlan plan = _engine.trigger_action (name);
 	result = ReactiveActionExecutor::execute (plan, target);
+	_next_action_preview = preview_slot (slot);
 	return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
 }
 
@@ -227,12 +304,14 @@ ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, Re
 
 	if (!_loaded) {
 		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
 	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
 	if (matches.empty ()) {
 		result.error = "no reactive action matched MIDI event";
+		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
@@ -240,11 +319,13 @@ ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, Re
 	std::string const name = match.action ? match.action->name : std::string ();
 	if (name.empty ()) {
 		result.error = "matched reactive MIDI action has no name";
+		clear_next_action_preview ();
 		return record_execution_status (match.action_index, std::string (), result);
 	}
 
 	ReactiveActionPlan plan = _engine.trigger_action (name);
 	result = ReactiveActionExecutor::execute (plan, target);
+	_next_action_preview = preview_midi_event (event);
 	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
 }
 
@@ -255,12 +336,14 @@ ReactiveActionSlotRunner::execute_midi_bytes (unsigned char const* bytes, size_t
 
 	if (!_loaded) {
 		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
 	ReactiveMidiEvent event;
 	if (!ReactiveMidiEvent::from_midi_bytes (bytes, size, event)) {
 		result.error = "unsupported reactive MIDI byte message";
+		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
@@ -291,6 +374,26 @@ ReactiveActionSlotRunner::format_last_execution_status () const
 	status << ": failed";
 	if (!_last_execution_status.result.error.empty ()) {
 		status << " - " << _last_execution_status.result.error;
+	}
+
+	return status.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_next_action_preview () const
+{
+	if (!_next_action_preview.available) {
+		return "Next action preview: none";
+	}
+
+	std::ostringstream status;
+	status << "Next action preview: slot " << _next_action_preview.slot << " (" << _next_action_preview.action_name << ")";
+	if (!_next_action_preview.primary_trigger.empty ()) {
+		status << " [" << _next_action_preview.primary_trigger << "]";
+	}
+	status << " - " << _next_action_preview.chain_mode << ", quantize " << _next_action_preview.quantize << ", " << _next_action_preview.command_count << " command";
+	if (_next_action_preview.command_count != 1) {
+		status << "s";
 	}
 
 	return status.str ();
@@ -363,6 +466,12 @@ void
 ReactiveActionSlotRunner::clear_last_execution_status ()
 {
 	_last_execution_status = ReactiveActionSlotExecutionStatus ();
+}
+
+void
+ReactiveActionSlotRunner::clear_next_action_preview ()
+{
+	_next_action_preview = ReactiveActionPreviewSummary ();
 }
 
 ReactiveExecutionResult

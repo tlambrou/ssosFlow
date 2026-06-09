@@ -3226,6 +3226,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 		"\n\n" +
 		_reactive_action_slots.format_last_execution_status () +
 		"\n\n" +
+		_reactive_action_slots.format_next_action_preview () +
+		"\n\n" +
 		_reactive_action_slots.format_action_bank_summary (8) +
 		"\n\n" +
 		_reactive_action_slots.format_macro_bank_summary (8) +
@@ -3248,6 +3250,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
 			"\n\n" +
 			_reactive_action_slots.format_last_execution_status () +
+			"\n\n" +
+			_reactive_action_slots.format_next_action_preview () +
 			"\n\n" +
 			_reactive_action_slots.format_action_bank_summary (8) +
 			"\n\n" +
