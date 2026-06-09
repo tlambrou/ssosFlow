@@ -114,6 +114,31 @@ ReactiveActionTest::parseMacroSnapshotCommands ()
 }
 
 void
+ReactiveActionTest::parseWhenConditions ()
+{
+	const char* src =
+		"ACTION gated\n"
+		"WHEN state section breakdown\n"
+		"WHEN macro filter 0.75\n"
+		"WHEN transport rolling\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveAction const& action = result.document.actions ().front ();
+	CPPUNIT_ASSERT_EQUAL (size_t (3), action.conditions.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCondition::StateEquals, action.conditions[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("section"), action.conditions[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), action.conditions[0].text);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCondition::MacroEquals, action.conditions[1].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), action.conditions[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.75, action.conditions[1].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCondition::TransportRolling, action.conditions[2].type);
+}
+
+void
 ReactiveActionTest::parseSequentialAndRandomChains ()
 {
 	const char* src =
@@ -252,6 +277,21 @@ ReactiveActionTest::rejectInvalidRhythmCommand ()
 	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
 	CPPUNIT_ASSERT_EQUAL (false, result.ok);
 	CPPUNIT_ASSERT (result.error.find ("invalid rhythm command") != std::string::npos);
+	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
+}
+
+void
+ReactiveActionTest::rejectInvalidWhenCondition ()
+{
+	const char* src =
+		"ACTION broken\n"
+		"WHEN potatoes now\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("unknown condition") != std::string::npos);
 	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
 }
 
