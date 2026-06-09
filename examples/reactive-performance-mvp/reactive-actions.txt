@@ -37,6 +37,35 @@ DO state groove rotated
 DO cue 3
 END
 
+ACTION demo.play.when.stopped
+TRIGGER midi note ch=10 note=40
+WHEN transport stopped
+DO state transport stopped
+DO transport play
+END
+
+ACTION demo.cue.when.rolling
+TRIGGER midi note ch=10 note=41
+TRIGGER midi note ch=10 note=46
+WHEN transport rolling
+QUANTIZE 1|0|0
+DO state transport rolling
+DO cue 4
+END
+
+ACTION demo.stop.when.rolling
+TRIGGER midi note ch=10 note=42
+WHEN transport rolling
+DO state transport stopping
+DO transport stop
+END
+
+ACTION demo.mark.stopped
+TRIGGER midi note ch=10 note=43
+WHEN transport stopped
+DO state transport stopped-ready
+END
+
 ACTION demo.filter.sweep
 TRIGGER midi cc ch=1 cc=22
 DO macro filter midi-value ramp 0|1|0
