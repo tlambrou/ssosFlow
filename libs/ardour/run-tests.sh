@@ -1,7 +1,37 @@
 #!/bin/bash
 #
 # Run libardour test suite.
+# By default this script runs with an isolated temporary HOME so session
+# tests do not read or write the user's real Ardour preferences.
+# Set ARDOUR_TEST_HOME=/path/to/home to preserve an inspectable test home.
+# Set ARDOUR_TEST_USE_REAL_HOME=1 only for tests that intentionally need it.
 #
+
+ARDOUR_TEST_TEMP_HOME=
+
+function cleanup_test_home {
+	if [ -n "$ARDOUR_TEST_TEMP_HOME" ]; then
+		rm -rf "$ARDOUR_TEST_TEMP_HOME"
+	fi
+}
+
+function setup_test_home {
+	if [ "$ARDOUR_TEST_USE_REAL_HOME" == "1" ]; then
+		return
+	fi
+
+	if [ -n "$ARDOUR_TEST_HOME" ]; then
+		mkdir -p "$ARDOUR_TEST_HOME" || exit 1
+		export HOME="$ARDOUR_TEST_HOME"
+		return
+	fi
+
+	ARDOUR_TEST_TEMP_HOME=`mktemp -d "${TMPDIR:-/tmp}/ardour-libardour-test-home.XXXXXX"` || exit 1
+	export HOME="$ARDOUR_TEST_TEMP_HOME"
+	trap cleanup_test_home EXIT
+}
+
+setup_test_home
 
 TOP=`dirname "$0"`/../..
 . "$TOP/build/gtk2_ardour/ardev_common_waf.sh"
