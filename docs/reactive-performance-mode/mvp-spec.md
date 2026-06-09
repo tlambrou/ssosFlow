@@ -551,6 +551,15 @@ Phase 5p connects the scheduler to the runner without adding realtime session ev
 - Clearing/replacing the action document and disabling Reactive Performance Mode clear pending queued actions, keeping disarm/reload behavior predictable under performance pressure.
 - This remains a non-realtime bridge. The next slice should compute due BBT from Ardour's `TempoMap` and poll/release due actions from a safe GTK/session clock context before any native `SessionEvent` design.
 
+Phase 5q connects queued actions to the session clock without adding a native realtime `SessionEvent` type:
+
+- `ReactiveActionClock` converts the current transport BBT and an action quantize offset into requested/due BBT values using Ardour's `TempoMap`.
+- The runner now has TempoMap-backed `execute_or_queue_slot(...)`, `execute_or_queue_midi_event(...)`, and `execute_or_queue_midi_bytes(...)` overloads, so callers do not parse preview text or guess an action's quantize value before planning.
+- `ARDOUR_UI` uses the current session transport sample to compute the request BBT, then routes manual panel/status actions and Generic MIDI trigger bytes through the queue-aware runner path.
+- The Cue-page Reactive Performance panel polls queued actions from GTK space every 100 ms and releases due actions through `ReactiveSessionTarget`, keeping execution out of realtime callbacks.
+- The always-visible panel summary and detailed status dialog now include queued-action summary text so performers can see pending quantized work.
+- This is still an MVP clock bridge: it uses polling rather than sample-accurate native `SessionEvent` scheduling, and exact hardware/controller smoke testing remains follow-up.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.
@@ -599,6 +608,7 @@ Phase 7g makes the template setup path closer to one-step:
 - Engine tests cover action lookup, chain state, literal and event-derived macro state, and quantization calculation against a fixed TempoMap.
 - Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, and event-derived MIDI macro preservation.
+- Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.

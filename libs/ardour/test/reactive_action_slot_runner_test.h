@@ -34,8 +34,10 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (transportProviderControlsMidiConditions);
 	CPPUNIT_TEST (transportProviderControlsPreviewConditions);
 	CPPUNIT_TEST (queueQuantizedSlotActionUntilDue);
+	CPPUNIT_TEST (queueQuantizedSlotActionUsingTempoMapClock);
 	CPPUNIT_TEST (zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath);
 	CPPUNIT_TEST (queueQuantizedMidiActionPreservesControllerValue);
+	CPPUNIT_TEST (queueQuantizedMidiBytesUsingTempoMapClock);
 	CPPUNIT_TEST (clearAndLoadDocumentClearQueuedActions);
 	CPPUNIT_TEST (disabledPerformanceModeDoesNotQueueActions);
 	CPPUNIT_TEST_SUITE_END ();
@@ -69,8 +71,10 @@ public:
 	void transportProviderControlsMidiConditions ();
 	void transportProviderControlsPreviewConditions ();
 	void queueQuantizedSlotActionUntilDue ();
+	void queueQuantizedSlotActionUsingTempoMapClock ();
 	void zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath ();
 	void queueQuantizedMidiActionPreservesControllerValue ();
+	void queueQuantizedMidiBytesUsingTempoMapClock ();
 	void clearAndLoadDocumentClearQueuedActions ();
 	void disabledPerformanceModeDoesNotQueueActions ();
 };

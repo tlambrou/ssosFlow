@@ -10,6 +10,10 @@
 #include "ardour/reactive_action_executor.h"
 #include "ardour/reactive_action_scheduler.h"
 
+namespace Temporal {
+class TempoMap;
+}
+
 namespace ARDOUR {
 
 struct LIBARDOUR_API ReactiveActionSlotExecutionStatus {
@@ -82,6 +86,7 @@ struct LIBARDOUR_API ReactiveActionPreviewSummary {
 	std::string primary_trigger;
 	std::string chain_mode;
 	std::string quantize;
+	Temporal::BBT_Offset quantize_offset;
 	size_t command_count = 0;
 };
 
@@ -107,7 +112,10 @@ public:
 	ReactiveActionPreviewSummary preview_midi_event (ReactiveMidiEvent const&);
 
 	ReactiveExecutionResult execute_or_queue_slot (size_t slot, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
+	ReactiveExecutionResult execute_or_queue_slot (size_t slot, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
 	ReactiveExecutionResult execute_or_queue_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
+	ReactiveExecutionResult execute_or_queue_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
+	ReactiveExecutionResult execute_or_queue_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&);

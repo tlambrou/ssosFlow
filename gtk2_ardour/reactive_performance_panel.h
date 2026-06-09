@@ -31,10 +31,12 @@ class ReactivePerformancePanel : public Gtk::VBox
 {
 public:
 	ReactivePerformancePanel ();
+	~ReactivePerformancePanel ();
 
 private:
 	void refresh ();
 	void on_map ();
+	bool poll_queue ();
 
 	void trigger_slot (size_t slot);
 	void toggle_mode ();
@@ -51,4 +53,5 @@ private:
 	ArdourWidgets::ArdourButton _status_button;
 
 	PBD::ScopedConnectionList _reactive_performance_connections;
+	sigc::connection _queue_poll_connection;
 };

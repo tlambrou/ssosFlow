@@ -315,6 +315,7 @@ public:
 	void trigger_cue_row (int r);
 	void trigger_reactive_action (int slot);
 	void trigger_reactive_midi_bytes (std::vector<unsigned char> message);
+	bool poll_reactive_performance_queue ();
 	void toggle_reactive_performance_mode ();
 	void reload_reactive_action_document ();
 	void show_reactive_action_document_status ();
@@ -663,6 +664,7 @@ private:
 	bool ensure_reactive_action_document ();
 	bool load_reactive_action_document (bool report_success);
 	bool reload_reactive_action_document_from_disk (bool report_success);
+	Temporal::BBT_Time reactive_performance_bbt_now () const;
 	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
 	ARDOUR::ReactiveActionDocumentLoadResult _reactive_action_document_load_result;
 	std::string _reactive_action_document_session_path;
