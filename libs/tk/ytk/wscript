@@ -295,6 +295,8 @@ def build(bld):
     if sys.platform == 'darwin':
         obj.source   = libytk_sources +  libytk_quartz_sources
         obj.cflags   += ['-xobjective-c']
+        # Darwin/Clang rejects the generated GTK2 alias attributes.
+        obj.defines  += [ 'DISABLE_VISIBILITY' ]
         obj.uselib   += ' OSX' #  -framework Cocoa -framework CoreFoundation -framework ApplicationServices
     elif bld.env['build_target'] == 'mingw' or bld.env['build_target'] == 'msvc':
         obj.source   = libytk_sources +  libytk_win32_sources
