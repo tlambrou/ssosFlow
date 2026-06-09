@@ -624,6 +624,39 @@ ReactiveActionSlotRunnerTest::summarizePerformanceControlsForStatusPanel ()
 }
 
 void
+ReactiveActionSlotRunnerTest::performanceControlsMarkLatestAttemptForPanelRefresh ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION manual.two\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactivePerformanceControlSummary> controls = runner.performance_control_summary (3);
+	CPPUNIT_ASSERT_EQUAL (std::string ("0 pad.one"), controls[0].button_label);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1 manual.two"), controls[1].button_label);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target).ok);
+	controls = runner.performance_control_summary (3);
+	CPPUNIT_ASSERT_EQUAL (std::string ("> 0 pad.one"), controls[0].button_label);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1 manual.two"), controls[1].button_label);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+	controls = runner.performance_control_summary (3);
+	CPPUNIT_ASSERT_EQUAL (std::string ("0 pad.one"), controls[0].button_label);
+	CPPUNIT_ASSERT_EQUAL (std::string ("> 1 manual.two"), controls[1].button_label);
+}
+
+void
 ReactiveActionSlotRunnerTest::summarizeMacroBankForPerformancePanel ()
 {
 	ReactiveActionSlotRunner runner;

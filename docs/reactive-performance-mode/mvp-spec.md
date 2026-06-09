@@ -171,7 +171,7 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, performance-control availability for the first eight slots, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
@@ -471,7 +471,14 @@ Phase 5i binds that Cue-page panel to the existing performance-control read mode
 - `ARDOUR_UI` exposes a narrow `reactive_performance_control_summary(...)` accessor that reuses `ReactiveActionSlotRunner::performance_control_summary(...)`.
 - The Cue-page panel refreshes slot labels and sensitivity from loaded action documents and the current Reactive Performance enabled state.
 - Empty or missing slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
-- The panel refreshes after local slot, Mode, Reload, and Status interactions; automatic refresh from external MIDI/controller actions remains follow-up work.
+- The panel refreshes after local slot, Mode, Reload, and Status interactions.
+
+Phase 5j adds controller-driven panel refresh feedback:
+
+- `ReactiveActionSlotRunner::performance_control_summary(...)` prefixes the latest attempted slot's large-control label with `> ` after manual or MIDI-triggered execution, giving the panel a compact performance feedback marker.
+- `ARDOUR_UI::ReactivePerformanceChanged` is emitted after Reactive slot execution, MIDI-byte execution, mode toggles, and document reloads.
+- `ReactivePerformancePanel` observes that signal on the GUI context, so controller-triggered Reactive actions refresh the Cue-page controls without a mouse interaction.
+- Controller LED/output feedback remains follow-up work.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 

@@ -3208,6 +3208,7 @@ void
 ARDOUR_UI::reload_reactive_action_document ()
 {
 	reload_reactive_action_document_from_disk (true);
+	ReactivePerformanceChanged (); // EMIT SIGNAL
 }
 
 void
@@ -3215,6 +3216,7 @@ ARDOUR_UI::toggle_reactive_performance_mode ()
 {
 	_reactive_action_slots.set_performance_enabled (!_reactive_action_slots.performance_enabled ());
 	info << _reactive_action_slots.format_performance_mode_status () << endmsg;
+	ReactivePerformanceChanged (); // EMIT SIGNAL
 }
 
 void
@@ -3353,6 +3355,7 @@ ARDOUR_UI::trigger_reactive_action (int slot)
 	if (!result.ok) {
 		warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
 	}
+	ReactivePerformanceChanged (); // EMIT SIGNAL
 }
 
 void
@@ -3373,6 +3376,7 @@ ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
 	if (!result.ok) {
 		warning << string_compose (_("Reactive MIDI trigger failed: %1"), result.error) << endmsg;
 	}
+	ReactivePerformanceChanged (); // EMIT SIGNAL
 }
 
 void

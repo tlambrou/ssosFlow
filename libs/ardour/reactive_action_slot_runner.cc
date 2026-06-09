@@ -234,6 +234,9 @@ ReactiveActionSlotRunner::performance_control_summary (size_t max_slots) const
 		if (_loaded && slot < count) {
 			ReactiveAction const& action = _engine.document ().actions ()[slot];
 			std::ostringstream label;
+			if (_last_execution_status.attempted && _last_execution_status.slot == slot) {
+				label << "> ";
+			}
 			label << slot << " " << action.name;
 			row.action_name = action.name;
 			row.primary_trigger = primary_trigger_label (action);

@@ -18,10 +18,14 @@
 
 #include "reactive_performance_panel.h"
 
+#include <functional>
 #include <sstream>
 #include <vector>
 
 #include "ardour_ui.h"
+#include "gui_thread.h"
+
+#include "gtkmm2ext/utils.h"
 
 #include "pbd/i18n.h"
 
@@ -70,6 +74,12 @@ ReactivePerformancePanel::ReactivePerformancePanel ()
 
 	pack_start (_slot_row, false, false);
 	pack_start (_utility_row, false, false);
+
+	ARDOUR_UI::instance ()->ReactivePerformanceChanged.connect (
+		_reactive_performance_connections,
+		invalidator (*this),
+		std::bind (&ReactivePerformancePanel::refresh, this),
+		gui_context ());
 
 	refresh ();
 }
