@@ -123,6 +123,16 @@ disabled_execution_result ()
 	return result;
 }
 
+static int
+controller_feedback_value (bool available, bool enabled, bool latest_attempted)
+{
+	if (!available || !enabled) {
+		return 0;
+	}
+
+	return latest_attempted ? 127 : 32;
+}
+
 } // namespace
 
 bool
@@ -248,6 +258,37 @@ ReactiveActionSlotRunner::performance_control_summary (size_t max_slots) const
 			label << slot << " empty";
 			row.button_label = label.str ();
 		}
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
+std::vector<ReactiveControllerFeedbackSummary>
+ReactiveActionSlotRunner::controller_feedback_summary (size_t max_slots) const
+{
+	std::vector<ReactiveControllerFeedbackSummary> summary;
+	if (max_slots == 0) {
+		return summary;
+	}
+
+	summary.reserve (max_slots);
+
+	size_t const count = _loaded ? action_count () : 0;
+	for (size_t slot = 0; slot < max_slots; ++slot) {
+		ReactiveControllerFeedbackSummary row;
+		row.slot = slot;
+		if (_loaded && slot < count) {
+			ReactiveAction const& action = _engine.document ().actions ()[slot];
+			row.action_name = action.name;
+			row.primary_trigger = primary_trigger_label (action);
+			row.available = true;
+			row.enabled = _performance_enabled;
+			row.latest_attempted = _performance_enabled &&
+				_last_execution_status.attempted &&
+				_last_execution_status.slot == slot;
+		}
+		row.value = controller_feedback_value (row.available, row.enabled, row.latest_attempted);
 		summary.push_back (row);
 	}
 
