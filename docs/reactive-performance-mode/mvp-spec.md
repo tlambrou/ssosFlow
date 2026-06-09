@@ -248,6 +248,12 @@ Phase 6j adds event-level LuaProc script coverage:
 - Cover default note pass-through, density-zero suppression, non-note pass-through, velocity-zero note-offs, velocity-priority filtering, and latched parameter updates.
 - Keep full Ardour `PluginInsert` MIDI-buffer execution and route insertion as follow-up work.
 
+Phase 6k adds runtime-path LuaProc/`PluginInsert` MIDI coverage:
+
+- Load `Reactive Rhythm State MVP` as a LuaProc plugin, wrap it in `PluginInsert`, configure one MIDI input/output, and run real `BufferSet`/`MidiBuffer` data through `PluginInsert::run`.
+- Cover density-100 forwarding, density-zero note suppression with non-note pass-through, velocity-zero note-offs, and beat/time-driven latched parameter updates through the actual Ardour buffer mapping path.
+- Keep automated route insertion, script presets, and demo-session routing as follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
