@@ -93,6 +93,8 @@ Required MVP commands:
 - `scene apply <index>`
 - `scene store <index>`
 - `macro <name> <value|midi-value> [ramp <bbt-offset>]`
+- `macro snapshot store <name>`
+- `macro snapshot recall <name> [ramp <bbt-offset>]`
 - `state <name> <value>`
 - `rhythm <param> <value>`
 - `rhythm insert <route-index>`
@@ -188,6 +190,8 @@ Phase 4e research found that the existing Generic MIDI surface already supports 
 Phase 4f adds that live adapter path for Generic MIDI note-on and control-change bindings. A map entry can now use `reactive="trigger"` with `note` or `ctl`; the Generic MIDI surface reconstructs the 3-byte controller message on Ardour's existing MIDI/control-surface thread, emits it through `BasicUI`, and the GTK-side Reactive Performance entry point delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`. The MVP map keeps notes 36 through 45 for fixed slot/status/reload actions and adds note 46 on channel 10 plus CC 22 on channel 1 as document-level trigger examples.
 
 Phase 4g adds event-derived macro values. `DO macro <name> midi-value [ramp <bbt-offset>]` stores a macro command whose value is resolved from the MIDI event that triggered the action: CC values and note velocities are normalized from `0..127` to `0.0..1.0`, and the optional ramp is preserved. Literal macro commands such as `DO macro filter 0.80` are unchanged. Because manual slot execution has no originating controller value, `midi-value` actions should be triggered through a matching MIDI note/CC path.
+
+Phase 3h adds macro snapshot store/recall. `DO macro snapshot store <name>` captures the current Reactive macro values under a named snapshot after any earlier macro commands in the same action have been applied. `DO macro snapshot recall <name> [ramp <bbt-offset>]` expands the stored values back into normal macro commands, preserving the optional recall ramp so existing executor, controller feedback, and performance UI paths can apply the recalled values. Missing snapshots fail the action plan visibly instead of silently changing live macro state.
 
 ## Performance UI
 

@@ -226,6 +226,25 @@ ReactiveActionExecutorTest::refuseFailedPlan ()
 }
 
 void
+ReactiveActionExecutorTest::rejectUnexpandedMacroSnapshotCommand ()
+{
+	ReactiveActionPlan plan;
+	plan.ok = true;
+	ReactiveCommand command;
+	command.type = ReactiveCommand::MacroSnapshotRecall;
+	command.name = "verse";
+	plan.commands.push_back (command);
+	RecordingTarget target;
+
+	ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
+
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("unexpanded macro snapshot") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), result.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+}
+
+void
 ReactiveActionExecutorTest::stopAfterFirstTargetFailure ()
 {
 	ReactiveActionEngine engine = engine_from_source (

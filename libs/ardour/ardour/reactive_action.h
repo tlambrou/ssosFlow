@@ -43,6 +43,8 @@ struct LIBARDOUR_API ReactiveCommand {
 		SceneApply,
 		SceneStore,
 		Macro,
+		MacroSnapshotStore,
+		MacroSnapshotRecall,
 		State,
 		Rhythm,
 		RhythmRoute,

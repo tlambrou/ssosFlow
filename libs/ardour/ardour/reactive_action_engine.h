@@ -60,11 +60,15 @@ public:
 	ReactiveActionDocument const& document () const { return _document; }
 
 private:
-	void apply_command_state (ReactiveCommand const&);
+	typedef std::map<std::string, double> MacroSnapshot;
+
+	bool preview_plan_commands (std::vector<ReactiveCommand> const&, ReactiveMidiEvent const*, std::vector<ReactiveCommand>&, std::string&) const;
+	bool trigger_plan_commands (std::vector<ReactiveCommand> const&, ReactiveMidiEvent const*, std::vector<ReactiveCommand>&, std::string&);
 
 	ReactiveActionDocument _document;
 	std::map<std::string, size_t> _sequential_positions;
 	std::map<std::string, double> _macros;
+	std::map<std::string, MacroSnapshot> _macro_snapshots;
 	std::map<std::string, std::string> _states;
 	std::string _last_action;
 };
