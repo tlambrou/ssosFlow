@@ -36,6 +36,7 @@
 
 #include <list>
 #include <cmath>
+#include <vector>
 
 #include "pbd/xml++.h"
 #include <ytkmm/box.h>
@@ -312,6 +313,7 @@ public:
 	void trigger_slot (int c, int r);
 	void trigger_cue_row (int r);
 	void trigger_reactive_action (int slot);
+	void trigger_reactive_midi_bytes (std::vector<unsigned char> message);
 	void reload_reactive_action_document ();
 	void show_reactive_action_document_status ();
 	void stop_all_cues (bool immediately);

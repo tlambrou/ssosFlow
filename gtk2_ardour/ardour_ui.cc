@@ -112,6 +112,8 @@
 
 #include "LuaBridge/LuaBridge.h"
 
+#include "control_protocol/basic_ui.h"
+
 #ifdef PLATFORM_WINDOWS
 #include "pbd/windows_mmcss.h"
 #endif
@@ -433,6 +435,7 @@ ARDOUR_UI::ARDOUR_UI (int *argcp, char **argvp[], const char* localedir)
 	/* handle dialog requests */
 
 	ARDOUR::Session::Dialog.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::session_dialog, this, _1), gui_context());
+	BasicUI::ReactiveMidiBytes.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::trigger_reactive_midi_bytes, this, _1), gui_context());
 
 	/* handle pending state with a dialog (PROBLEM: needs to return a value and thus cannot be x-thread) */
 
@@ -3264,6 +3267,26 @@ ARDOUR_UI::trigger_reactive_action (int slot)
 	ReactiveExecutionResult result = _reactive_action_slots.execute_slot (static_cast<size_t> (slot), target);
 	if (!result.ok) {
 		warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
+	}
+}
+
+void
+ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
+{
+	if (!_session) {
+		warning << _("Reactive MIDI trigger ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return;
+	}
+
+	unsigned char const* bytes = message.empty () ? 0 : &message[0];
+	ReactiveSessionTarget target (*_session);
+	ReactiveExecutionResult result = _reactive_action_slots.execute_midi_bytes (bytes, message.size (), target);
+	if (!result.ok) {
+		warning << string_compose (_("Reactive MIDI trigger failed: %1"), result.error) << endmsg;
 	}
 }
 

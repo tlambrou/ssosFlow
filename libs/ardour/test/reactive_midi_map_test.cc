@@ -54,7 +54,7 @@ ReactiveMidiMapTest::mapContainsExpectedControllerBindings ()
 		if (child->name () != "Binding") {
 			continue;
 		}
-		if (!child->property ("note")) {
+		if (!child->property ("note") || !child->property ("action")) {
 			continue;
 		}
 
@@ -77,4 +77,44 @@ ReactiveMidiMapTest::mapContainsExpectedControllerBindings ()
 	CPPUNIT_ASSERT_EQUAL (
 		std::string ("Reactive/reload-action-document"),
 		actions_by_note[BindingKey ("10", "45")]);
+}
+
+void
+ReactiveMidiMapTest::mapContainsLiveReactiveMidiTriggerBindings ()
+{
+	XMLTree tree;
+	CPPUNIT_ASSERT_MESSAGE ("could not parse Reactive Performance MIDI map", tree.read (reactive_midi_map_path ().c_str ()));
+
+	XMLNode* root = tree.root ();
+	CPPUNIT_ASSERT (root != 0);
+
+	bool has_note_trigger = false;
+	bool has_cc_trigger = false;
+	XMLNodeList const& children = root->children ();
+	for (XMLNodeConstIterator i = children.begin (); i != children.end (); ++i) {
+		XMLNode const* child = *i;
+		if (child->name () != "Binding" || !child->property ("reactive")) {
+			continue;
+		}
+
+		std::string const reactive = required_property (*child, "reactive");
+		if (reactive != "trigger") {
+			continue;
+		}
+
+		if (child->property ("note") &&
+		    required_property (*child, "channel") == "10" &&
+		    required_property (*child, "note") == "46") {
+			has_note_trigger = true;
+		}
+
+		if (child->property ("ctl") &&
+		    required_property (*child, "channel") == "1" &&
+		    required_property (*child, "ctl") == "22") {
+			has_cc_trigger = true;
+		}
+	}
+
+	CPPUNIT_ASSERT_MESSAGE ("missing live reactive MIDI note trigger binding", has_note_trigger);
+	CPPUNIT_ASSERT_MESSAGE ("missing live reactive MIDI CC trigger binding", has_cc_trigger);
 }

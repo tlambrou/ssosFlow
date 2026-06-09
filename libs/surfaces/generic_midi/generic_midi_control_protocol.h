@@ -50,6 +50,7 @@ namespace MIDI {
 class MIDIControllable;
 class MIDIFunction;
 class MIDIAction;
+class MIDIReactiveAction;
 
 struct GenericMIDIRequest : public BaseUI::BaseRequestObject {
 public:
@@ -157,6 +158,9 @@ private:
 	typedef std::list<MIDIAction*> MIDIActions;
 	MIDIActions actions;
 
+	typedef std::list<MIDIReactiveAction*> MIDIReactiveActions;
+	MIDIReactiveActions reactive_actions;
+
 	struct MIDIPendingControllable {
 		MIDIControllable* mc;
 		bool own_mc;
@@ -180,6 +184,7 @@ private:
 	MIDIControllable* create_binding (const XMLNode&);
 	MIDIFunction* create_function (const XMLNode&);
 	MIDIAction* create_action (const XMLNode&);
+	MIDIReactiveAction* create_reactive_action (const XMLNode&);
 
 	void reset_controllables ();
 

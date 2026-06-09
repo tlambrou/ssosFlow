@@ -68,6 +68,7 @@
 #include "midicontrollable.h"
 #include "midifunction.h"
 #include "midiaction.h"
+#include "midireactiveaction.h"
 
 #include "pbd/abstract_ui.inc.cc" // instantiate template
 
@@ -260,6 +261,11 @@ GenericMidiControlProtocol::drop_all ()
 		delete *i;
 	}
 	actions.clear ();
+
+	for (MIDIReactiveActions::iterator i = reactive_actions.begin(); i != reactive_actions.end(); ++i) {
+		delete *i;
+	}
+	reactive_actions.clear ();
 }
 
 void
@@ -593,6 +599,21 @@ GenericMidiControlProtocol::check_used_event (int pos, int control_number)
 		}
 	}
 
+	for (MIDIReactiveActions::iterator iter = reactive_actions.begin(); iter != reactive_actions.end();) {
+		MIDIReactiveAction* existingBinding = (*iter);
+		if ( (existingBinding->get_control_type() & 0xf0 ) == (pos & 0xf0) && (existingBinding->get_control_channel() & 0xf ) == channel ) {
+			if ( ((int) existingBinding->get_control_additional() == (int) value) || ((pos & 0xf0) == MIDI::pitchbend)) {
+				DEBUG_TRACE (DEBUG::GenericMidi, "checking: found match, delete old binding.\n");
+				delete existingBinding;
+				iter = reactive_actions.erase (iter);
+			} else {
+				++iter;
+			}
+		} else {
+			++iter;
+		}
+	}
+
 }
 
 XMLNode&
@@ -913,6 +934,13 @@ GenericMidiControlProtocol::load_bindings (const string& xmlpath)
 
 				if ((mf = create_function (*child)) != 0) {
 					functions.push_back (mf);
+				}
+
+			} else if (child->property ("reactive")) {
+				MIDIReactiveAction* mra;
+
+				if ((mra = create_reactive_action (*child)) != 0) {
+					reactive_actions.push_back (mra);
 				}
 
 			} else if (child->property ("action")) {
@@ -1723,6 +1751,62 @@ GenericMidiControlProtocol::create_action (const XMLNode& node)
 	return ma;
 }
 
+MIDIReactiveAction*
+GenericMidiControlProtocol::create_reactive_action (const XMLNode& node)
+{
+	const XMLProperty* prop;
+	int intval;
+	MIDI::byte detail = 0;
+	MIDI::channel_t channel = 0;
+	MIDI::eventType ev;
+
+	if ((prop = node.property (X_("ctl"))) != 0) {
+		ev = MIDI::controller;
+	} else if ((prop = node.property (X_("note"))) != 0) {
+		ev = MIDI::on;
+	} else {
+		warning << "Reactive MIDI binding ignored - unknown type" << endmsg;
+		return 0;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1) {
+		return 0;
+	}
+
+	detail = (MIDI::byte) intval;
+
+	if ((prop = node.property (X_("channel"))) == 0) {
+		return 0;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1) {
+		return 0;
+	}
+
+	channel = (MIDI::channel_t) intval;
+	/* adjust channel to zero-based counting */
+	if (channel > 0) {
+		channel -= 1;
+	}
+
+	prop = node.property (X_("reactive"));
+	if (!prop || prop->value() != X_("trigger")) {
+		warning << "Reactive MIDI binding ignored - unknown reactive target" << endmsg;
+		return 0;
+	}
+
+	MIDIReactiveAction* mra = new MIDIReactiveAction (*_input_port->parser());
+
+	if (mra->init (*this, prop->value())) {
+		delete mra;
+		return 0;
+	}
+
+	mra->bind_midi (channel, ev, detail);
+
+	return mra;
+}
+
 void
 GenericMidiControlProtocol::set_current_bank (uint32_t b)
 {
@@ -1901,4 +1985,3 @@ GenericMidiControlProtocol::remove_rid_from_selection (int rid)
 	int id = rid + (_current_bank * _bank_size);
 	ControlProtocol::remove_rid_from_selection (id);
 }
-

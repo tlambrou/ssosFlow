@@ -165,11 +165,13 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots.
 
-`ReactiveMidiEvent::from_midi_bytes(...)` maps 3-byte note-on and control-change controller messages into this event model. Raw MIDI status channels are converted to the musician-facing 1-based channel numbers used by action syntax, so status `0x99` maps to `ch=10`. Note-off, note-on with velocity 0, unsupported statuses, short messages, and null buffers are ignored. A live MIDI/control-surface adapter that feeds controller events directly into this runner remains follow-up work.
+`ReactiveMidiEvent::from_midi_bytes(...)` maps 3-byte note-on and control-change controller messages into this event model. Raw MIDI status channels are converted to the musician-facing 1-based channel numbers used by action syntax, so status `0x99` maps to `ch=10`. Note-off, note-on with velocity 0, unsupported statuses, short messages, and null buffers are ignored.
 
-`ReactiveActionSlotRunner::execute_midi_bytes(...)` now provides the backend bridge from raw controller bytes to executable actions. It preserves the missing-document failure path, maps supported byte messages through `ReactiveMidiEvent::from_midi_bytes(...)`, delegates supported messages to `execute_midi_event(...)`, and records unsupported byte messages in the same last-execution status model. Live MIDI/control-surface callback wiring remains follow-up work.
+`ReactiveActionSlotRunner::execute_midi_bytes(...)` now provides the backend bridge from raw controller bytes to executable actions. It preserves the missing-document failure path, maps supported byte messages through `ReactiveMidiEvent::from_midi_bytes(...)`, delegates supported messages to `execute_midi_event(...)`, and records unsupported byte messages in the same last-execution status model.
 
-Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needs one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance. The next implementation should add a narrow Reactive-specific Generic MIDI invokable, or equivalent adapter in that surface, that rebuilds supported 3-byte note-on/CC messages on Ardour's existing MIDI/control-surface thread and calls the UI entry point that delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`.
+Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needed one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance.
+
+Phase 4f adds that live adapter path for Generic MIDI note-on and control-change bindings. A map entry can now use `reactive="trigger"` with `note` or `ctl`; the Generic MIDI surface reconstructs the 3-byte controller message on Ardour's existing MIDI/control-surface thread, emits it through `BasicUI`, and the GTK-side Reactive Performance entry point delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`. The MVP map keeps notes 36 through 45 for fixed slot/status/reload actions and adds note 46 on channel 10 plus CC 22 on channel 1 as document-level trigger examples.
 
 ## Performance UI
 
@@ -375,7 +377,13 @@ Phase 4e chooses the live adapter hook:
 - Reconstruct supported 3-byte note-on/CC messages on Ardour's existing MIDI/control-surface thread.
 - Delegate to the UI Reactive Performance entry point and then `ReactiveActionSlotRunner::execute_midi_bytes(...)`.
 - Avoid parser, file loading, action planning, or session mutation in realtime audio callbacks.
-- Recommended next implementation issue: add the UI entry point plus a minimal Generic MIDI Reactive invokable that handles note-on and CC only.
+
+Phase 4f wires the live Generic MIDI adapter:
+
+- Add `reactive="trigger"` MIDI map bindings for note-on and control-change messages.
+- Reconstruct matching 3-byte MIDI messages from Generic MIDI parser callbacks.
+- Emit those bytes through `BasicUI` and handle them in the GTK Reactive Performance UI entry point.
+- Keep existing `action="Reactive/trigger-action-N"` bindings unchanged for fixed slot launches.
 
 Phase 5: add minimal Reactive Performance UI panel.
 
@@ -394,6 +402,7 @@ Phase 7b makes the MVP map more controller-first:
 - Keep notes 36 through 43 mapped to `Reactive/trigger-action-0` through `Reactive/trigger-action-7`.
 - Bind note 44 to `Reactive/show-action-document-status`.
 - Bind note 45 to `Reactive/reload-action-document`.
+- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`.
 
 ## Acceptance Tests
 
