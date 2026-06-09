@@ -572,6 +572,58 @@ ReactiveActionSlotRunnerTest::summarizeActionBankForPerformancePanel ()
 }
 
 void
+ReactiveActionSlotRunnerTest::summarizePerformanceControlsForStatusPanel ()
+{
+	ReactiveActionSlotRunner runner;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION manual.only\n"
+		"DO state section bridge\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactivePerformanceControlSummary> controls = runner.performance_control_summary (4);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (4), controls.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), controls[0].slot);
+	CPPUNIT_ASSERT_EQUAL (true, controls[0].available);
+	CPPUNIT_ASSERT_EQUAL (true, controls[0].enabled);
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), controls[0].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), controls[0].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("0 pad.one"), controls[0].button_label);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), controls[1].slot);
+	CPPUNIT_ASSERT_EQUAL (true, controls[1].available);
+	CPPUNIT_ASSERT_EQUAL (true, controls[1].enabled);
+	CPPUNIT_ASSERT_EQUAL (std::string ("manual.only"), controls[1].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("manual"), controls[1].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1 manual.only"), controls[1].button_label);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), controls[2].slot);
+	CPPUNIT_ASSERT_EQUAL (false, controls[2].available);
+	CPPUNIT_ASSERT_EQUAL (false, controls[2].enabled);
+	CPPUNIT_ASSERT_EQUAL (std::string ("2 empty"), controls[2].button_label);
+
+	runner.set_performance_enabled (false);
+	controls = runner.performance_control_summary (2);
+	CPPUNIT_ASSERT_EQUAL (true, controls[0].available);
+	CPPUNIT_ASSERT_EQUAL (false, controls[0].enabled);
+	CPPUNIT_ASSERT_EQUAL (true, controls[1].available);
+	CPPUNIT_ASSERT_EQUAL (false, controls[1].enabled);
+
+	std::string const formatted = runner.format_performance_control_summary (4);
+	CPPUNIT_ASSERT (formatted.find ("Performance controls: disabled") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("0: pad.one [MIDI note ch=10 note=36] - disabled") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("2: empty - unavailable") != std::string::npos);
+}
+
+void
 ReactiveActionSlotRunnerTest::summarizeMacroBankForPerformancePanel ()
 {
 	ReactiveActionSlotRunner runner;

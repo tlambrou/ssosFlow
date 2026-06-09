@@ -25,6 +25,15 @@ struct LIBARDOUR_API ReactiveActionSlotSummary {
 	bool latest_attempted = false;
 };
 
+struct LIBARDOUR_API ReactivePerformanceControlSummary {
+	size_t slot = 0;
+	std::string action_name;
+	std::string primary_trigger;
+	std::string button_label;
+	bool available = false;
+	bool enabled = false;
+};
+
 struct LIBARDOUR_API ReactiveMacroSlotSummary {
 	size_t slot = 0;
 	std::string name;
@@ -59,6 +68,7 @@ public:
 	size_t action_count () const;
 	std::string action_name (size_t slot) const;
 	std::vector<ReactiveActionSlotSummary> action_bank_summary (size_t max_slots) const;
+	std::vector<ReactivePerformanceControlSummary> performance_control_summary (size_t max_slots) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
 	ReactiveActionPreviewSummary preview_slot (size_t slot) const;
@@ -71,6 +81,7 @@ public:
 	ReactiveActionPreviewSummary const& next_action_preview () const { return _next_action_preview; }
 	std::string format_last_execution_status () const;
 	std::string format_performance_mode_status () const;
+	std::string format_performance_control_summary (size_t max_slots) const;
 	std::string format_next_action_preview () const;
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;

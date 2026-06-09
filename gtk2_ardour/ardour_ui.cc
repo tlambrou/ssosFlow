@@ -3227,43 +3227,37 @@ ARDOUR_UI::show_reactive_action_document_status ()
 
 	ensure_reactive_action_document ();
 
+	const int toggle_mode_response = 1000;
+	const int trigger_slot_response_base = 1100;
+
 	ArdourDialog dialog (_("Reactive Performance"), true, false);
 	ReactiveSessionTarget target (*_session);
-	Gtk::Label status (
-		_reactive_action_slots.format_performance_mode_status () +
-		"\n\n" +
-		ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
-		"\n\n" +
-		_reactive_action_slots.format_last_execution_status () +
-		"\n\n" +
-		_reactive_action_slots.format_next_action_preview () +
-		"\n\n" +
-		target.format_routing_summary (8) +
-		"\n\n" +
-		_reactive_action_slots.format_action_bank_summary (8) +
-		"\n\n" +
-		_reactive_action_slots.format_macro_bank_summary (8) +
-		"\n\n" +
-		_reactive_action_slots.format_state_bank_summary (8));
+	Gtk::Label status;
 	status.set_alignment (0.0, 0.0);
 	status.set_line_wrap (true);
 	status.set_selectable (true);
 
-	dialog.get_vbox()->pack_start (status, true, true, 12);
+	std::vector<Gtk::Button*> slot_buttons;
+	slot_buttons.reserve (8);
+	for (int slot = 0; slot < 8; ++slot) {
+		Gtk::Button* button = dialog.add_button ("", trigger_slot_response_base + slot);
+		button->set_size_request (120, 44);
+		slot_buttons.push_back (button);
+	}
+
+	Gtk::Button* mode_button = dialog.add_button ("", toggle_mode_response);
+	mode_button->set_size_request (120, 44);
 	dialog.add_button (_("Reload"), RESPONSE_APPLY);
 	dialog.add_button (Stock::CLOSE, RESPONSE_CLOSE);
-	dialog.set_default_response (RESPONSE_CLOSE);
-	dialog.set_resizable (false);
-	dialog.show_all ();
 
-	while (dialog.run () == RESPONSE_APPLY) {
-		reload_reactive_action_document_from_disk (true);
-		status.set_text (
-			_reactive_action_slots.format_performance_mode_status () +
+	const auto status_text = [&]() {
+		return _reactive_action_slots.format_performance_mode_status () +
 			"\n\n" +
 			ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
 			"\n\n" +
 			_reactive_action_slots.format_last_execution_status () +
+			"\n\n" +
+			_reactive_action_slots.format_performance_control_summary (8) +
 			"\n\n" +
 			_reactive_action_slots.format_next_action_preview () +
 			"\n\n" +
@@ -3273,7 +3267,50 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			_reactive_action_slots.format_macro_bank_summary (8) +
 			"\n\n" +
-			_reactive_action_slots.format_state_bank_summary (8));
+			_reactive_action_slots.format_state_bank_summary (8);
+	};
+
+	const auto refresh_controls = [&]() {
+		std::vector<ReactivePerformanceControlSummary> const controls = _reactive_action_slots.performance_control_summary (slot_buttons.size ());
+		for (size_t slot = 0; slot < slot_buttons.size (); ++slot) {
+			if (slot < controls.size ()) {
+				slot_buttons[slot]->set_label (controls[slot].button_label);
+				slot_buttons[slot]->set_sensitive (controls[slot].enabled);
+			} else {
+				std::ostringstream label;
+				label << slot << " empty";
+				slot_buttons[slot]->set_label (label.str ());
+				slot_buttons[slot]->set_sensitive (false);
+			}
+		}
+
+		mode_button->set_label (_reactive_action_slots.performance_enabled () ? _("Disable Mode") : _("Enable Mode"));
+		status.set_text (status_text ());
+	};
+
+	dialog.get_vbox()->pack_start (status, true, true, 12);
+	dialog.set_default_response (RESPONSE_CLOSE);
+	dialog.set_resizable (true);
+	refresh_controls ();
+	dialog.show_all ();
+
+	while (true) {
+		int const response = dialog.run ();
+		if (response == RESPONSE_APPLY) {
+			reload_reactive_action_document_from_disk (true);
+		} else if (response == toggle_mode_response) {
+			toggle_reactive_performance_mode ();
+		} else if (response >= trigger_slot_response_base && response < trigger_slot_response_base + 8) {
+			int const slot = response - trigger_slot_response_base;
+			ReactiveExecutionResult result = _reactive_action_slots.execute_slot (static_cast<size_t> (slot), target);
+			if (!result.ok) {
+				warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
+			}
+		} else {
+			break;
+		}
+
+		refresh_controls ();
 		dialog.show_all ();
 	}
 }
