@@ -231,6 +231,14 @@ parse_condition (std::vector<std::string> const& tokens, size_t line_number, Rea
 		condition.name = tokens[2];
 		condition.text = tokens[3];
 		parse_double (condition.text, condition.value);
+	} else if (tokens[1] == "harmony") {
+		if (tokens.size () != 4) {
+			result.error = line_error (line_number, "invalid harmony condition");
+			return false;
+		}
+		condition.type = ReactiveCondition::HarmonyEquals;
+		condition.name = tokens[2];
+		condition.text = tokens[3];
 	} else if (tokens[1] == "macro") {
 		if (tokens.size () != 4 || !parse_double (tokens[3], condition.value)) {
 			result.error = line_error (line_number, "invalid macro condition");
@@ -378,6 +386,14 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 		command.name = tokens[2];
 		command.text = tokens[3];
 		parse_double (command.text, command.value);
+	} else if (name == "harmony") {
+		if (tokens.size () != 4) {
+			result.error = line_error (line_number, "invalid harmony command");
+			return false;
+		}
+		command.type = ReactiveCommand::Harmony;
+		command.name = tokens[2];
+		command.text = tokens[3];
 	} else if (name == "rhythm") {
 		if (tokens.size () < 3) {
 			result.error = line_error (line_number, "invalid rhythm command");

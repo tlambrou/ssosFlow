@@ -46,6 +46,7 @@ struct LIBARDOUR_API ReactiveCommand {
 		MacroSnapshotStore,
 		MacroSnapshotRecall,
 		State,
+		Harmony,
 		Rhythm,
 		RhythmRoute,
 		RhythmInsert
@@ -69,6 +70,7 @@ struct LIBARDOUR_API ReactiveCommand {
 struct LIBARDOUR_API ReactiveCondition {
 	enum Type {
 		StateEquals,
+		HarmonyEquals,
 		MacroEquals,
 		TransportRolling,
 		TransportStopped

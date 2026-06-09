@@ -259,6 +259,32 @@ ReactiveActionTest::parseSceneStateAndTriggerCommands ()
 }
 
 void
+ReactiveActionTest::parseHarmonyCommandAndCondition ()
+{
+	const char* src =
+		"ACTION harmonic.shift\n"
+		"WHEN harmony key C_minor\n"
+		"DO harmony key E_flat_major\n"
+		"DO harmony chord i\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	ReactiveAction const& action = result.document.actions ().front ();
+	CPPUNIT_ASSERT_EQUAL (size_t (1), action.conditions.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCondition::HarmonyEquals, action.conditions[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("key"), action.conditions[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("C_minor"), action.conditions[0].text);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), action.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Harmony, action.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("key"), action.commands[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("E_flat_major"), action.commands[0].text);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Harmony, action.commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chord"), action.commands[1].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("i"), action.commands[1].text);
+}
+
+void
 ReactiveActionTest::rejectInvalidQuantize ()
 {
 	const char* src =

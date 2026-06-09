@@ -80,6 +80,12 @@ struct LIBARDOUR_API ReactiveStateSlotSummary {
 	std::string value;
 };
 
+struct LIBARDOUR_API ReactiveHarmonySlotSummary {
+	size_t slot = 0;
+	std::string name;
+	std::string value;
+};
+
 struct LIBARDOUR_API ReactiveActionPreviewSummary {
 	bool available = false;
 	size_t slot = 0;
@@ -109,6 +115,7 @@ public:
 	std::vector<ReactiveControllerFeedbackMidiMessage> controller_feedback_midi_messages (std::vector<ReactiveControllerFeedbackBinding> const&) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
+	std::vector<ReactiveHarmonySlotSummary> harmony_bank_summary (size_t max_slots) const;
 	ReactiveActionPreviewSummary preview_slot (size_t slot);
 	ReactiveActionPreviewSummary preview_midi_event (ReactiveMidiEvent const&);
 
@@ -134,10 +141,12 @@ public:
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;
 	std::string format_state_bank_summary (size_t max_slots) const;
+	std::string format_harmony_bank_summary (size_t max_slots) const;
 
 	std::string last_action () const { return _engine.last_action (); }
 	double macro_value (std::string const& name) const { return _engine.macro_value (name); }
 	std::string state_value (std::string const& name) const { return _engine.state_value (name); }
+	std::string harmony_value (std::string const& name) const { return _engine.harmony_value (name); }
 
 private:
 	void refresh_transport_state ();

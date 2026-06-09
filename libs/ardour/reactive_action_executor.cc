@@ -32,6 +32,8 @@ execute_command (ReactiveCommand const& command, ReactiveActionTarget& target, s
 		return false;
 	case ReactiveCommand::State:
 		return target.state (command.name, command.text, error);
+	case ReactiveCommand::Harmony:
+		return target.harmony (command.name, command.text, error);
 	case ReactiveCommand::Rhythm:
 		return target.rhythm (command.name, command.value, error);
 	case ReactiveCommand::RhythmRoute:

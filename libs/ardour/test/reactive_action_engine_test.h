@@ -22,6 +22,7 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (rotateSequentialChainCommands);
 	CPPUNIT_TEST (rejectUnknownActionWithoutChangingLastAction);
 	CPPUNIT_TEST (trackMacroAndStateValuesFromSelectedCommands);
+	CPPUNIT_TEST (trackHarmonyValuesAndConditions);
 	CPPUNIT_TEST (storeAndRecallMacroSnapshotValues);
 	CPPUNIT_TEST (rejectMissingMacroSnapshotRecallWithoutChangingLastAction);
 	CPPUNIT_TEST (blockUnmetStateConditionWithoutMutatingState);
@@ -46,6 +47,7 @@ public:
 	void rotateSequentialChainCommands ();
 	void rejectUnknownActionWithoutChangingLastAction ();
 	void trackMacroAndStateValuesFromSelectedCommands ();
+	void trackHarmonyValuesAndConditions ();
 	void storeAndRecallMacroSnapshotValues ();
 	void rejectMissingMacroSnapshotRecallWithoutChangingLastAction ();
 	void blockUnmetStateConditionWithoutMutatingState ();

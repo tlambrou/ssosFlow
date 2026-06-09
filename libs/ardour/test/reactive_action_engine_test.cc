@@ -339,6 +339,44 @@ ReactiveActionEngineTest::trackMacroAndStateValuesFromSelectedCommands ()
 }
 
 void
+ReactiveActionEngineTest::trackHarmonyValuesAndConditions ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION set.key\n"
+		"DO harmony key C_minor\n"
+		"END\n"
+		"ACTION gated.chord\n"
+		"WHEN harmony key C_minor\n"
+		"DO harmony chord i\n"
+		"END\n"
+		"ACTION blocked.chord\n"
+		"WHEN harmony key D_minor\n"
+		"DO harmony chord iv\n"
+		"END\n");
+
+	CPPUNIT_ASSERT_EQUAL (std::string (), engine.harmony_value ("key"));
+	CPPUNIT_ASSERT_EQUAL (std::string (), engine.harmony_value ("chord"));
+
+	ReactiveActionPlan preview = engine.preview_action ("set.key");
+	CPPUNIT_ASSERT_EQUAL (true, preview.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string (), engine.harmony_value ("key"));
+
+	ReactiveActionPlan set = engine.trigger_action ("set.key");
+	CPPUNIT_ASSERT_EQUAL (true, set.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string ("C_minor"), engine.harmony_value ("key"));
+
+	ReactiveActionPlan gated = engine.trigger_action ("gated.chord");
+	CPPUNIT_ASSERT_EQUAL (true, gated.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string ("i"), engine.harmony_value ("chord"));
+
+	ReactiveActionPlan blocked = engine.trigger_action ("blocked.chord");
+	CPPUNIT_ASSERT_EQUAL (false, blocked.ok);
+	CPPUNIT_ASSERT (blocked.error.find ("unmet condition") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (std::string ("i"), engine.harmony_value ("chord"));
+	CPPUNIT_ASSERT_EQUAL (std::string ("gated.chord"), engine.last_action ());
+}
+
+void
 ReactiveActionEngineTest::storeAndRecallMacroSnapshotValues ()
 {
 	ReactiveActionEngine engine = engine_from_source (
