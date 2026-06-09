@@ -204,6 +204,13 @@ Phase 6d adds a backend `MidiBuffer` adapter before live routing integration:
 - Keep chance deterministic through explicit per-event chance values while live randomness remains unconnected.
 - Leave live randomness injection, LuaProc wrapping, processor insertion, and demo routing for follow-up work.
 
+Phase 6e adds a realtime-safe chance source for buffer processing:
+
+- Generate normalized chance values from a deterministic, resettable seed without heap state in the generator.
+- Allow the backend `MidiBuffer` adapter to process a buffer from generated chance values while keeping the explicit chance-vector API for tests.
+- Cover chance-source-driven pass/drop behavior with real `MidiBuffer` objects.
+- Leave processor insertion, LuaProc wrapping, clock-derived step selection, and demo routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.

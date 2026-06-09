@@ -10,6 +10,8 @@
 
 namespace ARDOUR {
 
+class ReactiveRhythmChanceSource;
+
 struct LIBARDOUR_API ReactiveRhythmMidiBufferDecision {
 	samplepos_t time = 0;
 	Evoral::EventType event_type = Evoral::NO_EVENT;
@@ -32,6 +34,7 @@ public:
 	void clear_note_state ();
 
 	std::vector<ReactiveRhythmMidiBufferDecision> process_buffer (MidiBuffer&, std::vector<double> const& chance_values);
+	std::vector<ReactiveRhythmMidiBufferDecision> process_buffer (MidiBuffer&, ReactiveRhythmChanceSource&);
 
 private:
 	static ReactiveRhythmMidiBytes bytes_for_event (
