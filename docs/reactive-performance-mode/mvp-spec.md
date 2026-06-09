@@ -466,6 +466,13 @@ Phase 5h adds the first dedicated Cue-page panel scaffold:
 - The panel provides Mode, Reload, and Status controls that call the existing Reactive Performance mode-toggle, document reload, and status-dialog paths.
 - This scaffold intentionally keeps live read-model rendering, button-label synchronization, controller feedback, and richer layout as follow-up work.
 
+Phase 5i binds that Cue-page panel to the existing performance-control read model:
+
+- `ARDOUR_UI` exposes a narrow `reactive_performance_control_summary(...)` accessor that reuses `ReactiveActionSlotRunner::performance_control_summary(...)`.
+- The Cue-page panel refreshes slot labels and sensitivity from loaded action documents and the current Reactive Performance enabled state.
+- Empty or missing slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
+- The panel refreshes after local slot, Mode, Reload, and Status interactions; automatic refresh from external MIDI/controller actions remains follow-up work.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.

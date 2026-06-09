@@ -30,6 +30,9 @@ public:
 	ReactivePerformancePanel ();
 
 private:
+	void refresh ();
+	void on_map ();
+
 	void trigger_slot (size_t slot);
 	void toggle_mode ();
 	void reload_document ();

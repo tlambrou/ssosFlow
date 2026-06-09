@@ -317,6 +317,8 @@ public:
 	void toggle_reactive_performance_mode ();
 	void reload_reactive_action_document ();
 	void show_reactive_action_document_status ();
+	std::vector<ARDOUR::ReactivePerformanceControlSummary> reactive_performance_control_summary (size_t max_slots);
+	bool reactive_performance_enabled () const;
 	void stop_all_cues (bool immediately);
 	void stop_cues (int c, bool immediately);
 
