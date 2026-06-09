@@ -159,6 +159,8 @@ Phase 5l maps those controller-feedback rows to raw MIDI output messages without
 
 Phase 5m declares those feedback output bindings in the bundled Generic MIDI map. `reactive-performance-mvp.map` now has separate `reactive="feedback"` rows for slots `0` through `7` on the same channel-10 pad notes as the trigger actions, and `GenericMidiControlProtocol` validates and stores those rows as `ReactiveControllerFeedbackBinding` values. Actual output-port writes remain follow-up work so the realtime feedback loop is not changed until the cached-message path is designed.
 
+Phase 5n implements that cached-message path. Generic MIDI emits parsed feedback bindings through `BasicUI`, `ARDOUR_UI` computes feedback bytes with the GTK-owned `ReactiveActionSlotRunner` whenever Reactive Performance state changes, and Generic MIDI stores those bytes in `ReactiveControllerFeedbackMidiCache`. The existing feedback tick writes only cached byte vectors with a try-lock, so the realtime feedback path does not parse documents, plan actions, allocate runner data, or touch filesystem-backed state.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

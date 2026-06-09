@@ -320,6 +320,9 @@ public:
 	void show_reactive_action_document_status ();
 	std::vector<ARDOUR::ReactivePerformanceControlSummary> reactive_performance_control_summary (size_t max_slots);
 	bool reactive_performance_enabled () const;
+	void set_reactive_controller_feedback_bindings (std::vector<ARDOUR::ReactiveControllerFeedbackBinding>);
+	void update_reactive_controller_feedback ();
+	void reactive_performance_changed ();
 	void stop_all_cues (bool immediately);
 	void stop_cues (int c, bool immediately);
 
@@ -662,6 +665,7 @@ private:
 	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
 	ARDOUR::ReactiveActionDocumentLoadResult _reactive_action_document_load_result;
 	std::string _reactive_action_document_session_path;
+	std::vector<ARDOUR::ReactiveControllerFeedbackBinding> _reactive_controller_feedback_bindings;
 
 	void setup_session_options ();
 

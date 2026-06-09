@@ -2,7 +2,7 @@
 
 Issue: #63.
 
-This guide sets up the current Reactive Performance Mode vertical slice: eight Generic MIDI pad actions, session-local action loading, action/macro/state status read models, status-panel trigger controls, and the Reactive Rhythm State MVP LuaProc insertion path.
+This guide sets up the current Reactive Performance Mode vertical slice: eight Generic MIDI pad actions, session-local action loading, action/macro/state status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
 
 ## Build And Run
 
@@ -73,6 +73,8 @@ note 47 -> Reactive/toggle-performance-mode
 ```
 
 Use note 44 to inspect whether Reactive Performance Mode is enabled, the currently loaded action document, latest slot execution, first eight performance controls, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. The status panel also includes eight large slot-trigger buttons and an Enable/Disable Mode button for controller-parity checks during setup. The Cue page also shows the dedicated Reactive Performance panel above the trigger strip grid; its eight slot buttons reflect loaded action names and disable themselves when a slot is unavailable or Reactive Performance Mode is disarmed. Use note 45 after editing `reactive-actions.txt`. Use note 47 to arm or disarm Reactive Performance Mode from the controller; when disabled, performance actions report a disabled status and do not launch cues, mutate rhythm parameters, or update macro/state values.
+
+The map also declares feedback rows for slots 0-7 on channel 10 notes 36-43. When Ardour's Generic MIDI Control Out port is connected to a controller or monitor, the current implementation sends zero for unavailable or disabled slots, a low value for enabled idle slots, and full value for the latest attempted enabled slot.
 
 ## Built-In Fallback Behavior
 
@@ -155,14 +157,15 @@ Run this checklist after loading the session:
 - Route 0 contains an active LuaProc processor named `Reactive Rhythm State MVP`.
 - Cue row 0 launches if the row exists in the session.
 - Trigger pad 1 or 2, or press the matching Cue-page/status-panel slot button, and confirm the status panel reports the matching slot/action.
+- If Generic MIDI Control Out is connected to a controller or MIDI monitor, confirm the matching pad feedback changes after trigger, reload, and mode-toggle actions.
 - Move CC 22 on MIDI channel 1 and confirm the macro bank shows `filter` tracking the controller value from `0.0` to `1.0`.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 
 ## Current Limits
 
-- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can now turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI can parse/store those feedback declarations, but output-port writes and native macro-to-plugin parameter routing remain follow-up work.
-- The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED output wiring and richer layout remain follow-up work.
+- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. Native macro-to-plugin parameter routing remains follow-up work.
+- The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration; richer layout remains follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.

@@ -436,6 +436,7 @@ ARDOUR_UI::ARDOUR_UI (int *argcp, char **argvp[], const char* localedir)
 
 	ARDOUR::Session::Dialog.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::session_dialog, this, _1), gui_context());
 	BasicUI::ReactiveMidiBytes.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::trigger_reactive_midi_bytes, this, _1), gui_context());
+	BasicUI::ReactiveFeedbackBindingsChanged.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::set_reactive_controller_feedback_bindings, this, _1), gui_context());
 
 	/* handle pending state with a dialog (PROBLEM: needs to return a value and thus cannot be x-thread) */
 
@@ -3208,7 +3209,7 @@ void
 ARDOUR_UI::reload_reactive_action_document ()
 {
 	reload_reactive_action_document_from_disk (true);
-	ReactivePerformanceChanged (); // EMIT SIGNAL
+	reactive_performance_changed ();
 }
 
 void
@@ -3216,7 +3217,7 @@ ARDOUR_UI::toggle_reactive_performance_mode ()
 {
 	_reactive_action_slots.set_performance_enabled (!_reactive_action_slots.performance_enabled ());
 	info << _reactive_action_slots.format_performance_mode_status () << endmsg;
-	ReactivePerformanceChanged (); // EMIT SIGNAL
+	reactive_performance_changed ();
 }
 
 void
@@ -3300,6 +3301,7 @@ ARDOUR_UI::show_reactive_action_document_status ()
 		int const response = dialog.run ();
 		if (response == RESPONSE_APPLY) {
 			reload_reactive_action_document_from_disk (true);
+			reactive_performance_changed ();
 		} else if (response == toggle_mode_response) {
 			toggle_reactive_performance_mode ();
 		} else if (response >= trigger_slot_response_base && response < trigger_slot_response_base + 8) {
@@ -3308,6 +3310,7 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			if (!result.ok) {
 				warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
 			}
+			reactive_performance_changed ();
 		} else {
 			break;
 		}
@@ -3334,6 +3337,35 @@ ARDOUR_UI::reactive_performance_enabled () const
 }
 
 void
+ARDOUR_UI::set_reactive_controller_feedback_bindings (std::vector<ReactiveControllerFeedbackBinding> bindings)
+{
+	_reactive_controller_feedback_bindings = bindings;
+	update_reactive_controller_feedback ();
+}
+
+void
+ARDOUR_UI::update_reactive_controller_feedback ()
+{
+	std::vector<ReactiveControllerFeedbackMidiMessage> messages;
+
+	if (!_reactive_controller_feedback_bindings.empty ()) {
+		if (_session) {
+			ensure_reactive_action_document ();
+		}
+		messages = _reactive_action_slots.controller_feedback_midi_messages (_reactive_controller_feedback_bindings);
+	}
+
+	BasicUI::ReactiveFeedbackMidiMessagesChanged (messages);
+}
+
+void
+ARDOUR_UI::reactive_performance_changed ()
+{
+	update_reactive_controller_feedback ();
+	ReactivePerformanceChanged (); // EMIT SIGNAL
+}
+
+void
 ARDOUR_UI::trigger_reactive_action (int slot)
 {
 	if (!_session) {
@@ -3355,7 +3387,7 @@ ARDOUR_UI::trigger_reactive_action (int slot)
 	if (!result.ok) {
 		warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
 	}
-	ReactivePerformanceChanged (); // EMIT SIGNAL
+	reactive_performance_changed ();
 }
 
 void
@@ -3376,7 +3408,7 @@ ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
 	if (!result.ok) {
 		warning << string_compose (_("Reactive MIDI trigger failed: %1"), result.error) << endmsg;
 	}
-	ReactivePerformanceChanged (); // EMIT SIGNAL
+	reactive_performance_changed ();
 }
 
 void

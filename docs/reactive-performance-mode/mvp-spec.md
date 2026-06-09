@@ -503,7 +503,13 @@ Phase 5m declares Reactive feedback bindings in the Generic MIDI map:
 - Feedback bindings are separate XML rows from the action trigger rows so they do not collide with `Reactive/trigger-action-*` bindings.
 - `GenericMidiControlProtocol` accepts `reactive="feedback"` rows, validates slot/channel/note-or-CC metadata, and stores them as `ReactiveControllerFeedbackBinding` values for a later output-wiring slice.
 - Invalid feedback bindings are ignored cleanly instead of being reported as unknown Reactive trigger targets.
-- Actual Generic MIDI output-port writes remain follow-up work; this slice establishes the map format and parser storage.
+
+Phase 5n wires those feedback bindings to Generic MIDI's output port through a cached non-realtime bridge:
+
+- `BasicUI` now publishes Reactive feedback binding changes from Generic MIDI maps and precomputed Reactive feedback MIDI messages from the GTK-owned runner.
+- `ARDOUR_UI` keeps the active feedback bindings, recomputes slot feedback bytes after document reloads, mode changes, manual slot execution, and live MIDI-triggered execution, then publishes those bytes back to Generic MIDI.
+- `GenericMidiControlProtocol` caches the latest feedback messages and writes only cached byte vectors from its existing feedback tick with a try-lock, avoiding parser, document loading, runner planning, or allocation on the realtime feedback path.
+- Physical controller behavior remains hardware/output-routing dependent and should be smoke-tested with the selected controller after connecting Ardour's Generic MIDI Control Out port.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
