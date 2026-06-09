@@ -165,6 +165,89 @@ ReactiveActionSlotRunnerTest::executeSlotByDocumentOrder ()
 }
 
 void
+ReactiveActionSlotRunnerTest::executeMidiNoteTriggerByDocumentOrder ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION first\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION second\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+
+	ReactiveExecutionResult result = runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:0"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), runner.last_action ());
+	ReactiveActionSlotExecutionStatus const status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (true, status.result.ok);
+}
+
+void
+ReactiveActionSlotRunnerTest::executeMidiCCTriggerMacro ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.high\n"
+		"TRIGGER midi cc ch=1 cc=22 value>63\n"
+		"DO macro filter 0.80 ramp 0|1|0\n"
+		"END\n",
+		error));
+
+	ReactiveExecutionResult result = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 22, 64), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.8:0|1|0"), target.calls[0]);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, runner.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.high"), runner.last_execution_status ().action_name);
+}
+
+void
+ReactiveActionSlotRunnerTest::reportMidiEventWithoutLoadedDocumentOrMatch ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+
+	ReactiveExecutionResult missing = runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target);
+
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("no reactive action document loaded") != std::string::npos);
+	ReactiveActionSlotExecutionStatus status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	load_two_action_document (runner);
+	ReactiveExecutionResult no_match = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 22, 64), target);
+
+	CPPUNIT_ASSERT_EQUAL (false, no_match.ok);
+	CPPUNIT_ASSERT (no_match.error.find ("no reactive action matched MIDI event") != std::string::npos);
+	status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (false, status.result.ok);
+	CPPUNIT_ASSERT (target.calls.empty ());
+}
+
+void
 ReactiveActionSlotRunnerTest::executeBuiltInMvpFallbackRhythmDemo ()
 {
 	ReactiveActionSlotRunner runner;

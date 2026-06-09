@@ -121,6 +121,8 @@ Phase 6p adds a native execution-status read model to `ReactiveActionSlotRunner`
 
 Phase 6q adds `DO rhythm route <route-index> <param> <value>` for route-scoped rhythm parameter updates. The parser keeps it distinct from broadcast `DO rhythm <param> <value>` and insertion `DO rhythm insert <route-index>`, the executor dispatches it through `ReactiveActionTarget::rhythm_route`, and `ReactiveSessionTarget` resolves the route through `Session::get_remote_nth_route()`. This keeps broadcast changes available for simple demos while allowing a controller action to mutate one live lane without touching every inserted rhythm processor.
 
+Phase 4b connects the existing note/CC trigger matcher to executable loaded action documents through `ReactiveActionSlotRunner::execute_midi_event(...)`. This keeps the first MIDI-trigger path backend-only: parsed `ReactiveMidiEvent` values can execute the first matching action in document order and update the same last-execution status used by numbered slots. A later control-surface or MIDI-port adapter should feed live controller events into this API without doing parser, filesystem, or action-planning work on a realtime path.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.
