@@ -169,6 +169,8 @@ The backend runner can now execute a loaded document from a parsed `ReactiveMidi
 
 `ReactiveActionSlotRunner::execute_midi_bytes(...)` now provides the backend bridge from raw controller bytes to executable actions. It preserves the missing-document failure path, maps supported byte messages through `ReactiveMidiEvent::from_midi_bytes(...)`, delegates supported messages to `execute_midi_event(...)`, and records unsupported byte messages in the same last-execution status model. Live MIDI/control-surface callback wiring remains follow-up work.
 
+Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needs one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance. The next implementation should add a narrow Reactive-specific Generic MIDI invokable, or equivalent adapter in that surface, that rebuilds supported 3-byte note-on/CC messages on Ardour's existing MIDI/control-surface thread and calls the UI entry point that delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`.
+
 ## Performance UI
 
 Add the smallest useful UI surface, preferably integrated with the existing Cue page:
@@ -365,6 +367,15 @@ Phase 4d adds runner-level MIDI-byte execution:
 - Reuse `ReactiveMidiEvent::from_midi_bytes(...)` and `execute_midi_event(...)`.
 - Record unsupported byte messages in the normal last-execution status.
 - Keep live control-surface and MIDI-port callback integration as the next explicit bridge.
+
+Phase 4e chooses the live adapter hook:
+
+- Keep existing Generic MIDI action mappings for fixed slot launches.
+- Add a Reactive-specific Generic MIDI invokable or equivalent surface adapter for document-level MIDI triggers.
+- Reconstruct supported 3-byte note-on/CC messages on Ardour's existing MIDI/control-surface thread.
+- Delegate to the UI Reactive Performance entry point and then `ReactiveActionSlotRunner::execute_midi_bytes(...)`.
+- Avoid parser, file loading, action planning, or session mutation in realtime audio callbacks.
+- Recommended next implementation issue: add the UI entry point plus a minimal Generic MIDI Reactive invokable that handles note-on and CC only.
 
 Phase 5: add minimal Reactive Performance UI panel.
 
