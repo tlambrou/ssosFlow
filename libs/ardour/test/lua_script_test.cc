@@ -60,6 +60,33 @@ LuaScriptTest::session_script_test ()
 }
 
 void
+LuaScriptTest::reactive_performance_session_init_script_test ()
+{
+	LuaScriptInfoPtr reactive_template;
+	LuaScriptList scripts (LuaScripting::instance ().scripts (LuaScriptInfo::SessionInit));
+
+	for (LuaScriptList::const_iterator s = scripts.begin(); s != scripts.end(); ++s) {
+		if ((*s)->name == "Reactive Performance MVP") {
+			reactive_template = *s;
+			break;
+		}
+	}
+
+	CPPUNIT_ASSERT_MESSAGE ("Reactive Performance MVP SessionInit script was not discoverable", reactive_template);
+
+	std::string script;
+	try {
+		script = Glib::file_get_contents (reactive_template->path);
+	} catch (Glib::FileError const&) {
+		CPPUNIT_FAIL ("Reactive Performance MVP SessionInit script could not be read");
+	}
+
+	CPPUNIT_ASSERT_MESSAGE (
+		"Reactive Performance MVP SessionInit factory did not compile",
+		LuaScripting::try_compile (script, LuaScriptParamList ()));
+}
+
+void
 LuaScriptTest::dsp_script_test ()
 {
 	PluginManager& pm = PluginManager::instance ();

@@ -163,6 +163,8 @@ Phase 5m declares those feedback output bindings in the bundled Generic MIDI map
 
 Phase 5n implements that cached-message path. Generic MIDI emits parsed feedback bindings through `BasicUI`, `ARDOUR_UI` computes feedback bytes with the GTK-owned `ReactiveActionSlotRunner` whenever Reactive Performance state changes, and Generic MIDI stores those bytes in `ReactiveControllerFeedbackMidiCache`. The existing feedback tick writes only cached byte vectors with a try-lock, so the realtime feedback path does not parse documents, plan actions, allocate runner data, or touch filesystem-backed state.
 
+Phase 7e chooses a repeatable demo-session template script before committing generated session XML. `share/scripts/reactive_performance_mvp_session.lua` is a bundled `SessionInit` script named `Reactive Performance MVP`; Ardour lists it as a factory template in the new-session flow and runs it after creating the empty session. The script creates three MIDI-only controller-facing routes for rhythm, harmony, and macro lanes, then saves the session. This advances the demo-session deliverable without hand-authoring brittle `.ardour` XML IDs, ports, and environment-dependent connections. A complete session archive with clip/cue content remains a later packaging step once the route and cue layout is stable enough to verify.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

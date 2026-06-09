@@ -557,6 +557,14 @@ Phase 7c packages a small demo asset:
 - `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads` loads the packaged action file as a session document so parser drift breaks automated tests.
 - A full `.ardour` session archive remains a follow-up because current session XML is generated, ID-heavy, and environment-dependent.
 
+Phase 7e adds the first repeatable demo-session template path:
+
+- `share/scripts/reactive_performance_mvp_session.lua` is a bundled `SessionInit` script named `Reactive Performance MVP`, so it appears in Ardour's new-session template list as a factory template.
+- The script creates three MIDI-only controller-facing routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, giving the demo action document stable route-index targets without hand-authoring generated session XML.
+- `LuaScriptTest::reactive_performance_session_init_script_test` verifies the script is discoverable in the `SessionInit` catalog and compiles through Ardour's Lua factory path.
+- The example README now recommends creating a session from this template, then copying the session-local `reactive-actions.txt` next to the `.ardour` file.
+- A full session archive with clips/cues remains a later demo-production step; the template script keeps this slice repeatable while the final route/clip layout is still evolving.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
