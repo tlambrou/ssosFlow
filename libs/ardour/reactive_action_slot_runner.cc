@@ -106,6 +106,25 @@ ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, Re
 	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
 }
 
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget& target)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveMidiEvent event;
+	if (!ReactiveMidiEvent::from_midi_bytes (bytes, size, event)) {
+		result.error = "unsupported reactive MIDI byte message";
+		return record_execution_status (0, std::string (), result);
+	}
+
+	return execute_midi_event (event, target);
+}
+
 std::string
 ReactiveActionSlotRunner::format_last_execution_status () const
 {

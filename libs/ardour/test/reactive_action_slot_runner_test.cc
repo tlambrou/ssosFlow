@@ -221,6 +221,43 @@ ReactiveActionSlotRunnerTest::executeMidiCCTriggerMacro ()
 }
 
 void
+ReactiveActionSlotRunnerTest::executeMidiBytesThroughRunner ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+	unsigned char const note_bytes[] = { 0x99, 36, 100 };
+	unsigned char const cc_bytes[] = { 0xb0, 22, 64 };
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION knob.high\n"
+		"TRIGGER midi cc ch=1 cc=22 value>63\n"
+		"DO macro filter 0.80\n"
+		"END\n",
+		error));
+
+	ReactiveExecutionResult note = runner.execute_midi_bytes (note_bytes, 3, target);
+	CPPUNIT_ASSERT_EQUAL (true, note.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), note.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), runner.last_execution_status ().action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), runner.last_action ());
+
+	ReactiveExecutionResult cc = runner.execute_midi_bytes (cc_bytes, 3, target);
+	CPPUNIT_ASSERT_EQUAL (true, cc.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), cc.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.high"), runner.last_execution_status ().action_name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, runner.macro_value ("filter"), 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:0"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.8:0|0|0"), target.calls[1]);
+}
+
+void
 ReactiveActionSlotRunnerTest::reportMidiEventWithoutLoadedDocumentOrMatch ()
 {
 	ReactiveActionSlotRunner runner;
@@ -244,6 +281,38 @@ ReactiveActionSlotRunnerTest::reportMidiEventWithoutLoadedDocumentOrMatch ()
 	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
 	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
 	CPPUNIT_ASSERT_EQUAL (false, status.result.ok);
+	CPPUNIT_ASSERT (target.calls.empty ());
+}
+
+void
+ReactiveActionSlotRunnerTest::reportUnsupportedMidiBytes ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	unsigned char const valid_note[] = { 0x99, 36, 100 };
+	unsigned char const note_off[] = { 0x89, 36, 0 };
+	unsigned char const short_message[] = { 0x99, 36 };
+
+	ReactiveExecutionResult missing = runner.execute_midi_bytes (valid_note, 3, target);
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("no reactive action document loaded") != std::string::npos);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	load_two_action_document (runner);
+
+	ReactiveExecutionResult note_off_result = runner.execute_midi_bytes (note_off, 3, target);
+	CPPUNIT_ASSERT_EQUAL (false, note_off_result.ok);
+	CPPUNIT_ASSERT (note_off_result.error.find ("unsupported reactive MIDI byte message") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().result.ok);
+	CPPUNIT_ASSERT (runner.last_execution_status ().result.error.find ("unsupported reactive MIDI byte message") != std::string::npos);
+
+	ReactiveExecutionResult short_result = runner.execute_midi_bytes (short_message, 2, target);
+	CPPUNIT_ASSERT_EQUAL (false, short_result.ok);
+	CPPUNIT_ASSERT (short_result.error.find ("unsupported reactive MIDI byte message") != std::string::npos);
+
+	ReactiveExecutionResult null_result = runner.execute_midi_bytes (0, 3, target);
+	CPPUNIT_ASSERT_EQUAL (false, null_result.ok);
+	CPPUNIT_ASSERT (null_result.error.find ("unsupported reactive MIDI byte message") != std::string::npos);
 	CPPUNIT_ASSERT (target.calls.empty ());
 }
 

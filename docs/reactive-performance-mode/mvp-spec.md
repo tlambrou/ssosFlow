@@ -167,6 +167,8 @@ The backend runner can now execute a loaded document from a parsed `ReactiveMidi
 
 `ReactiveMidiEvent::from_midi_bytes(...)` maps 3-byte note-on and control-change controller messages into this event model. Raw MIDI status channels are converted to the musician-facing 1-based channel numbers used by action syntax, so status `0x99` maps to `ch=10`. Note-off, note-on with velocity 0, unsupported statuses, short messages, and null buffers are ignored. A live MIDI/control-surface adapter that feeds controller events directly into this runner remains follow-up work.
 
+`ReactiveActionSlotRunner::execute_midi_bytes(...)` now provides the backend bridge from raw controller bytes to executable actions. It preserves the missing-document failure path, maps supported byte messages through `ReactiveMidiEvent::from_midi_bytes(...)`, delegates supported messages to `execute_midi_event(...)`, and records unsupported byte messages in the same last-execution status model. Live MIDI/control-surface callback wiring remains follow-up work.
+
 ## Performance UI
 
 Add the smallest useful UI surface, preferably integrated with the existing Cue page:
@@ -355,6 +357,14 @@ Phase 4c adds controller MIDI-byte mapping:
 - Convert raw MIDI channels from 0-based status nibbles to 1-based action syntax channels.
 - Ignore note-off, note-on with velocity 0, unsupported statuses, short messages, and null buffers.
 - Keep this as a backend bridge for a later live MIDI/control-surface adapter.
+
+Phase 4d adds runner-level MIDI-byte execution:
+
+- Accept raw controller bytes at `ReactiveActionSlotRunner`.
+- Preserve missing-document errors before parsing bytes.
+- Reuse `ReactiveMidiEvent::from_midi_bytes(...)` and `execute_midi_event(...)`.
+- Record unsupported byte messages in the normal last-execution status.
+- Keep live control-surface and MIDI-port callback integration as the next explicit bridge.
 
 Phase 5: add minimal Reactive Performance UI panel.
 
