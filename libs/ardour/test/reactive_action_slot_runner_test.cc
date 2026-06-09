@@ -221,6 +221,42 @@ ReactiveActionSlotRunnerTest::executeMidiCCTriggerMacro ()
 }
 
 void
+ReactiveActionSlotRunnerTest::executeMidiCCTriggerMacroValueFromController ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.live\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro filter midi-value ramp 0|1|0\n"
+		"END\n",
+		error));
+
+	ReactiveExecutionResult mid = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 22, 64), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, mid.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), mid.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.503937:0|1|0"), target.calls[0]);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, runner.macro_value ("filter"), 0.0001);
+
+	std::vector<ReactiveMacroSlotSummary> summary = runner.macro_bank_summary (8);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), summary[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, summary[0].value, 0.0001);
+
+	ReactiveExecutionResult full = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 22, 127), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, full.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:1:0|1|0"), target.calls[1]);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (1.0, runner.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live"), runner.last_execution_status ().action_name);
+}
+
+void
 ReactiveActionSlotRunnerTest::executeMidiBytesThroughRunner ()
 {
 	ReactiveActionSlotRunner runner;
@@ -236,7 +272,7 @@ ReactiveActionSlotRunnerTest::executeMidiBytesThroughRunner ()
 		"END\n"
 		"ACTION knob.high\n"
 		"TRIGGER midi cc ch=1 cc=22 value>63\n"
-		"DO macro filter 0.80\n"
+		"DO macro filter midi-value\n"
 		"END\n",
 		error));
 
@@ -250,11 +286,11 @@ ReactiveActionSlotRunnerTest::executeMidiBytesThroughRunner ()
 	CPPUNIT_ASSERT_EQUAL (true, cc.ok);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), cc.commands_executed);
 	CPPUNIT_ASSERT_EQUAL (std::string ("knob.high"), runner.last_execution_status ().action_name);
-	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, runner.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, runner.macro_value ("filter"), 0.0001);
 
 	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("cue:0"), target.calls[0]);
-	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.8:0|0|0"), target.calls[1]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.503937:0|0|0"), target.calls[1]);
 }
 
 void

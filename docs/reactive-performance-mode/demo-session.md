@@ -128,6 +128,11 @@ TRIGGER midi note ch=10 note=39
 DO rhythm route 0 rotation 4
 DO cue 3
 END
+
+ACTION demo.filter.sweep
+TRIGGER midi cc ch=1 cc=22
+DO macro filter midi-value ramp 0|1|0
+END
 ```
 
 Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/show-action-document-status`.
@@ -143,12 +148,13 @@ Run this checklist after loading the session:
 - Route 0 contains an active LuaProc processor named `Reactive Rhythm State MVP`.
 - Cue row 0 launches if the row exists in the session.
 - Trigger pad 1 or 2 and confirm the status panel reports the matching slot/action.
+- Move CC 22 on MIDI channel 1 and confirm the macro bank shows `filter` tracking the controller value from `0.0` to `1.0`.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 
 ## Current Limits
 
-- The MVP map binds eight pad notes and two utility notes. Macro CCs and MIDI feedback output remain follow-up work.
+- The MVP map binds eight pad notes, two utility notes, and live document-level note/CC trigger examples. MIDI feedback output and native macro-to-plugin parameter routing remain follow-up work.
 - The status panel is a compact diagnostic dialog with the first reusable action-bank, macro-bank, state-bank, next-action preview, and routing read models, not the final Cue-page performance panel.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.

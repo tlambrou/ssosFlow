@@ -49,10 +49,16 @@ struct LIBARDOUR_API ReactiveCommand {
 		RhythmInsert
 	};
 
+	enum ValueSource {
+		LiteralValue,
+		MidiEventValue
+	};
+
 	Type type = Cue;
 	std::string name;
 	std::string text;
 	double value = 0.0;
+	ValueSource value_source = LiteralValue;
 	int first = 0;
 	int second = 0;
 	Temporal::BBT_Offset ramp;

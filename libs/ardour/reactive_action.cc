@@ -274,7 +274,10 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 		}
 		command.type = ReactiveCommand::Macro;
 		command.name = tokens[2];
-		if (!parse_double (tokens[3], command.value)) {
+		if (tokens[3] == "midi-value") {
+			command.value_source = ReactiveCommand::MidiEventValue;
+			command.value = 0.0;
+		} else if (!parse_double (tokens[3], command.value)) {
 			result.error = line_error (line_number, "invalid macro value");
 			return false;
 		}

@@ -222,6 +222,41 @@ ReactiveActionEngineTest::triggerAllChainReturnsAllCommandsAndMetadata ()
 }
 
 void
+ReactiveActionEngineTest::triggerActionWithMidiEventResolvesMacroValue ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION knob.live\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro filter midi-value ramp 0|1|0\n"
+		"END\n");
+	ReactiveMidiEvent event = ReactiveMidiEvent::control_change (1, 22, 64);
+
+	ReactiveActionPlan plan = engine.trigger_action ("knob.live", &event);
+
+	CPPUNIT_ASSERT_EQUAL (true, plan.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), plan.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, plan.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MidiEventValue, plan.commands[0].value_source);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, plan.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (1, plan.commands[0].ramp.beats);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live"), engine.last_action ());
+
+	ReactiveActionEngine pad_engine = engine_from_source (
+		"ACTION pad.live\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO macro accent midi-value\n"
+		"END\n");
+	ReactiveMidiEvent note = ReactiveMidiEvent::note_on (10, 36, 100);
+	ReactiveActionPlan note_plan = pad_engine.trigger_action ("pad.live", &note);
+
+	CPPUNIT_ASSERT_EQUAL (true, note_plan.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, note_plan.commands[0].type);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (100.0 / 127.0, note_plan.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (100.0 / 127.0, pad_engine.macro_value ("accent"), 0.0001);
+}
+
+void
 ReactiveActionEngineTest::rotateSequentialChainCommands ()
 {
 	ReactiveActionEngine engine = engine_from_source (
