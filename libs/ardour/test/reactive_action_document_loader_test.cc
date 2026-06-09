@@ -186,6 +186,32 @@ ReactiveActionDocumentLoaderTest::reportConfiguredDocumentParseFailureWithoutFal
 }
 
 void
+ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
+{
+	ReactiveActionSlotRunner runner;
+	ReactiveActionDocumentLoadResult result;
+	std::string const demo_dir = Glib::build_filename ("examples", "reactive-performance-mvp");
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		demo_dir,
+		std::string (),
+		action_source ("fallback.first", 7),
+		result));
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
+	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (demo_dir), result.path);
+	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (5), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (5), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.reset"), runner.action_name (0));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.tighten"), runner.action_name (1));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.sparse"), runner.action_name (2));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.rotate"), runner.action_name (3));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.filter.sweep"), runner.action_name (4));
+}
+
+void
 ReactiveActionDocumentLoaderTest::describeLoadStatusForConfiguredAndFallbackDocuments ()
 {
 	ReactiveActionDocumentLoadResult session_result;

@@ -529,6 +529,13 @@ Phase 7b makes the MVP map more controller-first:
 - Bind note 47 to `Reactive/toggle-performance-mode`.
 - Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro examples in session-local action files.
 
+Phase 7c packages a small demo asset:
+
+- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, state changes, and a CC-derived macro action.
+- `examples/reactive-performance-mvp/README.md` documents the manual session layout, controller map, feedback routing, and smoke checks.
+- `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads` loads the packaged action file as a session document so parser drift breaks automated tests.
+- A full `.ardour` session archive remains a follow-up because current session XML is generated, ID-heavy, and environment-dependent.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
