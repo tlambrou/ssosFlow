@@ -10,6 +10,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeMidiNoteTriggerByDocumentOrder);
 	CPPUNIT_TEST (executeMidiCCTriggerMacro);
 	CPPUNIT_TEST (executeMidiCCTriggerMacroValueFromController);
+	CPPUNIT_TEST (executeMidiCCTriggerRhythmRouteValueFromController);
 	CPPUNIT_TEST (executeMidiBytesThroughRunner);
 	CPPUNIT_TEST (reportMidiEventWithoutLoadedDocumentOrMatch);
 	CPPUNIT_TEST (reportUnsupportedMidiBytes);
@@ -47,6 +48,7 @@ public:
 	void executeMidiNoteTriggerByDocumentOrder ();
 	void executeMidiCCTriggerMacro ();
 	void executeMidiCCTriggerMacroValueFromController ();
+	void executeMidiCCTriggerRhythmRouteValueFromController ();
 	void executeMidiBytesThroughRunner ();
 	void reportMidiEventWithoutLoadedDocumentOrMatch ();
 	void reportUnsupportedMidiBytes ();

@@ -257,6 +257,28 @@ ReactiveActionEngineTest::triggerActionWithMidiEventResolvesMacroValue ()
 }
 
 void
+ReactiveActionEngineTest::triggerActionWithMidiEventResolvesRhythmRouteValue ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION knob.live.rhythm\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO rhythm route 0 density midi-value\n"
+		"END\n");
+	ReactiveMidiEvent event = ReactiveMidiEvent::control_change (1, 22, 64);
+
+	ReactiveActionPlan plan = engine.trigger_action ("knob.live.rhythm", &event);
+
+	CPPUNIT_ASSERT_EQUAL (true, plan.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), plan.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::RhythmRoute, plan.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (0, plan.commands[0].first);
+	CPPUNIT_ASSERT_EQUAL (std::string ("density"), plan.commands[0].name);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MidiEventValue, plan.commands[0].value_source);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, plan.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live.rhythm"), engine.last_action ());
+}
+
+void
 ReactiveActionEngineTest::rotateSequentialChainCommands ()
 {
 	ReactiveActionEngine engine = engine_from_source (

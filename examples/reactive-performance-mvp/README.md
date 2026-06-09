@@ -24,7 +24,7 @@ The bundled MVP map uses:
 
 - Channel 10 notes 36-43 for the first eight action slots in this file.
 - Channel 10 note 46 as a live document-level trigger for `demo.cue.when.rolling`.
-- Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`.
+- Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`, driving route 0 rhythm density and the `filter` macro read model.
 - Channel 10 note 44 for status.
 - Channel 10 note 45 for reload.
 - Channel 10 note 47 for mode enable/disable.
@@ -37,7 +37,7 @@ The bundled MVP map uses:
 4. Trigger notes 37, 38, and 39 to change route 0 rhythm density, chance, priority, or rotation.
 5. While transport is stopped, trigger note 40 and confirm transport starts; while transport is rolling, trigger note 41 or live trigger note 46 and confirm cue row 4 launches if it exists.
 6. While transport is rolling, trigger note 42 and confirm transport stops; while stopped, trigger note 43 and confirm the state bank reports `transport = stopped-ready`.
-7. Move CC 22 on channel 1 and confirm the macro bank shows `filter` changing between `0.0` and `1.0`.
+7. Move CC 22 on channel 1 and confirm route 0 rhythm density follows the controller value while the macro bank shows `filter` changing between `0.0` and `1.0`.
 8. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
 
 ## Current Limit

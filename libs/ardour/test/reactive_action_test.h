@@ -16,6 +16,7 @@ class ReactiveActionTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (parseSequentialAndRandomChains);
 	CPPUNIT_TEST (parseRhythmInsertCommand);
 	CPPUNIT_TEST (parseRouteScopedRhythmCommand);
+	CPPUNIT_TEST (parseRouteScopedRhythmCommandWithMidiValue);
 	CPPUNIT_TEST (parseMarkerTriggerAndTransportCommands);
 	CPPUNIT_TEST (parseSceneStateAndTriggerCommands);
 	CPPUNIT_TEST (rejectInvalidQuantize);
@@ -36,6 +37,7 @@ public:
 	void parseSequentialAndRandomChains ();
 	void parseRhythmInsertCommand ();
 	void parseRouteScopedRhythmCommand ();
+	void parseRouteScopedRhythmCommandWithMidiValue ();
 	void parseMarkerTriggerAndTransportCommands ();
 	void parseSceneStateAndTriggerCommands ();
 	void rejectInvalidQuantize ();

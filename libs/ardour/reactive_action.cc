@@ -84,6 +84,18 @@ parse_double (std::string const& token, double& value)
 }
 
 static bool
+parse_command_value (std::string const& token, ReactiveCommand& command)
+{
+	if (token == "midi-value") {
+		command.value_source = ReactiveCommand::MidiEventValue;
+		command.value = 0.0;
+		return true;
+	}
+
+	return parse_double (token, command.value);
+}
+
+static bool
 parse_bbt_offset (std::string const& token, Temporal::BBT_Offset& offset)
 {
 	std::string::size_type first = token.find ('|');
@@ -348,10 +360,7 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 		} else {
 			command.type = ReactiveCommand::Macro;
 			command.name = tokens[2];
-			if (tokens[3] == "midi-value") {
-				command.value_source = ReactiveCommand::MidiEventValue;
-				command.value = 0.0;
-			} else if (!parse_double (tokens[3], command.value)) {
+			if (!parse_command_value (tokens[3], command)) {
 				result.error = line_error (line_number, "invalid macro value");
 				return false;
 			}
@@ -385,7 +394,7 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 			}
 			command.type = ReactiveCommand::RhythmInsert;
 		} else if (tokens[2] == "route") {
-			if (tokens.size () != 6 || !parse_nonnegative_int (tokens[3], command.first) || !parse_double (tokens[5], command.value)) {
+			if (tokens.size () != 6 || !parse_nonnegative_int (tokens[3], command.first) || !parse_command_value (tokens[5], command)) {
 				result.error = line_error (line_number, "invalid route rhythm command");
 				return false;
 			}

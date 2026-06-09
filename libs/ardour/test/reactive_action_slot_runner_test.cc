@@ -297,6 +297,29 @@ ReactiveActionSlotRunnerTest::executeMidiCCTriggerMacroValueFromController ()
 }
 
 void
+ReactiveActionSlotRunnerTest::executeMidiCCTriggerRhythmRouteValueFromController ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.live.rhythm\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO rhythm route 0 density midi-value\n"
+		"END\n",
+		error));
+
+	ReactiveExecutionResult result = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 22, 64), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-route:0:density:0.503937"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live.rhythm"), runner.last_execution_status ().action_name);
+}
+
+void
 ReactiveActionSlotRunnerTest::executeMidiBytesThroughRunner ()
 {
 	ReactiveActionSlotRunner runner;

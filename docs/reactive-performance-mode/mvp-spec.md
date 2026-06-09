@@ -68,6 +68,8 @@ END
 ACTION filter.sweep
 TRIGGER midi cc ch=1 cc=23
 QUANTIZE 0|1|0
+DO rhythm insert 0
+DO rhythm route 0 density midi-value
 DO macro filter midi-value ramp 0|1|0
 END
 
@@ -98,6 +100,7 @@ Required MVP commands:
 - `state <name> <value>`
 - `rhythm <param> <value>`
 - `rhythm insert <route-index>`
+- `rhythm route <route-index> <param> <value|midi-value>`
 
 Required chain modes:
 
@@ -348,11 +351,17 @@ Phase 6p adds the first execution-status read model for UI and controller feedba
 
 Phase 6q adds route-scoped rhythm parameter actions:
 
-- Parse `DO rhythm route <route-index> <param> <value>` as a distinct command from global rhythm updates and route insertion.
+- Parse `DO rhythm route <route-index> <param> <value|midi-value>` as a distinct command from global rhythm updates and route insertion.
 - Resolve `<route-index>` through Ardour's controller-facing remote route order, matching `DO rhythm insert <route-index>`.
 - Update only the targeted route's `Reactive Rhythm State MVP` insert.
 - Keep `DO rhythm <param> <value>` as the broadcast form for simple demo-wide changes.
 - Return explicit errors for missing routes, missing rhythm inserts on the target route, and unknown rhythm parameters.
+
+Phase 6r allows route-scoped rhythm commands to use controller-derived values:
+
+- `DO rhythm route <route-index> <param> midi-value` resolves the value from the MIDI event that triggered the action, using the same normalized `0.0..1.0` CC/velocity mapping as macro `midi-value`.
+- The MVP demo's CC 22 action inserts the route 0 rhythm module if needed, drives route 0 density from the controller value, and still updates the `filter` macro read model for UI feedback.
+- General macro-to-plugin or macro-to-Ardour-parameter routing remains a follow-up; this slice only connects controller values to existing route-scoped rhythm parameters.
 
 Parameters:
 
@@ -576,7 +585,7 @@ Phase 7b makes the MVP map more controller-first:
 - Bind note 44 to `Reactive/show-action-document-status`.
 - Bind note 45 to `Reactive/reload-action-document`.
 - Bind note 47 to `Reactive/toggle-performance-mode`.
-- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro examples in session-local action files.
+- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro and route-scoped rhythm examples in session-local action files.
 
 Phase 7c packages a small demo asset:
 
@@ -611,10 +620,10 @@ Phase 7h makes the template-created lanes Cue-page visible:
 
 ## Acceptance Tests
 
-- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
-- Engine tests cover action lookup, chain state, literal and event-derived macro state, and quantization calculation against a fixed TempoMap.
+- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, and route-scoped rhythm `midi-value`.
+- Engine tests cover action lookup, chain state, literal and event-derived macro state, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
 - Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
-- Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, and event-derived MIDI macro preservation.
+- Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
