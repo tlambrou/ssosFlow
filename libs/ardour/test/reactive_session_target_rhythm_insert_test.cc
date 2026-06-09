@@ -4,14 +4,18 @@
 #include <memory>
 #include <string>
 
+#include "ardour/automation_control.h"
 #include "ardour/chan_count.h"
 #include "ardour/midi_track.h"
 #include "ardour/plugin.h"
+#include "ardour/plugin_insert.h"
 #include "ardour/processor.h"
 #include "ardour/reactive_rhythm_route_inserter.h"
 #include "ardour/reactive_session_target.h"
 #include "ardour/route.h"
 #include "ardour/session.h"
+
+#include "evoral/Parameter.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION (ReactiveSessionTargetRhythmInsertTest);
 
@@ -52,6 +56,48 @@ reactive_rhythm_insert_count (std::shared_ptr<Route> const& route)
 	return count;
 }
 
+static std::shared_ptr<PluginInsert>
+reactive_rhythm_insert (std::shared_ptr<Route> const& route)
+{
+	std::shared_ptr<PluginInsert> found;
+	route->foreach_processor ([&found] (std::weak_ptr<Processor> wp) {
+		if (found) {
+			return;
+		}
+
+		std::shared_ptr<Processor> processor = wp.lock ();
+		if (processor && ReactiveRhythmRouteInserter::is_reactive_rhythm_insert (processor)) {
+			found = std::dynamic_pointer_cast<PluginInsert> (processor);
+		}
+	});
+	return found;
+}
+
+static double
+reactive_rhythm_control_value (std::shared_ptr<PluginInsert> const& insert, std::string const& label)
+{
+	CPPUNIT_ASSERT (insert);
+	CPPUNIT_ASSERT (insert->plugin ());
+
+	for (uint32_t i = 0; i < insert->plugin ()->parameter_count (); ++i) {
+		if (!insert->plugin ()->parameter_is_control (i) || !insert->plugin ()->parameter_is_input (i)) {
+			continue;
+		}
+
+		Evoral::Parameter parameter (PluginAutomation, 0, i);
+		if (insert->describe_parameter (parameter) != label) {
+			continue;
+		}
+
+		std::shared_ptr<AutomationControl> control = insert->automation_control (parameter);
+		CPPUNIT_ASSERT (control);
+		return control->get_value ();
+	}
+
+	CPPUNIT_FAIL ("missing Reactive Rhythm State MVP control: " + label);
+	return 0.0;
+}
+
 } // namespace
 
 void
@@ -68,6 +114,52 @@ ReactiveSessionTargetRhythmInsertTest::rhythmInsertAddsLuaProcToRemoteRoute ()
 	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (0, error));
 	CPPUNIT_ASSERT (error.empty ());
 	CPPUNIT_ASSERT_EQUAL (size_t (1), reactive_rhythm_insert_count (route));
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::rhythmParameterActionsUpdateInsertedLuaProcControls ()
+{
+	std::shared_ptr<Route> route = new_midi_route (*_session);
+	ReactiveSessionTarget target (*_session);
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (0, error));
+	std::shared_ptr<PluginInsert> insert = reactive_rhythm_insert (route);
+	CPPUNIT_ASSERT (insert);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm ("density", 0.25, error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (25.0, reactive_rhythm_control_value (insert, "Density %"), 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm ("chance", 0.5, error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (50.0, reactive_rhythm_control_value (insert, "Chance %"), 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm ("priority_mode", 2.0, error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (2.0, reactive_rhythm_control_value (insert, "Priority"), 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm ("priority", 3.0, error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (3.0, reactive_rhythm_control_value (insert, "Priority"), 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm ("rotation", 7.0, error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (7.0, reactive_rhythm_control_value (insert, "Rotation"), 0.0001);
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::rhythmParameterActionsReportMissingInsertAndUnknownName ()
+{
+	ReactiveSessionTarget target (*_session);
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (false, target.rhythm ("density", 0.25, error));
+	CPPUNIT_ASSERT (error.find ("no Reactive Rhythm State MVP insert") != std::string::npos);
+
+	error.clear ();
+	CPPUNIT_ASSERT_EQUAL (false, target.rhythm ("swing", 0.5, error));
+	CPPUNIT_ASSERT (error.find ("unknown reactive rhythm parameter") != std::string::npos);
 }
 
 void

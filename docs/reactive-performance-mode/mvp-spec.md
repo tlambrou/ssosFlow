@@ -284,6 +284,13 @@ Phase 6n makes the built-in MVP fallback a small playable rhythm demo:
 - Add route-level rhythm insertion and rhythm-state mutations to the fallback while preserving cue-row launches for the eight controller pads.
 - Keep session-local and user action documents as the preferred performance path.
 
+Phase 6o maps rhythm parameter actions onto inserted LuaProc controls:
+
+- Apply `DO rhythm <param> <value>` to every existing `Reactive Rhythm State MVP` insert in the session.
+- Map `density` and `chance` from normalized action values `0.0..1.0` to LuaProc percent controls `0..100`.
+- Map `priority_mode` or `priority` to `Priority`, and `rotation` to `Rotation`.
+- Return explicit errors for unknown rhythm parameters or sessions with no inserted rhythm processor.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.

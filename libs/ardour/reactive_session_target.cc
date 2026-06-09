@@ -3,9 +3,17 @@
 #include <memory>
 #include <sstream>
 
+#include "ardour/automation_control.h"
+#include "ardour/plugin.h"
+#include "ardour/plugin_insert.h"
 #include "ardour/reactive_rhythm_route_inserter.h"
+#include "ardour/route.h"
 #include "ardour/session.h"
 #include "ardour/triggerbox.h"
+
+#include "evoral/Parameter.h"
+
+#include "pbd/controllable.h"
 
 using namespace ARDOUR;
 
@@ -23,6 +31,91 @@ compose_failure (std::string const& prefix, int value)
 	std::ostringstream msg;
 	msg << prefix << value << " failed";
 	return msg.str ();
+}
+
+static bool
+rhythm_parameter_target (std::string const& name, std::string& label, double& scale)
+{
+	scale = 1.0;
+
+	if (name == "density") {
+		label = "Density %";
+		scale = 100.0;
+		return true;
+	}
+
+	if (name == "chance") {
+		label = "Chance %";
+		scale = 100.0;
+		return true;
+	}
+
+	if (name == "priority" || name == "priority_mode") {
+		label = "Priority";
+		return true;
+	}
+
+	if (name == "rotation") {
+		label = "Rotation";
+		return true;
+	}
+
+	return false;
+}
+
+static double
+clamp_to_control_range (std::shared_ptr<AutomationControl> const& control, double value)
+{
+	if (!control) {
+		return value;
+	}
+
+	if (value < control->lower ()) {
+		return control->lower ();
+	}
+
+	if (value > control->upper ()) {
+		return control->upper ();
+	}
+
+	return value;
+}
+
+static bool
+set_reactive_rhythm_control (
+	std::shared_ptr<PluginInsert> const& insert,
+	std::string const& label,
+	double value,
+	std::string& error)
+{
+	if (!insert || !insert->plugin ()) {
+		error = "reactive rhythm insert is unavailable";
+		return false;
+	}
+
+	for (uint32_t i = 0; i < insert->plugin ()->parameter_count (); ++i) {
+		if (!insert->plugin ()->parameter_is_control (i) || !insert->plugin ()->parameter_is_input (i)) {
+			continue;
+		}
+
+		Evoral::Parameter parameter (PluginAutomation, 0, i);
+		if (insert->describe_parameter (parameter) != label) {
+			continue;
+		}
+
+		std::shared_ptr<AutomationControl> control = insert->automation_control (parameter);
+		if (!control) {
+			error = "reactive rhythm control " + label + " is unavailable";
+			return false;
+		}
+
+		control->set_value (clamp_to_control_range (control, value), PBD::Controllable::NoGroup);
+		error.clear ();
+		return true;
+	}
+
+	error = "reactive rhythm control " + label + " was not found";
+	return false;
 }
 
 } // namespace
@@ -147,8 +240,40 @@ ReactiveSessionTarget::state (std::string const& name, std::string const& value,
 bool
 ReactiveSessionTarget::rhythm (std::string const& name, double value, std::string& error)
 {
-	(void) name;
-	(void) value;
+	if (!_session) {
+		error = "reactive session target has no session";
+		return false;
+	}
+
+	std::string label;
+	double scale = 1.0;
+	if (!rhythm_parameter_target (name, label, scale)) {
+		error = "unknown reactive rhythm parameter: " + name;
+		return false;
+	}
+
+	size_t updated = 0;
+	std::shared_ptr<RouteList const> routes = _session->get_routes ();
+	for (RouteList::const_iterator route = routes->begin (); route != routes->end (); ++route) {
+		(*route)->foreach_processor ([&updated, &label, value, scale, &error] (std::weak_ptr<Processor> wp) {
+			std::shared_ptr<Processor> processor = wp.lock ();
+			if (!processor || !ReactiveRhythmRouteInserter::is_reactive_rhythm_insert (processor)) {
+				return;
+			}
+
+			std::shared_ptr<PluginInsert> insert = std::dynamic_pointer_cast<PluginInsert> (processor);
+			if (set_reactive_rhythm_control (insert, label, value * scale, error)) {
+				++updated;
+			}
+		});
+	}
+
+	if (updated == 0) {
+		if (error.empty ()) {
+			error = "no Reactive Rhythm State MVP insert is available";
+		}
+		return false;
+	}
 
 	error.clear ();
 	return true;
