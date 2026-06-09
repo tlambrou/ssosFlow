@@ -161,9 +161,11 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, the first eight action slots in a controller-bank-style summary, and the first eight macro slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
+
+State-bank rows are discovered from `DO state ...` commands in the loaded action document. Names are listed once in first-seen document order, default to an empty value before execution, and reflect the latest values written by executed state commands.
 
 The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots.
 
@@ -402,7 +404,14 @@ Phase 5b adds the reusable macro-bank read model for that panel:
 - Macro names are discovered from loaded action documents in stable first-seen document order, with duplicate macro commands collapsed to one row.
 - Macro values default to `0.0` before execution and update as `DO macro ...` commands run through the action engine.
 - The existing status dialog displays this compact macro bank below the action bank.
-- State rows, MIDI feedback, and queued-action preview remain follow-up work.
+
+Phase 5c adds the reusable state-bank read model for that panel:
+
+- `ReactiveActionSlotRunner` can summarize the first user-defined state bank as slot index, state name, and current value.
+- State names are discovered from loaded action documents in stable first-seen document order, with duplicate state commands collapsed to one row.
+- State values default to an empty string before execution and update as `DO state ...` commands run through the action engine.
+- The existing status dialog displays this compact state bank below the macro bank.
+- MIDI feedback, visible routing, and queued-action preview remain follow-up work.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 

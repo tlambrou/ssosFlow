@@ -31,6 +31,12 @@ struct LIBARDOUR_API ReactiveMacroSlotSummary {
 	double value = 0.0;
 };
 
+struct LIBARDOUR_API ReactiveStateSlotSummary {
+	size_t slot = 0;
+	std::string name;
+	std::string value;
+};
+
 class LIBARDOUR_API ReactiveActionSlotRunner {
 public:
 	bool load_source (std::string const&, std::string& error);
@@ -42,6 +48,7 @@ public:
 	std::string action_name (size_t slot) const;
 	std::vector<ReactiveActionSlotSummary> action_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
+	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
 
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
@@ -50,6 +57,7 @@ public:
 	std::string format_last_execution_status () const;
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;
+	std::string format_state_bank_summary (size_t max_slots) const;
 
 	std::string last_action () const { return _engine.last_action (); }
 	double macro_value (std::string const& name) const { return _engine.macro_value (name); }

@@ -546,3 +546,56 @@ ReactiveActionSlotRunnerTest::summarizeMacroBankForPerformancePanel ()
 	CPPUNIT_ASSERT (formatted.find ("1: delay_send = 0.4") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("2: resonance = 0.55") != std::string::npos);
 }
+
+void
+ReactiveActionSlotRunnerTest::summarizeStateBankForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT (runner.state_bank_summary (8).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("State bank: none"), runner.format_state_bank_summary (8));
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION setup\n"
+		"DO state section intro\n"
+		"DO state energy low\n"
+		"END\n"
+		"ACTION perform\n"
+		"DO state section breakdown\n"
+		"DO state mode mutate\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveStateSlotSummary> summary = runner.state_bank_summary (8);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("section"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary[0].value);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("energy"), summary[1].name);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary[1].value);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("mode"), summary[2].name);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary[2].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+
+	summary = runner.state_bank_summary (2);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("section"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), summary[0].value);
+	CPPUNIT_ASSERT_EQUAL (std::string ("energy"), summary[1].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("low"), summary[1].value);
+
+	std::string const formatted = runner.format_state_bank_summary (8);
+	CPPUNIT_ASSERT (formatted.find ("0: section = breakdown") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: energy = low") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("2: mode = mutate") != std::string::npos);
+}

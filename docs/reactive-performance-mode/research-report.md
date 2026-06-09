@@ -135,6 +135,8 @@ Phase 5a starts the performance-panel work with a backend read model instead of 
 
 Phase 5b adds the next panel read model for macro banks. `ReactiveActionSlotRunner` now exposes bounded macro rows with slot index, macro name, and current value. The rows are discovered from loaded action documents in first-seen document order with duplicate macro commands collapsed, and values reflect the current action-engine macro state after execution. The existing status dialog shows this macro bank beneath the action bank. A later Cue-page panel can reuse both models before adding state rows, controller feedback, and quantized next-action preview.
 
+Phase 5c adds the matching panel read model for user-defined performance states. `ReactiveActionSlotRunner` now exposes bounded state rows with slot index, state name, and current value. The rows are discovered from loaded action documents in first-seen document order with duplicate state commands collapsed, and values reflect the current action-engine state after execution. The existing status dialog shows this state bank beneath the macro bank. A later Cue-page panel can reuse action, macro, and state rows before adding controller feedback, visible routing, and quantized next-action preview.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.
