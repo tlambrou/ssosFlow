@@ -48,6 +48,7 @@ public:
 	std::vector<ReactiveQueuedAction> pop_due (Temporal::BBT_Time const& now);
 	void clear ();
 	size_t queued_count () const { return _queued.size (); }
+	bool has_pending_for_slot (size_t slot) const;
 
 private:
 	static bool due_at_or_before (Temporal::BBT_Time const& due_at, Temporal::BBT_Time const& now);

@@ -778,6 +778,70 @@ ReactiveActionSlotRunnerTest::controllerFeedbackSummarizesLatestAttempt ()
 }
 
 void
+ReactiveActionSlotRunnerTest::controllerFeedbackSummarizesQueuedActions ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION queued.pad\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 1\n"
+		"END\n"
+		"ACTION instant.pad\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (1, 1, 0),
+		Temporal::BBT_Time (2, 1, 0)).ok);
+
+	std::vector<ReactiveControllerFeedbackSummary> feedback = runner.controller_feedback_summary (2);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].queued);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (127, feedback[0].value);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[1].queued);
+	CPPUNIT_ASSERT_EQUAL (32, feedback[1].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+	feedback = runner.controller_feedback_summary (2);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].queued);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (96, feedback[0].value);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[1].queued);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[1].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (127, feedback[1].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.release_due_queued_actions (Temporal::BBT_Time (2, 1, 0), target).ok);
+	feedback = runner.controller_feedback_summary (2);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].queued);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (127, feedback[0].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+	feedback = runner.controller_feedback_summary (2);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].queued);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (32, feedback[0].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (3, 1, 0),
+		Temporal::BBT_Time (4, 1, 0)).ok);
+	runner.set_performance_enabled (false);
+	feedback = runner.controller_feedback_summary (2);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].queued);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (0, feedback[0].value);
+}
+
+void
 ReactiveActionSlotRunnerTest::controllerFeedbackMidiMessagesFollowSlotFeedbackState ()
 {
 	ReactiveActionSlotRunner runner;
@@ -826,6 +890,41 @@ ReactiveActionSlotRunnerTest::controllerFeedbackMidiMessagesFollowSlotFeedbackSt
 	assert_feedback_message (messages[0], 0, 0x99, 36, 0);
 	assert_feedback_message (messages[1], 1, 0xb0, 22, 0);
 	assert_feedback_message (messages[2], 2, 0x99, 38, 0);
+}
+
+void
+ReactiveActionSlotRunnerTest::controllerFeedbackMidiMessagesShowQueuedActions ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION queued.pad\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 1\n"
+		"END\n"
+		"ACTION instant.pad\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveControllerFeedbackBinding> bindings;
+	bindings.push_back (feedback_note_binding (0, 10, 36));
+	bindings.push_back (feedback_note_binding (1, 10, 37));
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (1, 1, 0),
+		Temporal::BBT_Time (2, 1, 0)).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+
+	std::vector<ReactiveControllerFeedbackMidiMessage> messages = runner.controller_feedback_midi_messages (bindings);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), messages.size ());
+	assert_feedback_message (messages[0], 0, 0x99, 36, 96);
+	assert_feedback_message (messages[1], 1, 0x99, 37, 127);
 }
 
 void

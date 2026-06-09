@@ -127,13 +127,21 @@ disabled_execution_result ()
 }
 
 static int
-controller_feedback_value (bool available, bool enabled, bool latest_attempted)
+controller_feedback_value (bool available, bool enabled, bool latest_attempted, bool queued)
 {
 	if (!available || !enabled) {
 		return 0;
 	}
 
-	return latest_attempted ? 127 : 32;
+	if (latest_attempted) {
+		return 127;
+	}
+
+	if (queued) {
+		return 96;
+	}
+
+	return 32;
 }
 
 static bool
@@ -1044,9 +1052,10 @@ ReactiveActionSlotRunner::controller_feedback_summary_row (size_t slot) const
 		row.latest_attempted = _performance_enabled &&
 			_last_execution_status.attempted &&
 			_last_execution_status.slot == slot;
+		row.queued = _performance_enabled && _scheduler.has_pending_for_slot (slot);
 	}
 
-	row.value = controller_feedback_value (row.available, row.enabled, row.latest_attempted);
+	row.value = controller_feedback_value (row.available, row.enabled, row.latest_attempted, row.queued);
 	return row;
 }
 

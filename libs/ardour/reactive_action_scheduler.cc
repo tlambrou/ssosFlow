@@ -97,6 +97,18 @@ ReactiveActionScheduler::clear ()
 }
 
 bool
+ReactiveActionScheduler::has_pending_for_slot (size_t slot) const
+{
+	for (std::vector<ReactiveQueuedAction>::const_iterator queued = _queued.begin (); queued != _queued.end (); ++queued) {
+		if (queued->slot == slot) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool
 ReactiveActionScheduler::due_at_or_before (Temporal::BBT_Time const& due_at, Temporal::BBT_Time const& now)
 {
 	return due_at < now || due_at == now;

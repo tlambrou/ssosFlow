@@ -24,7 +24,9 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (summarizePerformanceControlsForStatusPanel);
 	CPPUNIT_TEST (performanceControlsMarkLatestAttemptForPanelRefresh);
 	CPPUNIT_TEST (controllerFeedbackSummarizesLatestAttempt);
+	CPPUNIT_TEST (controllerFeedbackSummarizesQueuedActions);
 	CPPUNIT_TEST (controllerFeedbackMidiMessagesFollowSlotFeedbackState);
+	CPPUNIT_TEST (controllerFeedbackMidiMessagesShowQueuedActions);
 	CPPUNIT_TEST (controllerFeedbackMidiMessagesIgnoreInvalidBindings);
 	CPPUNIT_TEST (summarizeMacroBankForPerformancePanel);
 	CPPUNIT_TEST (summarizeStateBankForPerformancePanel);
@@ -62,7 +64,9 @@ public:
 	void summarizePerformanceControlsForStatusPanel ();
 	void performanceControlsMarkLatestAttemptForPanelRefresh ();
 	void controllerFeedbackSummarizesLatestAttempt ();
+	void controllerFeedbackSummarizesQueuedActions ();
 	void controllerFeedbackMidiMessagesFollowSlotFeedbackState ();
+	void controllerFeedbackMidiMessagesShowQueuedActions ();
 	void controllerFeedbackMidiMessagesIgnoreInvalidBindings ();
 	void summarizeMacroBankForPerformancePanel ();
 	void summarizeStateBankForPerformancePanel ();
