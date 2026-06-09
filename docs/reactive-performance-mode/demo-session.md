@@ -22,13 +22,13 @@ If the app was not configured yet, use the configure command in `docs/reactive-p
 
 ## Demo Session Layout
 
-Recommended path: create a new Ardour session from the bundled `Reactive Performance MVP` factory template. The template is provided by `share/scripts/reactive_performance_mvp_session.lua` and creates three MIDI-only controller-facing routes:
+Recommended path: create a new Ardour session from the bundled `Reactive Performance MVP` factory template. The template is provided by `share/scripts/reactive_performance_mvp_session.lua` and creates three MIDI-only controller-facing routes that are visible on the Cue page:
 
 - `Reactive Rhythm Lane`
 - `Reactive Harmony Lane`
 - `Reactive Macro Lane`
 
-The template also installs the demo `reactive-actions.txt` next to the new `.ardour` session file when Lua file I/O is available. It is the repeatable MVP setup path, but it is not a full `.ardour` session archive with generated clips, cues, ports, and environment-specific connections.
+The template also installs the demo `reactive-actions.txt` next to the new `.ardour` session file when Lua file I/O is available. It is the repeatable MVP setup path, but it is not a full `.ardour` session archive with generated clips, cue contents, ports, and environment-specific connections.
 
 Manual fallback: create or open any small session with the Cue page available.
 
@@ -124,7 +124,7 @@ When using the `Reactive Performance MVP` factory template, no manual copy is ne
 Run this checklist after creating the session and loading the Generic MIDI map. If you use the manual existing-session fallback, copy `reactive-actions.txt` into that session first.
 
 - App boots from `gtk2_ardour/ardev`.
-- A template-created session contains `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`; a manually created session has at least one MIDI route in controller-facing route slot 0.
+- A template-created session contains Cue-page visible `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`; a manually created session has at least one MIDI route in controller-facing route slot 0.
 - The Cue page shows a Reactive Performance panel above the trigger strip grid, with slot labels sourced from the loaded action document.
 - Empty Cue-page panel slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.

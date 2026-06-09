@@ -602,6 +602,13 @@ Phase 7g makes the template setup path closer to one-step:
 - `LuaScriptTest::reactive_performance_session_init_tolerates_unavailable_file_io_test` verifies that hardened Lua settings which remove file I/O do not crash the template; in that case users can still copy the packaged action file manually.
 - The example README and demo guide no longer require manual action-file copying for new sessions created from the factory template; manual existing-session setup still uses the packaged example file.
 
+Phase 7h makes the template-created lanes Cue-page visible:
+
+- `share/scripts/reactive_performance_mvp_session.lua` passes Ardour's `trigger_visibility=true` flag for `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`.
+- The template still creates the same three named MIDI lanes and installs the same session-local demo action document, but the lanes now appear as trigger-visible Cue-page routes instead of ordinary hidden-from-Cues MIDI tracks.
+- `LuaScriptTest` records the `new_midi_track(...)` trigger-visibility argument in the SessionInit harness and verifies all three demo lanes request it.
+- Generated trigger clip/cue content remains a later demo-production step; this slice only makes the route layout ready for Cue-page interaction.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
