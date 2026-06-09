@@ -193,6 +193,26 @@ ReactiveActionTest::parseRouteScopedRhythmCommand ()
 }
 
 void
+ReactiveActionTest::parseRouteScopedRhythmCommandWithMidiValue ()
+{
+	const char* src =
+		"ACTION route.rhythm.live\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO rhythm route 0 density midi-value\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveCommand const& command = result.document.actions ().front ().commands.front ();
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::RhythmRoute, command.type);
+	CPPUNIT_ASSERT_EQUAL (0, command.first);
+	CPPUNIT_ASSERT_EQUAL (std::string ("density"), command.name);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MidiEventValue, command.value_source);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, command.value, 0.0001);
+}
+
+void
 ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
 {
 	const char* src =

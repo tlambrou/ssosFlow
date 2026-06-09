@@ -43,6 +43,7 @@ Route numbers use Ardour's controller-facing remote route order. The current act
 ```text
 DO rhythm insert 0
 DO rhythm route 0 density 0.5
+DO rhythm route 0 density midi-value
 ```
 
 ## Controller Map
@@ -138,13 +139,13 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - Cue row 0 launches if the row exists in the session.
 - Trigger pad 1 or 2, or press the matching Cue-page/status-panel slot button, and confirm the status panel reports the matching slot/action.
 - If Generic MIDI Control Out is connected to a controller or MIDI monitor, confirm the matching pad feedback changes after trigger, reload, and mode-toggle actions.
-- Move CC 22 on MIDI channel 1 and confirm the macro bank shows `filter` tracking the controller value from `0.0` to `1.0`.
+- Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the macro bank shows `filter` tracking from `0.0` to `1.0`.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 
 ## Current Limits
 
-- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. Native macro-to-plugin parameter routing remains follow-up work.
+- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. CC-derived values can drive route-scoped rhythm parameters; general macro-to-plugin parameter routing remains follow-up work.
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration; richer layout remains follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
 - The repo packages a repeatable `Reactive Performance MVP` SessionInit template plus a session-local action document under `examples/reactive-performance-mvp/`. The template installs the demo action document into new sessions without overwriting an existing `reactive-actions.txt` when Lua file I/O is available, but this repo does not yet package a full `.ardour` demo session archive.

@@ -59,7 +59,9 @@ normalized_midi_value (ReactiveMidiEvent const& event)
 static ReactiveCommand
 resolve_command_value (ReactiveCommand const& command, ReactiveMidiEvent const* event)
 {
-	if (command.type != ReactiveCommand::Macro || command.value_source != ReactiveCommand::MidiEventValue || !event) {
+	if ((command.type != ReactiveCommand::Macro && command.type != ReactiveCommand::RhythmRoute) ||
+	    command.value_source != ReactiveCommand::MidiEventValue ||
+	    !event) {
 		return command;
 	}
 
