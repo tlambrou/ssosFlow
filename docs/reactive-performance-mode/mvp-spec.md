@@ -187,6 +187,14 @@ Phase 6b adds a backend MIDI-shaped adapter before touching Ardour's live MIDI b
 - Keep chance deterministic through explicit per-event chance values.
 - Leave direct `MidiBuffer` processing, LuaProc wrapping, randomness injection, and demo routing for follow-up work.
 
+Phase 6c adds raw MIDI-byte mapping before live buffer mutation:
+
+- Map 3-byte MIDI note-on/note-off messages into the backend rhythm MIDI adapter.
+- Treat note-on with velocity 0 as note-off.
+- Keep original raw bytes attached to each decision so a later `MidiBuffer` processor can forward or suppress the source event.
+- Pass non-note messages through unchanged.
+- Leave direct `MidiBuffer` mutation, live randomness injection, LuaProc wrapping, and demo routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
