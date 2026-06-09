@@ -157,7 +157,18 @@ ARDOUR_UI::install_actions ()
 {
 	Glib::RefPtr<ActionGroup> main_actions = ActionManager::create_action_group (global_bindings, X_("Main"));
 	Glib::RefPtr<ActionGroup> main_menu_actions = ActionManager::create_action_group (global_bindings, X_("Main Menu"));
+	Glib::RefPtr<ActionGroup> reactive_actions = ActionManager::create_action_group (global_bindings, X_("Reactive"));
 	Glib::RefPtr<Action> act;
+	const char* reactive_action_names[] = {
+		X_("trigger-action-0"),
+		X_("trigger-action-1"),
+		X_("trigger-action-2"),
+		X_("trigger-action-3"),
+		X_("trigger-action-4"),
+		X_("trigger-action-5"),
+		X_("trigger-action-6"),
+		X_("trigger-action-7")
+	};
 
 	ActionManager::register_action (main_actions, X_("Escape"), _("Escape (deselect all)"), sigc::mem_fun (*this, &ARDOUR_UI::escape));
 	/* This is hard-wired into the Keyboard code as "Primary-w". Maybe it
@@ -193,6 +204,11 @@ ARDOUR_UI::install_actions ()
 	ActionManager::register_action (main_menu_actions, X_("Denormals"), _("Denormal Handling"));
 
 	/* the real actions */
+
+	for (int n = 0; n < 8; ++n) {
+		const string display_name = string_compose (_("Trigger Reactive Action %1"), n);
+		ActionManager::register_action (reactive_actions, reactive_action_names[n], display_name.c_str (), sigc::bind (sigc::mem_fun (*this, &ARDOUR_UI::trigger_reactive_action), n));
+	}
 
 	act = ActionManager::register_action (main_actions, X_("New"), _("New..."),  hide_return (sigc::bind (sigc::mem_fun(*this, &ARDOUR_UI::start_session_load), true)));
 
