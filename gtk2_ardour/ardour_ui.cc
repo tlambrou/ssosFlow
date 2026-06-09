@@ -3334,6 +3334,26 @@ ARDOUR_UI::reactive_performance_control_summary (size_t max_slots)
 	return _reactive_action_slots.performance_control_summary (max_slots);
 }
 
+std::string
+ARDOUR_UI::reactive_performance_panel_summary (size_t max_items)
+{
+	if (_session) {
+		ensure_reactive_action_document ();
+	}
+
+	std::string summary = _reactive_action_slots.format_panel_summary (max_items);
+	summary += "\n";
+
+	if (_session) {
+		ReactiveSessionTarget target (*_session);
+		summary += target.format_routing_summary (max_items);
+	} else {
+		summary += "Routing: none";
+	}
+
+	return summary;
+}
+
 bool
 ARDOUR_UI::reactive_performance_enabled () const
 {

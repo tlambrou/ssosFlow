@@ -597,6 +597,45 @@ ReactiveActionSlotRunner::format_next_action_preview () const
 }
 
 std::string
+ReactiveActionSlotRunner::format_panel_summary (size_t max_items) const
+{
+	std::ostringstream text;
+
+	if (_next_action_preview.available) {
+		text << "Next: slot " << _next_action_preview.slot << " " << _next_action_preview.action_name
+		     << " - " << _next_action_preview.chain_mode << ", q " << _next_action_preview.quantize
+		     << ", " << _next_action_preview.command_count << " cmd";
+		if (_next_action_preview.command_count != 1) {
+			text << "s";
+		}
+	} else {
+		text << "Next: none";
+	}
+
+	std::vector<ReactiveMacroSlotSummary> const macros = macro_bank_summary (max_items);
+	text << "\nMacros:";
+	if (macros.empty ()) {
+		text << " none";
+	} else {
+		for (std::vector<ReactiveMacroSlotSummary>::const_iterator i = macros.begin (); i != macros.end (); ++i) {
+			text << (i == macros.begin () ? " " : ", ") << i->name << "=" << i->value;
+		}
+	}
+
+	std::vector<ReactiveStateSlotSummary> const states = state_bank_summary (max_items);
+	text << "\nStates:";
+	if (states.empty ()) {
+		text << " none";
+	} else {
+		for (std::vector<ReactiveStateSlotSummary>::const_iterator i = states.begin (); i != states.end (); ++i) {
+			text << (i == states.begin () ? " " : ", ") << i->name << "=" << i->value;
+		}
+	}
+
+	return text.str ();
+}
+
+std::string
 ReactiveActionSlotRunner::format_action_bank_summary (size_t max_slots) const
 {
 	std::vector<ReactiveActionSlotSummary> const summary = action_bank_summary (max_slots);

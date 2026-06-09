@@ -72,8 +72,14 @@ ReactivePerformancePanel::ReactivePerformancePanel ()
 	_utility_row.pack_start (_reload_button, false, false);
 	_utility_row.pack_start (_status_button, false, false);
 
+	_summary_label.set_alignment (0.0, 0.0);
+	_summary_label.set_line_wrap (true);
+	_summary_label.set_selectable (false);
+	_summary_label.set_size_request (420, 64);
+
 	pack_start (_slot_row, false, false);
 	pack_start (_utility_row, false, false);
+	pack_start (_summary_label, false, false);
 
 	ARDOUR_UI::instance ()->ReactivePerformanceChanged.connect (
 		_reactive_performance_connections,
@@ -102,6 +108,7 @@ ReactivePerformancePanel::refresh ()
 	}
 
 	_mode_button.set_text (ARDOUR_UI::instance ()->reactive_performance_enabled () ? _("Disable") : _("Enable"));
+	_summary_label.set_text (ARDOUR_UI::instance ()->reactive_performance_panel_summary (4));
 }
 
 void

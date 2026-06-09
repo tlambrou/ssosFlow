@@ -499,6 +499,7 @@ Phase 5j adds controller-driven panel refresh feedback:
 - `ReactiveActionSlotRunner::performance_control_summary(...)` prefixes the latest attempted slot's large-control label with `> ` after manual or MIDI-triggered execution, giving the panel a compact performance feedback marker.
 - `ARDOUR_UI::ReactivePerformanceChanged` is emitted after Reactive slot execution, MIDI-byte execution, mode toggles, and document reloads.
 - `ReactivePerformancePanel` observes that signal on the GUI context, so controller-triggered Reactive actions refresh the Cue-page controls without a mouse interaction.
+- The Cue-page panel now also shows a compact live read-model summary for next action preview, macros, user states, and first controller-facing routing rows, while the existing status dialog remains the detailed/debug view.
 - Controller LED byte generation and output-port wiring remain follow-up work at this phase.
 
 Phase 5k adds the first controller-feedback read model:

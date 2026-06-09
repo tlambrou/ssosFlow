@@ -23,6 +23,7 @@
 #include "pbd/signals.h"
 
 #include <ytkmm/box.h>
+#include <ytkmm/label.h>
 
 #include "widgets/ardour_button.h"
 
@@ -42,6 +43,7 @@ private:
 
 	Gtk::HBox _slot_row;
 	Gtk::HBox _utility_row;
+	Gtk::Label _summary_label;
 
 	std::vector<ArdourWidgets::ArdourButton*> _slot_buttons;
 	ArdourWidgets::ArdourButton _mode_button;
