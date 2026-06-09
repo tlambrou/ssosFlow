@@ -497,6 +497,14 @@ Phase 5l bridges the controller-feedback read model to raw MIDI messages:
 - Invalid channel or note/CC numbers are ignored instead of producing malformed bytes.
 - Actual Generic MIDI output-port wiring remains follow-up work; this slice proves the reusable byte adapter that surface code can consume.
 
+Phase 5m declares Reactive feedback bindings in the Generic MIDI map:
+
+- The bundled `reactive-performance-mvp.map` now declares `reactive="feedback"` bindings for slots `0` through `7` on the same channel-10 pad notes `36` through `43`.
+- Feedback bindings are separate XML rows from the action trigger rows so they do not collide with `Reactive/trigger-action-*` bindings.
+- `GenericMidiControlProtocol` accepts `reactive="feedback"` rows, validates slot/channel/note-or-CC metadata, and stores them as `ReactiveControllerFeedbackBinding` values for a later output-wiring slice.
+- Invalid feedback bindings are ignored cleanly instead of being reported as unknown Reactive trigger targets.
+- Actual Generic MIDI output-port writes remain follow-up work; this slice establishes the map format and parser storage.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.

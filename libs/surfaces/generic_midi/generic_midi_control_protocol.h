@@ -23,6 +23,7 @@
 #define ardour_generic_midi_control_protocol_h
 
 #include <list>
+#include <vector>
 
 #define ABSTRACT_UI_EXPORTS
 #include "pbd/abstract_ui.h"
@@ -30,6 +31,7 @@
 
 #include "ardour/types.h"
 #include "ardour/port.h"
+#include "ardour/reactive_action_slot_runner.h"
 
 #include "control_protocol/control_protocol.h"
 
@@ -161,6 +163,8 @@ private:
 	typedef std::list<MIDIReactiveAction*> MIDIReactiveActions;
 	MIDIReactiveActions reactive_actions;
 
+	std::vector<ARDOUR::ReactiveControllerFeedbackBinding> reactive_feedback_bindings;
+
 	struct MIDIPendingControllable {
 		MIDIControllable* mc;
 		bool own_mc;
@@ -185,6 +189,7 @@ private:
 	MIDIFunction* create_function (const XMLNode&);
 	MIDIAction* create_action (const XMLNode&);
 	MIDIReactiveAction* create_reactive_action (const XMLNode&);
+	bool create_reactive_feedback_binding (const XMLNode&, ARDOUR::ReactiveControllerFeedbackBinding&);
 
 	void reset_controllables ();
 

@@ -24,6 +24,16 @@
 	<Binding channel="10" note="42" action="Reactive/trigger-action-6" momentary="yes"/>
 	<Binding channel="10" note="43" action="Reactive/trigger-action-7" momentary="yes"/>
 
+	<!-- Feedback output bindings for the same eight pad LEDs; actual output-port writes are wired in a later slice. -->
+	<Binding channel="10" note="36" reactive="feedback" slot="0"/>
+	<Binding channel="10" note="37" reactive="feedback" slot="1"/>
+	<Binding channel="10" note="38" reactive="feedback" slot="2"/>
+	<Binding channel="10" note="39" reactive="feedback" slot="3"/>
+	<Binding channel="10" note="40" reactive="feedback" slot="4"/>
+	<Binding channel="10" note="41" reactive="feedback" slot="5"/>
+	<Binding channel="10" note="42" reactive="feedback" slot="6"/>
+	<Binding channel="10" note="43" reactive="feedback" slot="7"/>
+
 	<Binding channel="10" note="44" action="Reactive/show-action-document-status" momentary="yes"/>
 	<Binding channel="10" note="45" action="Reactive/reload-action-document" momentary="yes"/>
 	<Binding channel="10" note="47" action="Reactive/toggle-performance-mode" momentary="yes"/>
