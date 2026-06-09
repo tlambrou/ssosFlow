@@ -52,6 +52,7 @@ public:
 
 	ReactiveActionPlan preview_action (std::string const& name) const;
 	ReactiveActionPlan trigger_action (std::string const& name);
+	ReactiveActionPlan trigger_action (std::string const& name, ReactiveMidiEvent const* event);
 	double macro_value (std::string const& name) const;
 	std::string state_value (std::string const& name) const;
 	std::string last_action () const { return _last_action; }

@@ -72,6 +72,26 @@ ReactiveActionTest::parseMidiCCTrigger ()
 }
 
 void
+ReactiveActionTest::parseMidiValueMacroCommand ()
+{
+	const char* src =
+		"ACTION knob.live\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro filter midi-value ramp 0|1|0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveCommand const& command = result.document.actions ().front ().commands.front ();
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, command.type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), command.name);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MidiEventValue, command.value_source);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, command.value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (1, command.ramp.beats);
+}
+
+void
 ReactiveActionTest::parseSequentialAndRandomChains ()
 {
 	const char* src =

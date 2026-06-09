@@ -5,7 +5,8 @@
   Reactive Performance Mode MVP bridge map.
 
   This binds an eight-pad performance row to the first Reactive action slots,
-  plus two utility buttons for status and action-document reload.
+  plus two utility buttons for status/action-document reload and live
+  document-level note/CC trigger examples.
   With no session-local or user reactive-actions.txt, the built-in MVP fallback
   uses pad 0 to insert/reset the rhythm prototype on controller route 0 and
   uses later pads to launch cue rows while mutating rhythm density, chance,
@@ -26,7 +27,7 @@
 	<Binding channel="10" note="44" action="Reactive/show-action-document-status" momentary="yes"/>
 	<Binding channel="10" note="45" action="Reactive/reload-action-document" momentary="yes"/>
 
-	<!-- Live document-level TRIGGER midi examples. -->
+	<!-- Live document-level TRIGGER midi examples; CC 22 can drive DO macro <name> midi-value. -->
 	<Binding channel="10" note="46" reactive="trigger" momentary="yes"/>
 	<Binding channel="1" ctl="22" reactive="trigger"/>
 

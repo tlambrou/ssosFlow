@@ -323,7 +323,7 @@ ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, Re
 		return record_execution_status (match.action_index, std::string (), result);
 	}
 
-	ReactiveActionPlan plan = _engine.trigger_action (name);
+	ReactiveActionPlan plan = _engine.trigger_action (name, &event);
 	result = ReactiveActionExecutor::execute (plan, target);
 	_next_action_preview = preview_midi_event (event);
 	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);

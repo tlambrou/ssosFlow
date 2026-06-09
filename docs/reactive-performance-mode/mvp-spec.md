@@ -65,6 +65,12 @@ DO rhythm density 0.55
 DO rhythm density 0.80
 END
 
+ACTION filter.sweep
+TRIGGER midi cc ch=1 cc=23
+QUANTIZE 0|1|0
+DO macro filter midi-value ramp 0|1|0
+END
+
 ACTION breakdown
 TRIGGER marker Breakdown
 QUANTIZE 1|0|0
@@ -86,7 +92,7 @@ Required MVP commands:
 - `transport stop`
 - `scene apply <index>`
 - `scene store <index>`
-- `macro <name> <value> [ramp <bbt-offset>]`
+- `macro <name> <value|midi-value> [ramp <bbt-offset>]`
 - `state <name> <value>`
 - `rhythm <param> <value>`
 - `rhythm insert <route-index>`
@@ -116,7 +122,8 @@ The MVP should support two paths:
 
 2. Reactive action file triggers:
    - Parse `TRIGGER midi note ...` and `TRIGGER midi cc ...`.
-   - Bind them through the reactive engine or a thin Generic MIDI adapter in a later phase.
+   - Bind them through the live Generic MIDI `reactive="trigger"` adapter.
+   - Use `DO macro <name> midi-value` to map the incoming note velocity or CC value onto a normalized `0.0..1.0` macro value.
 
 After setup, the demo should be playable with:
 
@@ -176,6 +183,8 @@ The backend runner can now execute a loaded document from a parsed `ReactiveMidi
 Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needed one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance.
 
 Phase 4f adds that live adapter path for Generic MIDI note-on and control-change bindings. A map entry can now use `reactive="trigger"` with `note` or `ctl`; the Generic MIDI surface reconstructs the 3-byte controller message on Ardour's existing MIDI/control-surface thread, emits it through `BasicUI`, and the GTK-side Reactive Performance entry point delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`. The MVP map keeps notes 36 through 45 for fixed slot/status/reload actions and adds note 46 on channel 10 plus CC 22 on channel 1 as document-level trigger examples.
+
+Phase 4g adds event-derived macro values. `DO macro <name> midi-value [ramp <bbt-offset>]` stores a macro command whose value is resolved from the MIDI event that triggered the action: CC values and note velocities are normalized from `0..127` to `0.0..1.0`, and the optional ramp is preserved. Literal macro commands such as `DO macro filter 0.80` are unchanged. Because manual slot execution has no originating controller value, `midi-value` actions should be triggered through a matching MIDI note/CC path.
 
 ## Performance UI
 
@@ -389,6 +398,13 @@ Phase 4f wires the live Generic MIDI adapter:
 - Emit those bytes through `BasicUI` and handle them in the GTK Reactive Performance UI entry point.
 - Keep existing `action="Reactive/trigger-action-N"` bindings unchanged for fixed slot launches.
 
+Phase 4g maps controller values to macros:
+
+- Parse `DO macro <name> midi-value [ramp <bbt-offset>]` as a dynamic macro command.
+- Resolve the command value from the matched MIDI CC value or note velocity during event-triggered execution.
+- Normalize controller values from `0..127` to `0.0..1.0` before updating macro state and dispatching the target command.
+- Preserve existing literal macro commands, ramp metadata, and MIDI trigger matching behavior.
+
 Phase 5: add minimal Reactive Performance UI panel.
 
 Phase 5a adds the reusable read model for that panel:
@@ -441,12 +457,12 @@ Phase 7b makes the MVP map more controller-first:
 - Keep notes 36 through 43 mapped to `Reactive/trigger-action-0` through `Reactive/trigger-action-7`.
 - Bind note 44 to `Reactive/show-action-document-status`.
 - Bind note 45 to `Reactive/reload-action-document`.
-- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`.
+- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro examples in session-local action files.
 
 ## Acceptance Tests
 
-- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, and macro ramps.
-- Engine tests cover action lookup, chain state, macro state, and quantization calculation against a fixed TempoMap.
-- Manual smoke test can trigger one cue row and one macro from a MIDI map.
+- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
+- Engine tests cover action lookup, chain state, literal and event-derived macro state, and quantization calculation against a fixed TempoMap.
+- Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can enable mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.

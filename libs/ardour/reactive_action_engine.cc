@@ -40,6 +40,32 @@ matches_midi_event (ReactiveTrigger const& trigger, ReactiveMidiEvent const& eve
 	return matches_midi_note (trigger, event) || matches_midi_cc (trigger, event);
 }
 
+static double
+normalized_midi_value (ReactiveMidiEvent const& event)
+{
+	if (event.value <= 0) {
+		return 0.0;
+	}
+
+	if (event.value >= 127) {
+		return 1.0;
+	}
+
+	return event.value / 127.0;
+}
+
+static ReactiveCommand
+resolve_command_value (ReactiveCommand const& command, ReactiveMidiEvent const* event)
+{
+	if (command.type != ReactiveCommand::Macro || command.value_source != ReactiveCommand::MidiEventValue || !event) {
+		return command;
+	}
+
+	ReactiveCommand resolved = command;
+	resolved.value = normalized_midi_value (*event);
+	return resolved;
+}
+
 } // namespace
 
 ReactiveMidiEvent
@@ -176,6 +202,12 @@ ReactiveActionEngine::preview_action (std::string const& name) const
 ReactiveActionPlan
 ReactiveActionEngine::trigger_action (std::string const& name)
 {
+	return trigger_action (name, 0);
+}
+
+ReactiveActionPlan
+ReactiveActionEngine::trigger_action (std::string const& name, ReactiveMidiEvent const* event)
+{
 	ReactiveActionPlan plan;
 	std::vector<ReactiveAction> const& actions = _document.actions ();
 	ReactiveAction const* action = 0;
@@ -212,7 +244,8 @@ ReactiveActionEngine::trigger_action (std::string const& name)
 		plan.commands = action->commands;
 	}
 
-	for (std::vector<ReactiveCommand>::const_iterator command = plan.commands.begin (); command != plan.commands.end (); ++command) {
+	for (std::vector<ReactiveCommand>::iterator command = plan.commands.begin (); command != plan.commands.end (); ++command) {
+		*command = resolve_command_value (*command, event);
 		apply_command_state (*command);
 	}
 
