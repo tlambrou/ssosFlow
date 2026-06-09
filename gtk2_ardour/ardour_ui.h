@@ -319,6 +319,7 @@ public:
 	void reload_reactive_action_document ();
 	void show_reactive_action_document_status ();
 	std::vector<ARDOUR::ReactivePerformanceControlSummary> reactive_performance_control_summary (size_t max_slots);
+	std::string reactive_performance_panel_summary (size_t max_items);
 	bool reactive_performance_enabled () const;
 	void set_reactive_controller_feedback_bindings (std::vector<ARDOUR::ReactiveControllerFeedbackBinding>);
 	void update_reactive_controller_feedback ();

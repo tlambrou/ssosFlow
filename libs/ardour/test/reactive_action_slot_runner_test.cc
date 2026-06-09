@@ -1019,6 +1019,39 @@ ReactiveActionSlotRunnerTest::previewMidiEventForPerformancePanel ()
 }
 
 void
+ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMacros: none\nStates: none"), runner.format_panel_summary (2));
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION setup\n"
+		"DO macro filter 0.25\n"
+		"DO state section intro\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION perform\n"
+		"DO macro resonance 0.55\n"
+		"DO state section drop\n"
+		"DO state energy high\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+
+	std::string const formatted = runner.format_panel_summary (2);
+	CPPUNIT_ASSERT (formatted.find ("Next: slot 0 setup - all, q 0|0|0, 3 cmds") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("Macros: filter=0.25, resonance=0") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("States: section=intro, energy=") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("Action bank:") == std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("Reactive Performance Mode") == std::string::npos);
+}
+
+void
 ReactiveActionSlotRunnerTest::transportProviderControlsSlotConditions ()
 {
 	ReactiveActionSlotRunner runner;

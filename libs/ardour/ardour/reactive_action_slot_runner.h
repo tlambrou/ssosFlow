@@ -114,6 +114,7 @@ public:
 	std::string format_performance_mode_status () const;
 	std::string format_performance_control_summary (size_t max_slots) const;
 	std::string format_next_action_preview () const;
+	std::string format_panel_summary (size_t max_items) const;
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;
 	std::string format_state_bank_summary (size_t max_slots) const;
