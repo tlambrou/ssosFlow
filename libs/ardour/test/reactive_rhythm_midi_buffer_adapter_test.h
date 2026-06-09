@@ -11,6 +11,7 @@ class ReactiveRhythmMidiBufferAdapterTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (mapsVelocityZeroNoteOnAsNoteOff);
 	CPPUNIT_TEST (chanceZeroDropsNoteOnDeterministically);
 	CPPUNIT_TEST (chanceSourceDrivesPassAndDropDecisions);
+	CPPUNIT_TEST (frameDerivedStepsDriveDownbeatPriority);
 	CPPUNIT_TEST (forwardsNonNoteEventsUnchanged);
 	CPPUNIT_TEST_SUITE_END ();
 
@@ -20,5 +21,6 @@ public:
 	void mapsVelocityZeroNoteOnAsNoteOff ();
 	void chanceZeroDropsNoteOnDeterministically ();
 	void chanceSourceDrivesPassAndDropDecisions ();
+	void frameDerivedStepsDriveDownbeatPriority ();
 	void forwardsNonNoteEventsUnchanged ();
 };

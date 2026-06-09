@@ -1,6 +1,7 @@
 #include "ardour/reactive_rhythm_midi_buffer_adapter.h"
 
 #include "ardour/reactive_rhythm_chance_source.h"
+#include "ardour/reactive_rhythm_step_source.h"
 
 #include <vector>
 
@@ -71,6 +72,56 @@ ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, std::vector
 		raw_events.push_back (bytes_for_event (event, event_index, chance_value_at (chance_values, event_index)));
 	}
 
+	return apply_buffer_decisions (buffer, decisions, raw_events);
+}
+
+std::vector<ReactiveRhythmMidiBufferDecision>
+ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, ReactiveRhythmChanceSource& chance_source)
+{
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions;
+	std::vector<ReactiveRhythmMidiBytes> raw_events;
+
+	size_t event_index = 0;
+	for (MidiBuffer::iterator i = buffer.begin (); i != buffer.end (); ++i, ++event_index) {
+		Evoral::Event<samplepos_t> event (*i, false);
+		ReactiveRhythmMidiBufferDecision decision;
+		decision.time = event.time ();
+		decision.event_type = event.event_type ();
+		decision.bytes.assign (event.buffer (), event.buffer () + event.size ());
+		decisions.push_back (decision);
+
+		raw_events.push_back (bytes_for_event (event, event_index, chance_source.next ()));
+	}
+
+	return apply_buffer_decisions (buffer, decisions, raw_events);
+}
+
+std::vector<ReactiveRhythmMidiBufferDecision>
+ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, ReactiveRhythmChanceSource& chance_source, ReactiveRhythmStepSource const& step_source)
+{
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions;
+	std::vector<ReactiveRhythmMidiBytes> raw_events;
+
+	for (MidiBuffer::iterator i = buffer.begin (); i != buffer.end (); ++i) {
+		Evoral::Event<samplepos_t> event (*i, false);
+		ReactiveRhythmMidiBufferDecision decision;
+		decision.time = event.time ();
+		decision.event_type = event.event_type ();
+		decision.bytes.assign (event.buffer (), event.buffer () + event.size ());
+		decisions.push_back (decision);
+
+		raw_events.push_back (bytes_for_event (event, step_source.step_for (event.time ()), chance_source.next ()));
+	}
+
+	return apply_buffer_decisions (buffer, decisions, raw_events);
+}
+
+std::vector<ReactiveRhythmMidiBufferDecision>
+ReactiveRhythmMidiBufferAdapter::apply_buffer_decisions (
+	MidiBuffer& buffer,
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions,
+	std::vector<ReactiveRhythmMidiBytes> const& raw_events)
+{
 	std::vector<ReactiveRhythmMidiByteDecision> byte_decisions = _adapter.process_events (raw_events);
 	for (size_t i = 0; i < decisions.size (); ++i) {
 		decisions[i].byte_decision = byte_decisions[i];
@@ -91,18 +142,6 @@ ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, std::vector
 	}
 
 	return decisions;
-}
-
-std::vector<ReactiveRhythmMidiBufferDecision>
-ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, ReactiveRhythmChanceSource& chance_source)
-{
-	std::vector<double> chance_values;
-
-	for (MidiBuffer::iterator i = buffer.begin (); i != buffer.end (); ++i) {
-		chance_values.push_back (chance_source.next ());
-	}
-
-	return process_buffer (buffer, chance_values);
 }
 
 ReactiveRhythmMidiBytes

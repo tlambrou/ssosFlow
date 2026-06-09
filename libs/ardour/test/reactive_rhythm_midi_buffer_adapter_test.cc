@@ -3,6 +3,7 @@
 #include "ardour/midi_buffer.h"
 #include "ardour/reactive_rhythm_chance_source.h"
 #include "ardour/reactive_rhythm_midi_buffer_adapter.h"
+#include "ardour/reactive_rhythm_step_source.h"
 
 #include <vector>
 
@@ -163,6 +164,37 @@ ReactiveRhythmMidiBufferAdapterTest::chanceSourceDrivesPassAndDropDecisions ()
 	CPPUNIT_ASSERT_EQUAL (false, drop_decisions[0].forward);
 	CPPUNIT_ASSERT_EQUAL (false, drop_decisions[1].forward);
 	CPPUNIT_ASSERT_EQUAL (true, drop_buffer.empty ());
+}
+
+void
+ReactiveRhythmMidiBufferAdapterTest::frameDerivedStepsDriveDownbeatPriority ()
+{
+	MidiBuffer buffer (512);
+	push (buffer, 120, 0x90, 60, 100);
+	push (buffer, 0, 0x90, 62, 100);
+	push (buffer, 180, 0x80, 60, 0);
+	push (buffer, 60, 0x80, 62, 0);
+
+	ReactiveRhythmSettings settings = settings_with_density (0.5);
+	settings.pattern_steps = 4;
+	settings.priority_mode = ReactiveRhythmPriorityMode::Downbeat;
+
+	ReactiveRhythmMidiBufferAdapter adapter (settings);
+	ReactiveRhythmChanceSource chance_source (1);
+	ReactiveRhythmStepSource step_source (0, 120);
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions = adapter.process_buffer (buffer, chance_source, step_source);
+	std::vector<std::vector<unsigned char> > events = buffer_bytes (buffer);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (4), decisions.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), decisions[0].byte_decision.mapped_event.step);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), decisions[1].byte_decision.mapped_event.step);
+	CPPUNIT_ASSERT_EQUAL (false, decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (false, decisions[2].forward);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[3].forward);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), events.size ());
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (62), events[0][1]);
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (62), events[1][1]);
 }
 
 void
