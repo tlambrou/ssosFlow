@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -91,6 +92,7 @@ public:
 
 	bool performance_enabled () const { return _performance_enabled; }
 	void set_performance_enabled (bool);
+	void set_transport_rolling_provider (std::function<bool()>);
 	bool loaded () const { return _loaded; }
 	size_t action_count () const;
 	std::string action_name (size_t slot) const;
@@ -100,8 +102,8 @@ public:
 	std::vector<ReactiveControllerFeedbackMidiMessage> controller_feedback_midi_messages (std::vector<ReactiveControllerFeedbackBinding> const&) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
-	ReactiveActionPreviewSummary preview_slot (size_t slot) const;
-	ReactiveActionPreviewSummary preview_midi_event (ReactiveMidiEvent const&) const;
+	ReactiveActionPreviewSummary preview_slot (size_t slot);
+	ReactiveActionPreviewSummary preview_midi_event (ReactiveMidiEvent const&);
 
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
@@ -121,6 +123,7 @@ public:
 	std::string state_value (std::string const& name) const { return _engine.state_value (name); }
 
 private:
+	void refresh_transport_state ();
 	void clear_last_execution_status ();
 	void clear_next_action_preview ();
 	ReactiveControllerFeedbackSummary controller_feedback_summary_row (size_t slot) const;
@@ -129,6 +132,7 @@ private:
 	ReactiveActionEngine _engine;
 	ReactiveActionSlotExecutionStatus _last_execution_status;
 	ReactiveActionPreviewSummary _next_action_preview;
+	std::function<bool()> _transport_rolling_provider;
 	bool _loaded = false;
 	bool _performance_enabled = true;
 };

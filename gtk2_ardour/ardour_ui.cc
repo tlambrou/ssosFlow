@@ -3156,6 +3156,10 @@ ARDOUR_UI::trigger_cue_row (int r)
 bool
 ARDOUR_UI::ensure_reactive_action_document ()
 {
+	_reactive_action_slots.set_transport_rolling_provider ([this] () {
+		return _session && _session->transport_state_rolling ();
+	});
+
 	std::string session_path = _session ? _session->path () : std::string ();
 
 	if (_reactive_action_slots.loaded () && _reactive_action_document_session_path == session_path) {

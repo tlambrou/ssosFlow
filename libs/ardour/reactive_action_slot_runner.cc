@@ -210,6 +210,13 @@ ReactiveActionSlotRunner::set_performance_enabled (bool enabled)
 	}
 }
 
+void
+ReactiveActionSlotRunner::set_transport_rolling_provider (std::function<bool()> provider)
+{
+	_transport_rolling_provider = provider;
+	refresh_transport_state ();
+}
+
 size_t
 ReactiveActionSlotRunner::action_count () const
 {
@@ -379,23 +386,25 @@ ReactiveActionSlotRunner::state_bank_summary (size_t max_slots) const
 }
 
 ReactiveActionPreviewSummary
-ReactiveActionSlotRunner::preview_slot (size_t slot) const
+ReactiveActionSlotRunner::preview_slot (size_t slot)
 {
 	if (!_loaded || slot >= action_count ()) {
 		return ReactiveActionPreviewSummary ();
 	}
 
+	refresh_transport_state ();
 	ReactiveAction const& action = _engine.document ().actions ()[slot];
 	return preview_summary_from_plan (slot, action, _engine.preview_action (action.name));
 }
 
 ReactiveActionPreviewSummary
-ReactiveActionSlotRunner::preview_midi_event (ReactiveMidiEvent const& event) const
+ReactiveActionSlotRunner::preview_midi_event (ReactiveMidiEvent const& event)
 {
 	if (!_loaded) {
 		return ReactiveActionPreviewSummary ();
 	}
 
+	refresh_transport_state ();
 	std::vector<ReactiveActionMatch> const matches = _engine.match_midi_event (event);
 	if (matches.empty ()) {
 		return ReactiveActionPreviewSummary ();
@@ -434,6 +443,7 @@ ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& targe
 		return record_execution_status (slot, name, disabled_execution_result ());
 	}
 
+	refresh_transport_state ();
 	ReactiveActionPlan plan = _engine.trigger_action (name);
 	result = ReactiveActionExecutor::execute (plan, target);
 	_next_action_preview = preview_slot (slot);
@@ -471,6 +481,7 @@ ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, Re
 		return record_execution_status (match.action_index, name, disabled_execution_result ());
 	}
 
+	refresh_transport_state ();
 	ReactiveActionPlan plan = _engine.trigger_action (name, &event);
 	result = ReactiveActionExecutor::execute (plan, target);
 	_next_action_preview = preview_midi_event (event);
@@ -496,6 +507,14 @@ ReactiveActionSlotRunner::execute_midi_bytes (unsigned char const* bytes, size_t
 	}
 
 	return execute_midi_event (event, target);
+}
+
+void
+ReactiveActionSlotRunner::refresh_transport_state ()
+{
+	if (_transport_rolling_provider) {
+		_engine.set_transport_rolling (_transport_rolling_provider ());
+	}
 }
 
 std::string
