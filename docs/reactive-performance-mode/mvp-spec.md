@@ -226,6 +226,14 @@ Phase 6g adds tempo-derived step sizing:
 - Allow the frame step source to be configured from tempo settings while preserving the explicit frames-per-step path.
 - Leave Ardour TempoMap/transport wiring, processor insertion, LuaProc wrapping, and demo routing for follow-up work.
 
+Phase 6h researches and scaffolds the live MIDI insertion path:
+
+- Use LuaProc/plugin insertion as the first MVP stream-processing path when LuaProc has MIDI input/output and DSP time info available.
+- Keep native C++ processors and external plugins as deferred alternatives for later performance or packaging needs.
+- Treat MIDI route hooks and control surfaces as the wrong first insertion point for rhythm stream mutation.
+- Add a backend insertion planner that records this policy and keeps live route mutation disabled.
+- Leave actual route insertion, LuaProc script packaging, and demo-session routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
