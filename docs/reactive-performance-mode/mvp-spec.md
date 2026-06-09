@@ -234,6 +234,14 @@ Phase 6h researches and scaffolds the live MIDI insertion path:
 - Add a backend insertion planner that records this policy and keeps live route mutation disabled.
 - Leave actual route insertion, LuaProc script packaging, and demo-session routing for follow-up work.
 
+Phase 6i adds the first LuaProc rhythm script prototype:
+
+- Bundle `share/scripts/reactive_rhythm_state_mvp.lua` as `Reactive Rhythm State MVP`.
+- Declare MIDI input/output, request DSP time info, and expose density, chance, priority, rotation, pattern length, latch steps, steps-per-beat, and chance seed.
+- Pass non-note MIDI through unchanged and track forwarded note-ons so suppressed note-ons do not create bogus note-offs.
+- Validate script discovery and plugin activation through the LuaProc test harness.
+- Leave automated route insertion, script presets, event-level LuaProc buffer tests, and demo-session routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.

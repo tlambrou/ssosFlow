@@ -103,3 +103,37 @@ LuaScriptTest::dsp_script_test ()
 		CPPUNIT_ASSERT_MESSAGE ((*i)->name, rv == 0);
 	}
 }
+
+void
+LuaScriptTest::reactive_rhythm_luaproc_script_test ()
+{
+	PluginManager& pm = PluginManager::instance ();
+	AudioTrackList tracks = _session->new_audio_track (2, 2, NULL, 1, "", PresentationInfo::max_order);
+	CPPUNIT_ASSERT (tracks.size() == 1);
+	std::shared_ptr<Route> r = tracks.front ();
+
+	PluginInfoPtr reactive_rhythm_info;
+	const PluginInfoList& plugs = pm.lua_plugin_info();
+	for (PluginInfoList::const_iterator i = plugs.begin(); i != plugs.end(); ++i) {
+		if ((*i)->name == "Reactive Rhythm State MVP") {
+			reactive_rhythm_info = *i;
+			break;
+		}
+	}
+
+	CPPUNIT_ASSERT_MESSAGE ("Reactive Rhythm State MVP LuaProc script was not discoverable", reactive_rhythm_info);
+
+	PluginPtr p = reactive_rhythm_info->load (*_session);
+	CPPUNIT_ASSERT_MESSAGE (reactive_rhythm_info->name, p);
+
+	std::shared_ptr<Processor> processor (new PluginInsert (*_session, Temporal::TimeDomainProvider (r->time_domain()), p));
+	processor->enable (true);
+
+	int rv = r->add_processor (processor, std::shared_ptr<Processor>(), 0);
+	CPPUNIT_ASSERT_MESSAGE (reactive_rhythm_info->name, rv == 0);
+	processor->enable (true);
+	Glib::usleep(200000);
+	CPPUNIT_ASSERT_MESSAGE (reactive_rhythm_info->name, processor->active());
+	rv = r->remove_processor (processor, NULL, true);
+	CPPUNIT_ASSERT_MESSAGE (reactive_rhythm_info->name, rv == 0);
+}
