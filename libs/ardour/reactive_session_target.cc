@@ -1,5 +1,6 @@
 #include "ardour/reactive_session_target.h"
 
+#include <iomanip>
 #include <memory>
 #include <sstream>
 
@@ -165,6 +166,119 @@ route_has_reactive_rhythm_insert (std::shared_ptr<Route> const& route)
 	});
 
 	return found;
+}
+
+static std::shared_ptr<PluginInsert>
+reactive_rhythm_insert_for_route (std::shared_ptr<Route> const& route)
+{
+	std::shared_ptr<PluginInsert> found;
+	if (!route) {
+		return found;
+	}
+
+	route->foreach_processor ([&found] (std::weak_ptr<Processor> wp) {
+		if (found) {
+			return;
+		}
+
+		std::shared_ptr<Processor> processor = wp.lock ();
+		if (!processor || !ReactiveRhythmRouteInserter::is_reactive_rhythm_insert (processor)) {
+			return;
+		}
+
+		found = std::dynamic_pointer_cast<PluginInsert> (processor);
+	});
+
+	return found;
+}
+
+static bool
+reactive_rhythm_control_value (std::shared_ptr<PluginInsert> const& insert, std::string const& label, double& value)
+{
+	if (!insert || !insert->plugin ()) {
+		return false;
+	}
+
+	for (uint32_t i = 0; i < insert->plugin ()->parameter_count (); ++i) {
+		if (!insert->plugin ()->parameter_is_control (i) || !insert->plugin ()->parameter_is_input (i)) {
+			continue;
+		}
+
+		Evoral::Parameter parameter (PluginAutomation, 0, i);
+		if (insert->describe_parameter (parameter) != label) {
+			continue;
+		}
+
+		std::shared_ptr<AutomationControl> control = insert->automation_control (parameter);
+		if (!control) {
+			return false;
+		}
+
+		value = control->get_value ();
+		return true;
+	}
+
+	return false;
+}
+
+static std::string
+format_decimal_value (double value)
+{
+	std::ostringstream text;
+	text << std::fixed << std::setprecision (2) << value;
+	return text.str ();
+}
+
+static std::string
+format_integer_value (double value)
+{
+	std::ostringstream text;
+	text << std::fixed << std::setprecision (0) << value;
+	return text.str ();
+}
+
+static bool
+populate_reactive_rhythm_route_values (std::shared_ptr<Route> const& route, ReactiveRoutingSlotSummary& row)
+{
+	std::shared_ptr<PluginInsert> insert = reactive_rhythm_insert_for_route (route);
+	if (!insert) {
+		return false;
+	}
+
+	double density = 0.0;
+	double chance = 0.0;
+	double priority = 0.0;
+	double rotation = 0.0;
+
+	if (!reactive_rhythm_control_value (insert, "Density %", density) ||
+	    !reactive_rhythm_control_value (insert, "Chance %", chance) ||
+	    !reactive_rhythm_control_value (insert, "Priority", priority) ||
+	    !reactive_rhythm_control_value (insert, "Rotation", rotation)) {
+		return false;
+	}
+
+	row.reactive_rhythm_values_present = true;
+	row.rhythm_density = density / 100.0;
+	row.rhythm_chance = chance / 100.0;
+	row.rhythm_priority = priority;
+	row.rhythm_rotation = rotation;
+	return true;
+}
+
+static std::string
+reactive_rhythm_route_status (ReactiveRoutingSlotSummary const& row)
+{
+	if (!row.reactive_rhythm_values_present) {
+		return ReactiveRhythmRouteInserter::lua_proc_name ();
+	}
+
+	std::ostringstream status;
+	status << ReactiveRhythmRouteInserter::lua_proc_name ()
+	       << " density=" << format_decimal_value (row.rhythm_density)
+	       << " chance=" << format_decimal_value (row.rhythm_chance)
+	       << " priority=" << format_integer_value (row.rhythm_priority)
+	       << " rotation=" << format_integer_value (row.rhythm_rotation);
+	return status.str ();
 }
 
 } // namespace
@@ -385,7 +499,12 @@ ReactiveSessionTarget::routing_summary (size_t max_routes) const
 		row.slot = slot;
 		row.route_name = route->name ();
 		row.reactive_rhythm_insert_present = route_has_reactive_rhythm_insert (route);
-		row.status = row.reactive_rhythm_insert_present ? ReactiveRhythmRouteInserter::lua_proc_name () : "no reactive rhythm insert";
+		if (row.reactive_rhythm_insert_present) {
+			populate_reactive_rhythm_route_values (route, row);
+			row.status = reactive_rhythm_route_status (row);
+		} else {
+			row.status = "no reactive rhythm insert";
+		}
 		summary.push_back (row);
 	}
 

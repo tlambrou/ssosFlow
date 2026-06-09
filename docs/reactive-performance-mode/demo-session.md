@@ -139,7 +139,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - Cue row 0 launches if the row exists in the session.
 - Trigger pad 1 or 2, or press the matching Cue-page/status-panel slot button, and confirm the status panel reports the matching slot/action.
 - If Generic MIDI Control Out is connected to a controller or MIDI monitor, confirm the matching pad feedback changes after trigger, reload, and mode-toggle actions.
-- Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the macro bank shows `filter` tracking from `0.0` to `1.0`.
+- Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the routing summary shows the density value and the macro bank shows `filter` tracking from `0.0` to `1.0`.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 

@@ -233,6 +233,7 @@ ReactiveSessionTargetRhythmInsertTest::summarizeReactiveRhythmRoutingStatus ()
 	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
 	CPPUNIT_ASSERT_EQUAL (second_route->name (), summary[1].route_name);
 	CPPUNIT_ASSERT_EQUAL (false, summary[1].reactive_rhythm_insert_present);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].reactive_rhythm_values_present);
 
 	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (1, error));
 	CPPUNIT_ASSERT (error.empty ());
@@ -242,7 +243,25 @@ ReactiveSessionTargetRhythmInsertTest::summarizeReactiveRhythmRoutingStatus ()
 	CPPUNIT_ASSERT_EQUAL (false, summary[0].reactive_rhythm_insert_present);
 	CPPUNIT_ASSERT_EQUAL (std::string ("no reactive rhythm insert"), summary[0].status);
 	CPPUNIT_ASSERT_EQUAL (true, summary[1].reactive_rhythm_insert_present);
-	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Rhythm State MVP"), summary[1].status);
+	CPPUNIT_ASSERT_EQUAL (true, summary[1].reactive_rhythm_values_present);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (1.0, summary[1].rhythm_density, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (1.0, summary[1].rhythm_chance, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, summary[1].rhythm_priority, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, summary[1].rhythm_rotation, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Rhythm State MVP density=1.00 chance=1.00 priority=0 rotation=0"), summary[1].status);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_route (1, "density", 0.25, error));
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_route (1, "chance", 0.5, error));
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_route (1, "priority_mode", 2.0, error));
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_route (1, "rotation", 4.0, error));
+
+	summary = target.routing_summary (8);
+	CPPUNIT_ASSERT_EQUAL (true, summary[1].reactive_rhythm_values_present);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, summary[1].rhythm_density, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.5, summary[1].rhythm_chance, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (2.0, summary[1].rhythm_priority, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (4.0, summary[1].rhythm_rotation, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Rhythm State MVP density=0.25 chance=0.50 priority=2 rotation=4"), summary[1].status);
 
 	summary = target.routing_summary (1);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
@@ -251,7 +270,7 @@ ReactiveSessionTargetRhythmInsertTest::summarizeReactiveRhythmRoutingStatus ()
 	std::string const formatted = target.format_routing_summary (8);
 	CPPUNIT_ASSERT (formatted.find ("Routing:") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("0: " + first_route->name () + " - no reactive rhythm insert") != std::string::npos);
-	CPPUNIT_ASSERT (formatted.find ("1: " + second_route->name () + " - Reactive Rhythm State MVP") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: " + second_route->name () + " - Reactive Rhythm State MVP density=0.25 chance=0.50 priority=2 rotation=4") != std::string::npos);
 }
 
 void
