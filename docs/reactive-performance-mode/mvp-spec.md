@@ -137,6 +137,12 @@ The session-local document is the preferred performance path because it travels 
 
 If a configured file exists but cannot be read or parsed, Reactive Performance Mode reports that file path and error and does not fall back silently. This keeps a broken set-specific document visible during setup instead of triggering the wrong demo actions during performance.
 
+The built-in fallback now demonstrates the rhythm path as well as cue launching:
+
+- `mvp.cue.0` inserts `Reactive Rhythm State MVP` on controller route 0, resets rhythm density/chance/priority/rotation, then launches cue row 0.
+- `mvp.cue.1` through `mvp.cue.7` keep launching cue rows 1 through 7 while changing density, chance, priority mode, or rotation.
+- The eight action names stay stable so existing Generic MIDI action bindings continue to address the same slots.
+
 The existing Generic MIDI action names remain stable:
 
 - `Reactive/reload-action-document`
@@ -270,6 +276,13 @@ Phase 6m exposes route insertion through the reactive action path:
 - Call `ReactiveRhythmRouteInserter::ensure_inserted()` and treat an already-present insert as success.
 - Return clear action-target errors for missing routes and route insertion failures.
 - Keep UI buttons, controller feedback messages, script preset installation, and demo-session routing as follow-up work.
+
+Phase 6n makes the built-in MVP fallback a small playable rhythm demo:
+
+- Move the fallback action document into libardour so it is testable outside the GTK UI.
+- Keep eight stable actions named `mvp.cue.0` through `mvp.cue.7`.
+- Add route-level rhythm insertion and rhythm-state mutations to the fallback while preserving cue-row launches for the eight controller pads.
+- Keep session-local and user action documents as the preferred performance path.
 
 Parameters:
 

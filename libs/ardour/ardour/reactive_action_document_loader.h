@@ -21,6 +21,7 @@ struct LIBARDOUR_API ReactiveActionDocumentLoadResult {
 class LIBARDOUR_API ReactiveActionDocumentLoader {
 public:
 	static const char* document_filename ();
+	static const char* mvp_fallback_source ();
 	static std::string session_document_path (std::string const& session_directory);
 	static std::string user_document_path (std::string const& user_config_directory);
 	static std::string describe_load_result (ReactiveActionDocumentLoadResult const&);
