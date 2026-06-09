@@ -3,6 +3,8 @@
 #include "ardour/reactive_action_document_loader.h"
 #include "ardour/reactive_action_slot_runner.h"
 
+#include "temporal/tempo.h"
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -166,6 +168,12 @@ assert_feedback_message (ReactiveControllerFeedbackMidiMessage const& message, s
 	CPPUNIT_ASSERT_EQUAL (status, message.bytes[0]);
 	CPPUNIT_ASSERT_EQUAL (number, message.bytes[1]);
 	CPPUNIT_ASSERT_EQUAL (value, message.bytes[2]);
+}
+
+static Temporal::TempoMap
+simple_tempo_map ()
+{
+	return Temporal::TempoMap (Temporal::Tempo (120, 4), Temporal::Meter (4, 4));
 }
 
 } // namespace
@@ -950,6 +958,7 @@ ReactiveActionSlotRunnerTest::previewSlotForPerformancePanelWithoutMutatingState
 	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), preview.primary_trigger);
 	CPPUNIT_ASSERT_EQUAL (std::string ("sequential"), preview.chain_mode);
 	CPPUNIT_ASSERT_EQUAL (std::string ("1|0|0"), preview.quantize);
+	CPPUNIT_ASSERT_EQUAL (Temporal::BBT_Offset (1, 0, 0), preview.quantize_offset);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
 	CPPUNIT_ASSERT_EQUAL (std::string (), runner.last_action ());
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, runner.macro_value ("filter"), 0.0001);
@@ -1230,6 +1239,47 @@ ReactiveActionSlotRunnerTest::zeroQuantizeSlotActionExecutesImmediatelyThroughQu
 }
 
 void
+ReactiveActionSlotRunnerTest::queueQuantizedSlotActionUsingTempoMapClock ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	Temporal::TempoMap map = simple_tempo_map ();
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION intro.drop\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult queued = runner.execute_or_queue_slot (
+		0,
+		target,
+		map,
+		Temporal::BBT_Time (3, 2, 0));
+
+	CPPUNIT_ASSERT_EQUAL (true, queued.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), queued.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+
+	std::vector<ReactiveQueuedActionSummary> summary = runner.queued_action_summary (8, Temporal::BBT_Time (3, 2, 0));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("3|2|0"), summary[0].requested_at);
+	CPPUNIT_ASSERT_EQUAL (std::string ("4|1|0"), summary[0].due_at);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.release_due_queued_actions (Temporal::BBT_Time (3, 4, 0), target).commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	ReactiveExecutionResult due = runner.release_due_queued_actions (Temporal::BBT_Time (4, 1, 0), target);
+	CPPUNIT_ASSERT_EQUAL (true, due.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), due.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:2"), target.calls[0]);
+}
+
+void
 ReactiveActionSlotRunnerTest::queueQuantizedMidiActionPreservesControllerValue ()
 {
 	ReactiveActionSlotRunner runner;
@@ -1296,6 +1346,47 @@ ReactiveActionSlotRunnerTest::clearAndLoadDocumentClearQueuedActions ()
 	CPPUNIT_ASSERT (error.empty ());
 	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.queued_action_count ());
 	CPPUNIT_ASSERT (runner.queued_action_summary (8, Temporal::BBT_Time (2, 1, 0)).empty ());
+}
+
+void
+ReactiveActionSlotRunnerTest::queueQuantizedMidiBytesUsingTempoMapClock ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	Temporal::TempoMap map = simple_tempo_map ();
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.filter\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"QUANTIZE 0|1|0\n"
+		"DO macro filter midi-value ramp 0|1|0\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	unsigned char const message[] = { 0xb0, 22, 64 };
+	ReactiveExecutionResult queued = runner.execute_or_queue_midi_bytes (
+		message,
+		sizeof (message),
+		target,
+		map,
+		Temporal::BBT_Time (1, 1, 120));
+
+	CPPUNIT_ASSERT_EQUAL (true, queued.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), queued.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+
+	std::vector<ReactiveQueuedActionSummary> summary = runner.queued_action_summary (8, Temporal::BBT_Time (1, 1, 120));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("1|1|120"), summary[0].requested_at);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1|2|0"), summary[0].due_at);
+
+	ReactiveExecutionResult due = runner.release_due_queued_actions (Temporal::BBT_Time (1, 2, 0), target);
+	CPPUNIT_ASSERT_EQUAL (true, due.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), due.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.503937:0|1|0"), target.calls[0]);
 }
 
 void

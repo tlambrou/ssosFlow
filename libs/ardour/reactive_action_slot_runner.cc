@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include "ardour/reactive_action_clock.h"
+
 using namespace ARDOUR;
 
 namespace {
@@ -79,6 +81,7 @@ preview_summary_from_plan (size_t slot, ReactiveAction const& action, ReactiveAc
 	preview.primary_trigger = primary_trigger_label (action);
 	preview.chain_mode = format_chain_mode (plan.chain_mode);
 	preview.quantize = format_bbt_offset (plan.quantize);
+	preview.quantize_offset = plan.quantize;
 	preview.command_count = plan.commands.size ();
 	return preview;
 }
@@ -496,6 +499,55 @@ ReactiveActionSlotRunner::execute_or_queue_slot (
 }
 
 ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_slot (
+	size_t slot,
+	ReactiveActionTarget& target,
+	Temporal::TempoMap const& tempo_map,
+	Temporal::BBT_Time const& requested_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (slot, std::string (), result);
+	}
+
+	if (slot >= action_count ()) {
+		std::ostringstream msg;
+		msg << "reactive action slot " << slot << " is out of range";
+		result.error = msg.str ();
+		clear_next_action_preview ();
+		return record_execution_status (slot, std::string (), result);
+	}
+
+	std::string const name = action_name (slot);
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (slot, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveAction const& action = _engine.document ().actions ()[slot];
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	if (!plan.ok) {
+		clear_next_action_preview ();
+		return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, failed_plan_result (plan));
+	}
+
+	ReactiveActionClockPosition const position = ReactiveActionClock::quantize_bbt (tempo_map, requested_at, plan.quantize);
+	if (zero_quantize (plan.quantize)) {
+		result = ReactiveActionExecutor::execute (plan, target);
+		_next_action_preview = preview_slot (slot);
+		return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
+	}
+
+	result = queue_plan (slot, primary_trigger_label (action), plan, position.requested_at, position.due_at);
+	_next_action_preview = preview_slot (slot);
+	return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
 ReactiveActionSlotRunner::execute_or_queue_midi_event (
 	ReactiveMidiEvent const& event,
 	ReactiveActionTarget& target,
@@ -546,6 +598,86 @@ ReactiveActionSlotRunner::execute_or_queue_midi_event (
 	result = queue_plan (match.action_index, match.action ? primary_trigger_label (*match.action) : std::string (), plan, requested_at, due_at);
 	_next_action_preview = preview_midi_event (event);
 	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_midi_event (
+	ReactiveMidiEvent const& event,
+	ReactiveActionTarget& target,
+	Temporal::TempoMap const& tempo_map,
+	Temporal::BBT_Time const& requested_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
+	if (matches.empty ()) {
+		result.error = "no reactive action matched MIDI event";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	std::string const name = match.action ? match.action->name : std::string ();
+	if (name.empty ()) {
+		result.error = "matched reactive MIDI action has no name";
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveActionPlan plan = _engine.trigger_action (name, &event);
+	if (!plan.ok) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, failed_plan_result (plan));
+	}
+
+	ReactiveActionClockPosition const position = ReactiveActionClock::quantize_bbt (tempo_map, requested_at, plan.quantize);
+	if (zero_quantize (plan.quantize)) {
+		result = ReactiveActionExecutor::execute (plan, target);
+		_next_action_preview = preview_midi_event (event);
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+	}
+
+	result = queue_plan (match.action_index, match.action ? primary_trigger_label (*match.action) : std::string (), plan, position.requested_at, position.due_at);
+	_next_action_preview = preview_midi_event (event);
+	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_midi_bytes (
+	unsigned char const* bytes,
+	size_t size,
+	ReactiveActionTarget& target,
+	Temporal::TempoMap const& tempo_map,
+	Temporal::BBT_Time const& requested_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveMidiEvent event;
+	if (!ReactiveMidiEvent::from_midi_bytes (bytes, size, event)) {
+		result.error = "unsupported reactive MIDI byte message";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	return execute_or_queue_midi_event (event, target, tempo_map, requested_at);
 }
 
 ReactiveExecutionResult

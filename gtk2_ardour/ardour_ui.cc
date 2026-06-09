@@ -110,6 +110,9 @@
 #include "ardour/vca_manager.h"
 #include "ardour/utils.h"
 
+#include "temporal/tempo.h"
+#include "temporal/timeline.h"
+
 #include "LuaBridge/LuaBridge.h"
 
 #include "control_protocol/basic_ui.h"
@@ -3216,6 +3219,17 @@ ARDOUR_UI::reload_reactive_action_document ()
 	reactive_performance_changed ();
 }
 
+Temporal::BBT_Time
+ARDOUR_UI::reactive_performance_bbt_now () const
+{
+	if (!_session) {
+		return Temporal::BBT_Time ();
+	}
+
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	return tmap->bbt_at (Temporal::timepos_t (_session->transport_sample ()));
+}
+
 void
 ARDOUR_UI::toggle_reactive_performance_mode ()
 {
@@ -3268,6 +3282,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			_reactive_action_slots.format_next_action_preview () +
 			"\n\n" +
+			_reactive_action_slots.format_queued_action_summary (8, reactive_performance_bbt_now ()) +
+			"\n\n" +
 			target.format_routing_summary (8) +
 			"\n\n" +
 			_reactive_action_slots.format_action_bank_summary (8) +
@@ -3310,7 +3326,12 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			toggle_reactive_performance_mode ();
 		} else if (response >= trigger_slot_response_base && response < trigger_slot_response_base + 8) {
 			int const slot = response - trigger_slot_response_base;
-			ReactiveExecutionResult result = _reactive_action_slots.execute_slot (static_cast<size_t> (slot), target);
+			Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+			ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_slot (
+				static_cast<size_t> (slot),
+				target,
+				*tmap,
+				reactive_performance_bbt_now ());
 			if (!result.ok) {
 				warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
 			}
@@ -3342,6 +3363,8 @@ ARDOUR_UI::reactive_performance_panel_summary (size_t max_items)
 	}
 
 	std::string summary = _reactive_action_slots.format_panel_summary (max_items);
+	summary += "\n";
+	summary += _reactive_action_slots.format_queued_action_summary (max_items, reactive_performance_bbt_now ());
 	summary += "\n";
 
 	if (_session) {
@@ -3407,7 +3430,12 @@ ARDOUR_UI::trigger_reactive_action (int slot)
 	}
 
 	ReactiveSessionTarget target (*_session);
-	ReactiveExecutionResult result = _reactive_action_slots.execute_slot (static_cast<size_t> (slot), target);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_slot (
+		static_cast<size_t> (slot),
+		target,
+		*tmap,
+		reactive_performance_bbt_now ());
 	if (!result.ok) {
 		warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
 	}
@@ -3428,11 +3456,45 @@ ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
 
 	unsigned char const* bytes = message.empty () ? 0 : &message[0];
 	ReactiveSessionTarget target (*_session);
-	ReactiveExecutionResult result = _reactive_action_slots.execute_midi_bytes (bytes, message.size (), target);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_midi_bytes (
+		bytes,
+		message.size (),
+		target,
+		*tmap,
+		reactive_performance_bbt_now ());
 	if (!result.ok) {
 		warning << string_compose (_("Reactive MIDI trigger failed: %1"), result.error) << endmsg;
 	}
 	reactive_performance_changed ();
+}
+
+bool
+ARDOUR_UI::poll_reactive_performance_queue ()
+{
+	if (!_session || _reactive_action_slots.queued_action_count () == 0) {
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return false;
+	}
+
+	size_t const queued_before = _reactive_action_slots.queued_action_count ();
+	ReactiveSessionTarget target (*_session);
+	ReactiveExecutionResult result = _reactive_action_slots.release_due_queued_actions (reactive_performance_bbt_now (), target);
+	size_t const queued_after = _reactive_action_slots.queued_action_count ();
+	bool const changed = queued_before != queued_after || result.commands_executed > 0 || !result.ok;
+
+	if (!result.ok) {
+		warning << string_compose (_("Reactive queued action release failed: %1"), result.error) << endmsg;
+	}
+
+	if (changed) {
+		reactive_performance_changed ();
+	}
+
+	return changed;
 }
 
 void

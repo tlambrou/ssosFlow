@@ -22,6 +22,8 @@
 #include <sstream>
 #include <vector>
 
+#include <glibmm/main.h>
+
 #include "ardour_ui.h"
 #include "gui_thread.h"
 
@@ -87,7 +89,14 @@ ReactivePerformancePanel::ReactivePerformancePanel ()
 		std::bind (&ReactivePerformancePanel::refresh, this),
 		gui_context ());
 
+	_queue_poll_connection = Glib::signal_timeout ().connect (sigc::mem_fun (*this, &ReactivePerformancePanel::poll_queue), 100);
+
 	refresh ();
+}
+
+ReactivePerformancePanel::~ReactivePerformancePanel ()
+{
+	_queue_poll_connection.disconnect ();
 }
 
 void
@@ -116,6 +125,16 @@ ReactivePerformancePanel::on_map ()
 {
 	Gtk::VBox::on_map ();
 	refresh ();
+}
+
+bool
+ReactivePerformancePanel::poll_queue ()
+{
+	if (ARDOUR_UI::instance ()->poll_reactive_performance_queue ()) {
+		refresh ();
+	}
+
+	return true;
 }
 
 void
