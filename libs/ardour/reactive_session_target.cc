@@ -118,6 +118,33 @@ set_reactive_rhythm_control (
 	return false;
 }
 
+static size_t
+set_reactive_rhythm_route_controls (
+	std::shared_ptr<Route> const& route,
+	std::string const& label,
+	double value,
+	std::string& error)
+{
+	size_t updated = 0;
+	if (!route) {
+		return updated;
+	}
+
+	route->foreach_processor ([&updated, &label, value, &error] (std::weak_ptr<Processor> wp) {
+		std::shared_ptr<Processor> processor = wp.lock ();
+		if (!processor || !ReactiveRhythmRouteInserter::is_reactive_rhythm_insert (processor)) {
+			return;
+		}
+
+		std::shared_ptr<PluginInsert> insert = std::dynamic_pointer_cast<PluginInsert> (processor);
+		if (set_reactive_rhythm_control (insert, label, value, error)) {
+			++updated;
+		}
+	});
+
+	return updated;
+}
+
 } // namespace
 
 ReactiveSessionTarget::ReactiveSessionTarget ()
@@ -255,22 +282,54 @@ ReactiveSessionTarget::rhythm (std::string const& name, double value, std::strin
 	size_t updated = 0;
 	std::shared_ptr<RouteList const> routes = _session->get_routes ();
 	for (RouteList::const_iterator route = routes->begin (); route != routes->end (); ++route) {
-		(*route)->foreach_processor ([&updated, &label, value, scale, &error] (std::weak_ptr<Processor> wp) {
-			std::shared_ptr<Processor> processor = wp.lock ();
-			if (!processor || !ReactiveRhythmRouteInserter::is_reactive_rhythm_insert (processor)) {
-				return;
-			}
-
-			std::shared_ptr<PluginInsert> insert = std::dynamic_pointer_cast<PluginInsert> (processor);
-			if (set_reactive_rhythm_control (insert, label, value * scale, error)) {
-				++updated;
-			}
-		});
+		updated += set_reactive_rhythm_route_controls (*route, label, value * scale, error);
 	}
 
 	if (updated == 0) {
 		if (error.empty ()) {
 			error = "no Reactive Rhythm State MVP insert is available";
+		}
+		return false;
+	}
+
+	error.clear ();
+	return true;
+}
+
+bool
+ReactiveSessionTarget::rhythm_route (int route, std::string const& name, double value, std::string& error)
+{
+	if (!_session) {
+		error = "reactive session target has no session";
+		return false;
+	}
+
+	if (route < 0) {
+		error = "reactive rhythm route index must be non-negative";
+		return false;
+	}
+
+	std::string label;
+	double scale = 1.0;
+	if (!rhythm_parameter_target (name, label, scale)) {
+		error = "unknown reactive rhythm parameter: " + name;
+		return false;
+	}
+
+	std::shared_ptr<Route> target = _session->get_remote_nth_route (static_cast<PresentationInfo::order_t> (route));
+	if (!target) {
+		std::ostringstream msg;
+		msg << "missing route for reactive rhythm route " << route;
+		error = msg.str ();
+		return false;
+	}
+
+	size_t const updated = set_reactive_rhythm_route_controls (target, label, value * scale, error);
+	if (updated == 0) {
+		if (error.empty ()) {
+			std::ostringstream msg;
+			msg << "no Reactive Rhythm State MVP insert is available on route " << route;
+			error = msg.str ();
 		}
 		return false;
 	}

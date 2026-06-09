@@ -108,6 +108,24 @@ ReactiveActionTest::parseRhythmInsertCommand ()
 }
 
 void
+ReactiveActionTest::parseRouteScopedRhythmCommand ()
+{
+	const char* src =
+		"ACTION route.rhythm\n"
+		"DO rhythm route 2 density 0.35\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveCommand const& command = result.document.actions ().front ().commands.front ();
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::RhythmRoute, command.type);
+	CPPUNIT_ASSERT_EQUAL (2, command.first);
+	CPPUNIT_ASSERT_EQUAL (std::string ("density"), command.name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.35, command.value, 0.0001);
+}
+
+void
 ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
 {
 	const char* src =
@@ -178,6 +196,20 @@ ReactiveActionTest::rejectInvalidRhythmInsert ()
 	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
 	CPPUNIT_ASSERT_EQUAL (false, result.ok);
 	CPPUNIT_ASSERT (result.error.find ("invalid rhythm insert") != std::string::npos);
+	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
+}
+
+void
+ReactiveActionTest::rejectInvalidRhythmCommand ()
+{
+	const char* src =
+		"ACTION broken\n"
+		"DO rhythm\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("invalid rhythm command") != std::string::npos);
 	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
 }
 

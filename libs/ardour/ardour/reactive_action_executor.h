@@ -23,6 +23,7 @@ public:
 	virtual bool macro (std::string const& name, double value, Temporal::BBT_Offset const& ramp, std::string& error) = 0;
 	virtual bool state (std::string const& name, std::string const& value, std::string& error) = 0;
 	virtual bool rhythm (std::string const& name, double value, std::string& error) = 0;
+	virtual bool rhythm_route (int route, std::string const& name, double value, std::string& error) = 0;
 	virtual bool rhythm_insert (int route, std::string& error) = 0;
 };
 

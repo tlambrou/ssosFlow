@@ -45,6 +45,7 @@ struct LIBARDOUR_API ReactiveCommand {
 		Macro,
 		State,
 		Rhythm,
+		RhythmRoute,
 		RhythmInsert
 	};
 

@@ -149,6 +149,49 @@ ReactiveSessionTargetRhythmInsertTest::rhythmParameterActionsUpdateInsertedLuaPr
 }
 
 void
+ReactiveSessionTargetRhythmInsertTest::routeScopedRhythmParameterActionsUpdateOnlyTargetRoute ()
+{
+	std::shared_ptr<Route> first_route = new_midi_route (*_session);
+	std::shared_ptr<Route> second_route = new_midi_route (*_session);
+	ReactiveSessionTarget target (*_session);
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (0, error));
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (1, error));
+
+	std::shared_ptr<PluginInsert> first_insert = reactive_rhythm_insert (first_route);
+	std::shared_ptr<PluginInsert> second_insert = reactive_rhythm_insert (second_route);
+	CPPUNIT_ASSERT (first_insert);
+	CPPUNIT_ASSERT (second_insert);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_route (1, "density", 0.25, error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (100.0, reactive_rhythm_control_value (first_insert, "Density %"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (25.0, reactive_rhythm_control_value (second_insert, "Density %"), 0.0001);
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::routeScopedRhythmParameterActionsReportMissingTargets ()
+{
+	ReactiveSessionTarget target (*_session);
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (false, target.rhythm_route (99, "density", 0.25, error));
+	CPPUNIT_ASSERT (error.find ("missing route") != std::string::npos);
+
+	std::shared_ptr<Route> route = new_midi_route (*_session);
+	CPPUNIT_ASSERT (route);
+
+	error.clear ();
+	CPPUNIT_ASSERT_EQUAL (false, target.rhythm_route (0, "density", 0.25, error));
+	CPPUNIT_ASSERT (error.find ("no Reactive Rhythm State MVP insert") != std::string::npos);
+
+	error.clear ();
+	CPPUNIT_ASSERT_EQUAL (false, target.rhythm_route (0, "swing", 0.5, error));
+	CPPUNIT_ASSERT (error.find ("unknown reactive rhythm parameter") != std::string::npos);
+}
+
+void
 ReactiveSessionTargetRhythmInsertTest::rhythmParameterActionsReportMissingInsertAndUnknownName ()
 {
 	ReactiveSessionTarget target (*_session);

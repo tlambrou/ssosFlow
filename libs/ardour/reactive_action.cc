@@ -292,17 +292,32 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 		command.text = tokens[3];
 		parse_double (command.text, command.value);
 	} else if (name == "rhythm") {
-		if (tokens.size () != 4) {
+		if (tokens.size () < 3) {
 			result.error = line_error (line_number, "invalid rhythm command");
 			return false;
 		}
 		if (tokens[2] == "insert") {
+			if (tokens.size () != 4) {
+				result.error = line_error (line_number, "invalid rhythm insert command");
+				return false;
+			}
 			if (!parse_nonnegative_int (tokens[3], command.first)) {
 				result.error = line_error (line_number, "invalid rhythm insert command");
 				return false;
 			}
 			command.type = ReactiveCommand::RhythmInsert;
+		} else if (tokens[2] == "route") {
+			if (tokens.size () != 6 || !parse_nonnegative_int (tokens[3], command.first) || !parse_double (tokens[5], command.value)) {
+				result.error = line_error (line_number, "invalid route rhythm command");
+				return false;
+			}
+			command.type = ReactiveCommand::RhythmRoute;
+			command.name = tokens[4];
 		} else {
+			if (tokens.size () != 4) {
+				result.error = line_error (line_number, "invalid rhythm command");
+				return false;
+			}
 			if (!parse_double (tokens[3], command.value)) {
 				result.error = line_error (line_number, "invalid rhythm command");
 				return false;
