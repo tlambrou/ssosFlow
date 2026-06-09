@@ -115,7 +115,9 @@ Phase 6m exposes that helper through the declarative action path as `DO rhythm i
 
 Phase 6n moves the built-in Reactive Performance MVP fallback action document into libardour and expands it from cue-only actions into a small playable rhythm demo. The eight stable `mvp.cue.0` through `mvp.cue.7` slots still launch cue rows, while slot 0 inserts and resets `Reactive Rhythm State MVP` on controller route 0 and later slots mutate density, chance, priority mode, or rotation.
 
-Phase 6o maps `DO rhythm <param> <value>` actions onto existing `Reactive Rhythm State MVP` LuaProc controls through Ardour's `AutomationControl` path. Density and chance use normalized action values scaled to LuaProc percent controls, while priority/priority_mode and rotation map directly to their named controls. The action target applies these changes to every existing rhythm insert in the session and reports explicit errors for unknown parameters or missing inserts. UI buttons, controller feedback messages, script presets, live route mutation policy beyond explicit action commands, and full demo-session routing remain follow-up work.
+Phase 6o maps `DO rhythm <param> <value>` actions onto existing `Reactive Rhythm State MVP` LuaProc controls through Ardour's `AutomationControl` path. Density and chance use normalized action values scaled to LuaProc percent controls, while priority/priority_mode and rotation map directly to their named controls. The action target applies these changes to every existing rhythm insert in the session and reports explicit errors for unknown parameters or missing inserts.
+
+Phase 6p adds a native execution-status read model to `ReactiveActionSlotRunner`. The runner now records the latest slot attempt, action name when known, success/failure, error text, and executed command count; status is reset when the document is cleared or replaced. The existing Reactive Performance status dialog shows the summary as a first UI feedback surface. Controller feedback messages, script presets, live route mutation policy beyond explicit action commands, and full demo-session routing remain follow-up work.
 
 ### 5. Use SessionEvent carefully
 
@@ -131,7 +133,7 @@ Native C++ should own:
 - Action chain execution.
 - Quantization calculations against `Temporal::TempoMap`.
 - Integration with `Session`, `TriggerBox`, `Route`, mixer scenes, and automation controls.
-- UI-facing read model for active state and queued next actions.
+- UI-facing read model for active state, last executed action, and queued next actions.
 
 Lua should own first experiments where rapid iteration matters:
 

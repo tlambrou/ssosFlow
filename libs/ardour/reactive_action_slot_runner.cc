@@ -26,6 +26,7 @@ ReactiveActionSlotRunner::load_document (ReactiveActionDocument const& document,
 	}
 
 	_loaded = true;
+	clear_last_execution_status ();
 	error.clear ();
 	return true;
 }
@@ -34,6 +35,7 @@ void
 ReactiveActionSlotRunner::clear ()
 {
 	_engine = ReactiveActionEngine ();
+	clear_last_execution_status ();
 	_loaded = false;
 }
 
@@ -60,16 +62,66 @@ ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& targe
 
 	if (!_loaded) {
 		result.error = "no reactive action document loaded";
-		return result;
+		return record_execution_status (slot, std::string (), result);
 	}
 
 	if (slot >= action_count ()) {
 		std::ostringstream msg;
 		msg << "reactive action slot " << slot << " is out of range";
 		result.error = msg.str ();
-		return result;
+		return record_execution_status (slot, std::string (), result);
 	}
 
-	ReactiveActionPlan plan = _engine.trigger_action (action_name (slot));
-	return ReactiveActionExecutor::execute (plan, target);
+	std::string const name = action_name (slot);
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	result = ReactiveActionExecutor::execute (plan, target);
+	return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+std::string
+ReactiveActionSlotRunner::format_last_execution_status () const
+{
+	if (!_last_execution_status.attempted) {
+		return "Last execution: none";
+	}
+
+	std::ostringstream status;
+	status << "Last execution: slot " << _last_execution_status.slot;
+	if (!_last_execution_status.action_name.empty ()) {
+		status << " (" << _last_execution_status.action_name << ")";
+	}
+
+	if (_last_execution_status.result.ok) {
+		status << ": OK, " << _last_execution_status.result.commands_executed << " command";
+		if (_last_execution_status.result.commands_executed != 1) {
+			status << "s";
+		}
+		return status.str ();
+	}
+
+	status << ": failed";
+	if (!_last_execution_status.result.error.empty ()) {
+		status << " - " << _last_execution_status.result.error;
+	}
+
+	return status.str ();
+}
+
+void
+ReactiveActionSlotRunner::clear_last_execution_status ()
+{
+	_last_execution_status = ReactiveActionSlotExecutionStatus ();
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::record_execution_status (
+	size_t slot,
+	std::string const& action_name,
+	ReactiveExecutionResult const& result)
+{
+	_last_execution_status.attempted = true;
+	_last_execution_status.slot = slot;
+	_last_execution_status.action_name = action_name;
+	_last_execution_status.result = result;
+	return result;
 }

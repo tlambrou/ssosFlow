@@ -11,6 +11,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (reportMissingDocumentAndOutOfRangeSlot);
 	CPPUNIT_TEST (rejectInvalidSource);
 	CPPUNIT_TEST (propagateTargetFailure);
+	CPPUNIT_TEST (resetExecutionStatusOnClearAndLoad);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -19,4 +20,5 @@ public:
 	void reportMissingDocumentAndOutOfRangeSlot ();
 	void rejectInvalidSource ();
 	void propagateTargetFailure ();
+	void resetExecutionStatusOnClearAndLoad ();
 };

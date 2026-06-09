@@ -291,6 +291,14 @@ Phase 6o maps rhythm parameter actions onto inserted LuaProc controls:
 - Map `priority_mode` or `priority` to `Priority`, and `rotation` to `Rotation`.
 - Return explicit errors for unknown rhythm parameters or sessions with no inserted rhythm processor.
 
+Phase 6p adds the first execution-status read model for UI and controller feedback:
+
+- `ReactiveActionSlotRunner` records the latest slot execution attempt, including slot index, action name when known, success/failure, error text, and executed command count.
+- Missing documents, out-of-range slots, and target failures are recorded as status, not only returned to the caller.
+- Clearing or loading an action document resets stale execution status.
+- The Reactive Performance status dialog includes this latest execution summary.
+- Actual MIDI feedback output remains a follow-up so this slice stays backend-first and reusable.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.

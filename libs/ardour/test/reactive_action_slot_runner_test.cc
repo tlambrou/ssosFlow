@@ -146,6 +146,12 @@ ReactiveActionSlotRunnerTest::executeSlotByDocumentOrder ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), runner.action_name (1));
 	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), runner.last_action ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), runner.state_value ("section"));
+	ReactiveActionSlotExecutionStatus const status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (true, status.result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), status.result.commands_executed);
 	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("trigger:1:3"), target.calls[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("state:section:breakdown"), target.calls[1]);
@@ -195,6 +201,13 @@ ReactiveActionSlotRunnerTest::reportMissingDocumentAndOutOfRangeSlot ()
 
 	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
 	CPPUNIT_ASSERT (missing.error.find ("no reactive action document loaded") != std::string::npos);
+	ReactiveActionSlotExecutionStatus status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (false, status.result.ok);
+	CPPUNIT_ASSERT (status.result.error.find ("no reactive action document loaded") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.result.commands_executed);
 	CPPUNIT_ASSERT (target.calls.empty ());
 
 	load_two_action_document (runner);
@@ -202,6 +215,12 @@ ReactiveActionSlotRunnerTest::reportMissingDocumentAndOutOfRangeSlot ()
 
 	CPPUNIT_ASSERT_EQUAL (false, out_of_range.ok);
 	CPPUNIT_ASSERT (out_of_range.error.find ("reactive action slot 2 is out of range") != std::string::npos);
+	status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (false, status.result.ok);
+	CPPUNIT_ASSERT (status.result.error.find ("reactive action slot 2 is out of range") != std::string::npos);
 	CPPUNIT_ASSERT (target.calls.empty ());
 }
 
@@ -238,5 +257,29 @@ ReactiveActionSlotRunnerTest::propagateTargetFailure ()
 	CPPUNIT_ASSERT_EQUAL (false, result.ok);
 	CPPUNIT_ASSERT (result.error.find ("target failed cue:2") != std::string::npos);
 	CPPUNIT_ASSERT_EQUAL (size_t (0), result.commands_executed);
+	ReactiveActionSlotExecutionStatus const status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro"), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (false, status.result.ok);
+	CPPUNIT_ASSERT (status.result.error.find ("target failed cue:2") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.result.commands_executed);
 	CPPUNIT_ASSERT (target.calls.empty ());
+}
+
+void
+ReactiveActionSlotRunnerTest::resetExecutionStatusOnClearAndLoad ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+
+	load_two_action_document (runner);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.last_execution_status ().attempted);
+
+	runner.clear ();
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
+
+	load_two_action_document (runner);
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
 }

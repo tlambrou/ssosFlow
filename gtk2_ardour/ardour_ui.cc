@@ -3218,7 +3218,10 @@ ARDOUR_UI::show_reactive_action_document_status ()
 	ensure_reactive_action_document ();
 
 	ArdourDialog dialog (_("Reactive Performance"), true, false);
-	Gtk::Label status (ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result));
+	Gtk::Label status (
+		ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
+		"\n\n" +
+		_reactive_action_slots.format_last_execution_status ());
 	status.set_alignment (0.0, 0.0);
 	status.set_line_wrap (true);
 	status.set_selectable (true);
@@ -3232,7 +3235,10 @@ ARDOUR_UI::show_reactive_action_document_status ()
 
 	while (dialog.run () == RESPONSE_APPLY) {
 		reload_reactive_action_document_from_disk (true);
-		status.set_text (ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result));
+		status.set_text (
+			ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
+			"\n\n" +
+			_reactive_action_slots.format_last_execution_status ());
 		dialog.show_all ();
 	}
 }
