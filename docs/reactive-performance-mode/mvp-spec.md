@@ -459,6 +459,13 @@ Phase 5g adds performance-safe controls to the status surface:
 - The same dialog includes an Enable/Disable Mode button and refreshes status text after mode changes, reloads, and slot execution.
 - A dedicated Cue-page panel, controller LED feedback, and richer layout remain follow-up work.
 
+Phase 5h adds the first dedicated Cue-page panel scaffold:
+
+- `ReactivePerformancePanel` lives in the Cue page main content area, above the trigger strip grid.
+- The panel provides eight large slot buttons for `Reactive/trigger-action-0` through `Reactive/trigger-action-7` behavior by calling the same `ARDOUR_UI::trigger_reactive_action(...)` path used by action bindings and MIDI maps.
+- The panel provides Mode, Reload, and Status controls that call the existing Reactive Performance mode-toggle, document reload, and status-dialog paths.
+- This scaffold intentionally keeps live read-model rendering, button-label synchronization, controller feedback, and richer layout as follow-up work.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.

@@ -72,7 +72,7 @@ note 45 -> Reactive/reload-action-document
 note 47 -> Reactive/toggle-performance-mode
 ```
 
-Use note 44 to inspect whether Reactive Performance Mode is enabled, the currently loaded action document, latest slot execution, first eight performance controls, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. The status panel also includes eight large slot-trigger buttons and an Enable/Disable Mode button for controller-parity checks during setup. Use note 45 after editing `reactive-actions.txt`. Use note 47 to arm or disarm Reactive Performance Mode from the controller; when disabled, performance actions report a disabled status and do not launch cues, mutate rhythm parameters, or update macro/state values.
+Use note 44 to inspect whether Reactive Performance Mode is enabled, the currently loaded action document, latest slot execution, first eight performance controls, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. The status panel also includes eight large slot-trigger buttons and an Enable/Disable Mode button for controller-parity checks during setup. The Cue page also shows the first dedicated Reactive Performance panel scaffold above the trigger strip grid, with eight slot buttons plus Mode, Reload, and Status controls. Use note 45 after editing `reactive-actions.txt`. Use note 47 to arm or disarm Reactive Performance Mode from the controller; when disabled, performance actions report a disabled status and do not launch cues, mutate rhythm parameters, or update macro/state values.
 
 ## Built-In Fallback Behavior
 
@@ -143,6 +143,7 @@ Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/
 Run this checklist after loading the session:
 
 - App boots from `gtk2_ardour/ardev`.
+- The Cue page shows a Reactive Performance panel scaffold above the trigger strip grid.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
 - The status panel shows eight slot-trigger buttons, visibly disables empty/unavailable controls, and has an Enable/Disable Mode button.
 - Utility note 47 or the panel mode button toggles the status between `Reactive Performance Mode: enabled` and `Reactive Performance Mode: disabled`.
@@ -152,7 +153,7 @@ Run this checklist after loading the session:
 - The status panel reports slot 0, a successful last execution, shows the refreshed next-action preview, shows route 0 with `Reactive Rhythm State MVP`, marks the corresponding action-bank row, and shows macro/state values from the loaded action document.
 - Route 0 contains an active LuaProc processor named `Reactive Rhythm State MVP`.
 - Cue row 0 launches if the row exists in the session.
-- Trigger pad 1 or 2, or press the matching status-panel slot button, and confirm the status panel reports the matching slot/action.
+- Trigger pad 1 or 2, or press the matching Cue-page/status-panel slot button, and confirm the status panel reports the matching slot/action.
 - Move CC 22 on MIDI channel 1 and confirm the macro bank shows `filter` tracking the controller value from `0.0` to `1.0`.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
@@ -160,6 +161,7 @@ Run this checklist after loading the session:
 ## Current Limits
 
 - The MVP map binds eight pad notes, three utility notes, and live document-level note/CC trigger examples. MIDI feedback output and native macro-to-plugin parameter routing remain follow-up work.
-- The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models, not the final Cue-page performance panel.
+- The Cue-page panel is currently a command scaffold. Live read-model rendering, synchronized labels, controller feedback, and richer layout remain follow-up work.
+- The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.
