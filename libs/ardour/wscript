@@ -199,6 +199,7 @@ libardour_sources = [
         'reactive_rhythm_midi_byte_adapter.cc',
         'reactive_rhythm_midi_buffer_adapter.cc',
         'reactive_rhythm_midi_adapter.cc',
+        'reactive_rhythm_step_source.cc',
         'reactive_session_target.cc',
         'recent_sessions.cc',
         'record_enable_control.cc',
@@ -664,6 +665,7 @@ def build(bld):
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_byte_adapter', 'test_reactive_rhythm_midi_byte_adapter', ['test/reactive_rhythm_midi_byte_adapter_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_buffer_adapter', 'test_reactive_rhythm_midi_buffer_adapter', ['test/reactive_rhythm_midi_buffer_adapter_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_adapter', 'test_reactive_rhythm_midi_adapter', ['test/reactive_rhythm_midi_adapter_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_step_source', 'test_reactive_rhythm_step_source', ['test/reactive_rhythm_step_source_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_session_target', 'test_reactive_session_target', ['test/reactive_session_target_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-control_surface', 'test_control_surfaces', ['test/control_surfaces_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-mtdm', 'test_mtdm', ['test/mtdm_test.cc'])
@@ -697,6 +699,7 @@ def build(bld):
             'test/reactive_rhythm_midi_byte_adapter_test.cc',
             'test/reactive_rhythm_midi_buffer_adapter_test.cc',
             'test/reactive_rhythm_midi_adapter_test.cc',
+            'test/reactive_rhythm_step_source_test.cc',
             'test/reactive_session_target_test.cc',
             'test/control_surfaces_test.cc',
             'test/mtdm_test.cc',

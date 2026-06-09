@@ -211,6 +211,14 @@ Phase 6e adds a realtime-safe chance source for buffer processing:
 - Cover chance-source-driven pass/drop behavior with real `MidiBuffer` objects.
 - Leave processor insertion, LuaProc wrapping, clock-derived step selection, and demo routing for follow-up work.
 
+Phase 6f adds frame-derived step selection for buffer processing:
+
+- Map event frame/sample positions to rhythm step indices from an origin frame and positive frames-per-step value.
+- Clamp events before the origin to step zero and normalize invalid frames-per-step values to avoid divide-by-zero behavior.
+- Allow the backend `MidiBuffer` adapter to process a buffer with both generated chance values and frame-derived rhythm steps.
+- Cover a density/priority case where frame-derived downbeat priority, not event order, chooses the forwarded note.
+- Leave transport-tempo conversion, processor insertion, LuaProc wrapping, and demo routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
