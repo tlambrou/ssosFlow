@@ -137,6 +137,7 @@ If a configured file exists but cannot be read or parsed, Reactive Performance M
 
 The existing Generic MIDI action names remain stable:
 
+- `Reactive/reload-action-document`
 - `Reactive/trigger-action-0`
 - `Reactive/trigger-action-1`
 - `Reactive/trigger-action-2`
@@ -147,6 +148,8 @@ The existing Generic MIDI action names remain stable:
 - `Reactive/trigger-action-7`
 
 The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots.
+
+`Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
 ## Performance UI
 

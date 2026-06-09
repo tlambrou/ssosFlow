@@ -21,6 +21,7 @@ public:
 	static const char* document_filename ();
 	static std::string session_document_path (std::string const& session_directory);
 	static std::string user_document_path (std::string const& user_config_directory);
+	static std::string describe_load_result (ReactiveActionDocumentLoadResult const&);
 
 	static bool load_from_paths (
 		ReactiveActionSlotRunner& runner,

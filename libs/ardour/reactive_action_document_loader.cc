@@ -92,6 +92,24 @@ ReactiveActionDocumentLoader::user_document_path (std::string const& user_config
 	return user_config_directory.empty () ? std::string () : Glib::build_filename (user_config_directory, document_filename ());
 }
 
+std::string
+ReactiveActionDocumentLoader::describe_load_result (ReactiveActionDocumentLoadResult const& result)
+{
+	if (!result.ok) {
+		return result.error.empty () ? "Reactive action document load failed" : result.error;
+	}
+
+	if (result.used_fallback || result.source == "fallback") {
+		return "Loaded built-in Reactive Performance MVP fallback";
+	}
+
+	if (!result.path.empty ()) {
+		return string_compose ("Loaded %1 reactive action document: %2", result.source, result.path);
+	}
+
+	return string_compose ("Loaded %1 reactive action document", result.source);
+}
+
 bool
 ReactiveActionDocumentLoader::load_from_paths (
 	ReactiveActionSlotRunner& runner,

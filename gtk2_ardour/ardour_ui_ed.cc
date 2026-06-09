@@ -209,6 +209,7 @@ ARDOUR_UI::install_actions ()
 		const string display_name = string_compose (_("Trigger Reactive Action %1"), n);
 		ActionManager::register_action (reactive_actions, reactive_action_names[n], display_name.c_str (), sigc::bind (sigc::mem_fun (*this, &ARDOUR_UI::trigger_reactive_action), n));
 	}
+	ActionManager::register_action (reactive_actions, X_("reload-action-document"), _("Reload Reactive Action Document"), sigc::mem_fun (*this, &ARDOUR_UI::reload_reactive_action_document));
 
 	act = ActionManager::register_action (main_actions, X_("New"), _("New..."),  hide_return (sigc::bind (sigc::mem_fun(*this, &ARDOUR_UI::start_session_load), true)));
 
