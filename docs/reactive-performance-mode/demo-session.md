@@ -93,52 +93,21 @@ If no configured `reactive-actions.txt` exists, the app loads the built-in MVP f
 
 ## Session-Local Action File
 
-For an explicit route-scoped demo, save this file as:
+For an explicit route-scoped demo, use the packaged example asset:
 
 ```text
+examples/reactive-performance-mvp/
+```
+
+Copy its action document into your Ardour session folder:
+
+```text
+examples/reactive-performance-mvp/reactive-actions.txt
+  ->
 <session-folder>/reactive-actions.txt
 ```
 
-```text
-ACTION demo.reset
-TRIGGER midi note ch=10 note=36
-DO rhythm insert 0
-DO rhythm route 0 density 1
-DO rhythm route 0 chance 1
-DO rhythm route 0 priority_mode 0
-DO rhythm route 0 rotation 0
-DO cue 0
-END
-
-ACTION demo.tighten
-TRIGGER midi note ch=10 note=37
-DO rhythm route 0 density 0.75
-DO rhythm route 0 chance 1
-DO rhythm route 0 priority_mode 3
-DO cue 1
-END
-
-ACTION demo.sparse
-TRIGGER midi note ch=10 note=38
-DO rhythm route 0 density 0.35
-DO rhythm route 0 chance 0.5
-DO rhythm route 0 priority_mode 1
-DO cue 2
-END
-
-ACTION demo.rotate
-TRIGGER midi note ch=10 note=39
-DO rhythm route 0 rotation 4
-DO cue 3
-END
-
-ACTION demo.filter.sweep
-TRIGGER midi cc ch=1 cc=22
-DO macro filter midi-value ramp 0|1|0
-END
-```
-
-Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/show-action-document-status`.
+The packaged action file is also covered by `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads`, so parser drift fails in automated tests. Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/show-action-document-status`.
 
 ## Smoke Test
 
@@ -167,5 +136,5 @@ Run this checklist after loading the session:
 - The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. Native macro-to-plugin parameter routing remains follow-up work.
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration; richer layout remains follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
-- The session must be created manually; this repo does not yet package an Ardour demo session archive.
+- The repo packages a session-local action document and setup notes under `examples/reactive-performance-mvp/`, but the Ardour session itself must still be created manually; this repo does not yet package a full `.ardour` demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.
