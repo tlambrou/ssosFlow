@@ -42,6 +42,14 @@ matches_midi_event (ReactiveTrigger const& trigger, ReactiveMidiEvent const& eve
 	return matches_midi_note (trigger, event) || matches_midi_cc (trigger, event);
 }
 
+static bool
+matches_marker_event (ReactiveTrigger const& trigger, ReactiveMarkerEvent const& event)
+{
+	return trigger.type == ReactiveTrigger::Marker &&
+	       !trigger.name.empty () &&
+	       trigger.name == event.name;
+}
+
 static double
 normalized_midi_value (ReactiveMidiEvent const& event)
 {
@@ -119,6 +127,14 @@ ReactiveMidiEvent::from_midi_bytes (unsigned char const* bytes, size_t size, Rea
 	return false;
 }
 
+ReactiveMarkerEvent
+ReactiveMarkerEvent::named (std::string const& name)
+{
+	ReactiveMarkerEvent event;
+	event.name = name;
+	return event;
+}
+
 bool
 ReactiveActionEngine::load_document (ReactiveActionDocument const& document, std::string& error)
 {
@@ -144,6 +160,33 @@ ReactiveActionEngine::match_midi_event (ReactiveMidiEvent const& event) const
 
 		for (std::vector<ReactiveTrigger>::const_iterator trigger = action.triggers.begin (); trigger != action.triggers.end (); ++trigger) {
 			if (!matches_midi_event (*trigger, event)) {
+				continue;
+			}
+
+			ReactiveActionMatch match;
+			match.action = &action;
+			match.action_index = action_index;
+			match.chain_mode = action.chain_mode;
+			match.quantize = action.quantize;
+			matches.push_back (match);
+			break;
+		}
+	}
+
+	return matches;
+}
+
+std::vector<ReactiveActionMatch>
+ReactiveActionEngine::match_marker_event (ReactiveMarkerEvent const& event) const
+{
+	std::vector<ReactiveActionMatch> matches;
+	std::vector<ReactiveAction> const& actions = _document.actions ();
+
+	for (size_t action_index = 0; action_index < actions.size (); ++action_index) {
+		ReactiveAction const& action = actions[action_index];
+
+		for (std::vector<ReactiveTrigger>::const_iterator trigger = action.triggers.begin (); trigger != action.triggers.end (); ++trigger) {
+			if (!matches_marker_event (*trigger, event)) {
 				continue;
 			}
 

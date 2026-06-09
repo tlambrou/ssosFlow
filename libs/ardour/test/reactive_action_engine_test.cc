@@ -174,6 +174,54 @@ ReactiveActionEngineTest::ignoreMarkerTriggersForMidi ()
 }
 
 void
+ReactiveActionEngineTest::matchMarkerTriggerByName ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION breakdown\n"
+		"TRIGGER marker Breakdown\n"
+		"QUANTIZE 0|1|0\n"
+		"CHAIN sequential\n"
+		"DO transport stop\n"
+		"END\n"
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 1\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_marker_event (ReactiveMarkerEvent::named ("Breakdown"));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches.size ());
+	CPPUNIT_ASSERT (matches[0].action != 0);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), matches[0].action->name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
+	CPPUNIT_ASSERT (ReactiveChainMode::Sequential == matches[0].chain_mode);
+	CPPUNIT_ASSERT_EQUAL (1, matches[0].quantize.beats);
+	CPPUNIT_ASSERT (engine.match_marker_event (ReactiveMarkerEvent::named ("Drop")).empty ());
+}
+
+void
+ReactiveActionEngineTest::keepDocumentOrderForMultipleMarkerMatches ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION first\n"
+		"TRIGGER marker Breakdown\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION second\n"
+		"TRIGGER marker Breakdown\n"
+		"DO cue 1\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_marker_event (ReactiveMarkerEvent::named ("Breakdown"));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), matches.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), matches[0].action->name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("second"), matches[1].action->name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches[1].action_index);
+}
+
+void
 ReactiveActionEngineTest::keepDocumentOrderForMultipleMatches ()
 {
 	ReactiveActionEngine engine = engine_from_source (

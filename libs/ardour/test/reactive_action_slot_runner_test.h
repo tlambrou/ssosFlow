@@ -12,7 +12,9 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeMidiCCTriggerMacroValueFromController);
 	CPPUNIT_TEST (executeMidiCCTriggerRhythmRouteValueFromController);
 	CPPUNIT_TEST (executeMidiBytesThroughRunner);
+	CPPUNIT_TEST (executeMarkerTriggerByDocumentOrder);
 	CPPUNIT_TEST (reportMidiEventWithoutLoadedDocumentOrMatch);
+	CPPUNIT_TEST (reportMarkerEventWithoutLoadedDocumentOrMatch);
 	CPPUNIT_TEST (reportUnsupportedMidiBytes);
 	CPPUNIT_TEST (executeBuiltInMvpFallbackRhythmDemo);
 	CPPUNIT_TEST (reportMissingDocumentAndOutOfRangeSlot);
@@ -33,6 +35,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (summarizeHarmonyBankForPerformancePanel);
 	CPPUNIT_TEST (previewSlotForPerformancePanelWithoutMutatingState);
 	CPPUNIT_TEST (previewMidiEventForPerformancePanel);
+	CPPUNIT_TEST (previewMarkerEventForPerformancePanel);
 	CPPUNIT_TEST (formatCompactPanelSummaryForCuePage);
 	CPPUNIT_TEST (transportProviderControlsSlotConditions);
 	CPPUNIT_TEST (transportProviderControlsMidiConditions);
@@ -41,6 +44,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (queueQuantizedSlotActionUsingTempoMapClock);
 	CPPUNIT_TEST (zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath);
 	CPPUNIT_TEST (queueQuantizedMidiActionPreservesControllerValue);
+	CPPUNIT_TEST (queueQuantizedMarkerActionUsingTempoMapClock);
 	CPPUNIT_TEST (queueQuantizedMidiBytesUsingTempoMapClock);
 	CPPUNIT_TEST (clearAndLoadDocumentClearQueuedActions);
 	CPPUNIT_TEST (disabledPerformanceModeDoesNotQueueActions);
@@ -53,7 +57,9 @@ public:
 	void executeMidiCCTriggerMacroValueFromController ();
 	void executeMidiCCTriggerRhythmRouteValueFromController ();
 	void executeMidiBytesThroughRunner ();
+	void executeMarkerTriggerByDocumentOrder ();
 	void reportMidiEventWithoutLoadedDocumentOrMatch ();
+	void reportMarkerEventWithoutLoadedDocumentOrMatch ();
 	void reportUnsupportedMidiBytes ();
 	void executeBuiltInMvpFallbackRhythmDemo ();
 	void reportMissingDocumentAndOutOfRangeSlot ();
@@ -74,6 +80,7 @@ public:
 	void summarizeHarmonyBankForPerformancePanel ();
 	void previewSlotForPerformancePanelWithoutMutatingState ();
 	void previewMidiEventForPerformancePanel ();
+	void previewMarkerEventForPerformancePanel ();
 	void formatCompactPanelSummaryForCuePage ();
 	void transportProviderControlsSlotConditions ();
 	void transportProviderControlsMidiConditions ();
@@ -82,6 +89,7 @@ public:
 	void queueQuantizedSlotActionUsingTempoMapClock ();
 	void zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath ();
 	void queueQuantizedMidiActionPreservesControllerValue ();
+	void queueQuantizedMarkerActionUsingTempoMapClock ();
 	void queueQuantizedMidiBytesUsingTempoMapClock ();
 	void clearAndLoadDocumentClearQueuedActions ();
 	void disabledPerformanceModeDoesNotQueueActions ();
