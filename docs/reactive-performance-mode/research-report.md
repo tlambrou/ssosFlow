@@ -113,7 +113,9 @@ Phase 6l adds `ReactiveRhythmRouteInserter`, a narrow C++ helper that locates th
 
 Phase 6m exposes that helper through the declarative action path as `DO rhythm insert <route-index>`. The parser treats insertion as distinct from numeric rhythm parameter updates, the executor dispatches it through `ReactiveActionTarget::rhythm_insert`, and `ReactiveSessionTarget` resolves the controller-facing route index with `Session::get_remote_nth_route()` before calling `ReactiveRhythmRouteInserter::ensure_inserted()`.
 
-Phase 6n moves the built-in Reactive Performance MVP fallback action document into libardour and expands it from cue-only actions into a small playable rhythm demo. The eight stable `mvp.cue.0` through `mvp.cue.7` slots still launch cue rows, while slot 0 inserts and resets `Reactive Rhythm State MVP` on controller route 0 and later slots mutate density, chance, priority mode, or rotation. UI buttons, controller feedback messages, script presets, live route mutation policy beyond this explicit command, and full demo-session routing remain follow-up work.
+Phase 6n moves the built-in Reactive Performance MVP fallback action document into libardour and expands it from cue-only actions into a small playable rhythm demo. The eight stable `mvp.cue.0` through `mvp.cue.7` slots still launch cue rows, while slot 0 inserts and resets `Reactive Rhythm State MVP` on controller route 0 and later slots mutate density, chance, priority mode, or rotation.
+
+Phase 6o maps `DO rhythm <param> <value>` actions onto existing `Reactive Rhythm State MVP` LuaProc controls through Ardour's `AutomationControl` path. Density and chance use normalized action values scaled to LuaProc percent controls, while priority/priority_mode and rotation map directly to their named controls. The action target applies these changes to every existing rhythm insert in the session and reports explicit errors for unknown parameters or missing inserts. UI buttons, controller feedback messages, script presets, live route mutation policy beyond explicit action commands, and full demo-session routing remain follow-up work.
 
 ### 5. Use SessionEvent carefully
 

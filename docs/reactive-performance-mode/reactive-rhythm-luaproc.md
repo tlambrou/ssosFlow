@@ -32,5 +32,5 @@ The script proves the Phase 6h insertion recommendation at the plugin/LuaProc bo
 - Event-level Lua behavior is covered by `unit-test-reactive_rhythm_luaproc_harness`, which embeds Lua, stubs the LuaProc globals, and calls this script's `dsp_run` with deterministic MIDI events.
 - Ardour runtime buffer behavior is covered by `unit-test-reactive_rhythm_luaproc_plugininsert`, which loads this script as a LuaProc plugin, wraps it in `PluginInsert`, and runs real `BufferSet`/`MidiBuffer` events through `PluginInsert::run`.
 - Route-level helper behavior is covered by `unit-test-reactive_rhythm_route_inserter`, which inserts the bundled LuaProc into a MIDI track and verifies duplicate-safe discovery.
-- Action-to-session insertion behavior is covered by `unit-test-reactive_session_target_rhythm_insert`, which calls the session target command path against a real MIDI track.
+- Action-to-session insertion and parameter-control behavior is covered by `unit-test-reactive_session_target_rhythm_insert`, which calls the session target command path against a real MIDI track and verifies inserted LuaProc controls change.
 - Step assignment uses the block's current beat time, not each event's sample offset inside the block. Sample-offset-aware Lua behavior is a later refinement.
