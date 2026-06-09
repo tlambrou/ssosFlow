@@ -1,8 +1,8 @@
 # Reactive Performance MVP Demo Guide
 
-Issue: #63.
+Issue: #63, #123.
 
-This guide sets up the current Reactive Performance Mode vertical slice: eight Generic MIDI pad actions, session-local action loading, action/macro/state status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
+This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, action/macro/state status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
 
 ## Build And Run
 
@@ -22,9 +22,17 @@ If the app was not configured yet, use the configure command in `docs/reactive-p
 
 ## Demo Session Layout
 
-Create or open a small session with the Cue page available.
+Recommended path: create a new Ardour session from the bundled `Reactive Performance MVP` factory template. The template is provided by `share/scripts/reactive_performance_mvp_session.lua` and creates three MIDI-only controller-facing routes:
 
-Recommended minimal layout:
+- `Reactive Rhythm Lane`
+- `Reactive Harmony Lane`
+- `Reactive Macro Lane`
+
+Then copy the packaged action document into the new session folder as described below. The template is the repeatable MVP setup path, but it is not a full `.ardour` session archive with generated clips, cues, ports, and environment-specific connections.
+
+Manual fallback: create or open any small session with the Cue page available.
+
+Minimal manual layout:
 
 - Route 0: one MIDI track that receives controller or clip MIDI and can host `Reactive Rhythm State MVP`.
 - Optional routes 1-3: additional MIDI or instrument tracks for cue-row contrast.
@@ -109,11 +117,14 @@ examples/reactive-performance-mvp/reactive-actions.txt
 
 The packaged action file is also covered by `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads`, so parser drift fails in automated tests. Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/show-action-document-status`.
 
+When using the `Reactive Performance MVP` factory template, copy the action file next to the new `.ardour` session file after the template finishes creating the three MIDI lanes.
+
 ## Smoke Test
 
-Run this checklist after loading the session:
+Run this checklist after creating the session, copying `reactive-actions.txt`, and loading the Generic MIDI map:
 
 - App boots from `gtk2_ardour/ardev`.
+- A template-created session contains `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`; a manually created session has at least one MIDI route in controller-facing route slot 0.
 - The Cue page shows a Reactive Performance panel above the trigger strip grid, with slot labels sourced from the loaded action document.
 - Empty Cue-page panel slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
@@ -136,5 +147,5 @@ Run this checklist after loading the session:
 - The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. Native macro-to-plugin parameter routing remains follow-up work.
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration; richer layout remains follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
-- The repo packages a session-local action document and setup notes under `examples/reactive-performance-mvp/`, but the Ardour session itself must still be created manually; this repo does not yet package a full `.ardour` demo session archive.
+- The repo packages a repeatable `Reactive Performance MVP` SessionInit template plus a session-local action document under `examples/reactive-performance-mvp/`. Users still copy the action document into the session folder, and this repo does not yet package a full `.ardour` demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.
