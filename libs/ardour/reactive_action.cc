@@ -201,6 +201,54 @@ parse_trigger (std::vector<std::string> const& tokens, size_t line_number, React
 }
 
 static bool
+parse_condition (std::vector<std::string> const& tokens, size_t line_number, ReactiveAction& action, ReactiveActionParseResult& result)
+{
+	if (tokens.size () < 2) {
+		result.error = line_error (line_number, "invalid condition");
+		return false;
+	}
+
+	ReactiveCondition condition;
+
+	if (tokens[1] == "state") {
+		if (tokens.size () != 4) {
+			result.error = line_error (line_number, "invalid state condition");
+			return false;
+		}
+		condition.type = ReactiveCondition::StateEquals;
+		condition.name = tokens[2];
+		condition.text = tokens[3];
+		parse_double (condition.text, condition.value);
+	} else if (tokens[1] == "macro") {
+		if (tokens.size () != 4 || !parse_double (tokens[3], condition.value)) {
+			result.error = line_error (line_number, "invalid macro condition");
+			return false;
+		}
+		condition.type = ReactiveCondition::MacroEquals;
+		condition.name = tokens[2];
+	} else if (tokens[1] == "transport") {
+		if (tokens.size () != 3) {
+			result.error = line_error (line_number, "invalid transport condition");
+			return false;
+		}
+		if (tokens[2] == "rolling") {
+			condition.type = ReactiveCondition::TransportRolling;
+		} else if (tokens[2] == "stopped") {
+			condition.type = ReactiveCondition::TransportStopped;
+		} else {
+			result.error = line_error (line_number, "unknown transport condition");
+			return false;
+		}
+	} else {
+		result.error = line_error (line_number, "unknown condition");
+		return false;
+	}
+
+	action.conditions.push_back (condition);
+	return true;
+}
+
+static bool
 parse_command (std::vector<std::string> const& tokens, size_t line_number, ReactiveAction& action, ReactiveActionParseResult& result)
 {
 	if (tokens.size () < 2) {
@@ -442,7 +490,7 @@ ReactiveActionDocument::parse (std::string const& source)
 				return result;
 			}
 		} else if (tokens[0] == "WHEN") {
-			if (!require_action (in_action, line_number, "WHEN", result)) {
+			if (!require_action (in_action, line_number, "WHEN", result) || !parse_condition (tokens, line_number, current, result)) {
 				return result;
 			}
 		} else if (tokens[0] == "CHAIN") {

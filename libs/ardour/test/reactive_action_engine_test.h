@@ -23,6 +23,9 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (trackMacroAndStateValuesFromSelectedCommands);
 	CPPUNIT_TEST (storeAndRecallMacroSnapshotValues);
 	CPPUNIT_TEST (rejectMissingMacroSnapshotRecallWithoutChangingLastAction);
+	CPPUNIT_TEST (blockUnmetStateConditionWithoutMutatingState);
+	CPPUNIT_TEST (matchMacroConditionAfterMacroChanges);
+	CPPUNIT_TEST (blockTransportConditionWithoutAdvancingSequentialChain);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -43,4 +46,7 @@ public:
 	void trackMacroAndStateValuesFromSelectedCommands ();
 	void storeAndRecallMacroSnapshotValues ();
 	void rejectMissingMacroSnapshotRecallWithoutChangingLastAction ();
+	void blockUnmetStateConditionWithoutMutatingState ();
+	void matchMacroConditionAfterMacroChanges ();
+	void blockTransportConditionWithoutAdvancingSequentialChain ();
 };

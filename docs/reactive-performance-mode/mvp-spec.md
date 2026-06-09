@@ -105,10 +105,20 @@ Required chain modes:
 - `sequential`: execute one child per trigger, rotating each time.
 - `random`: choose one child per trigger.
 
+Required MVP conditions:
+
+- `WHEN state <name> <value>`
+- `WHEN macro <name> <value>`
+- `WHEN transport rolling`
+- `WHEN transport stopped`
+
+Phase 3i stores and enforces these conditions in the Reactive action engine before previewing or triggering commands. Unmet conditions fail visibly without mutating macro/state values, advancing sequential chains, or updating the last action. Transport conditions are engine-level for now; the live session bridge still needs a later slice to update the engine's rolling/stopped flag from Ardour transport state.
+
 Required validation:
 
 - Duplicate action names fail.
 - Unknown commands fail with file/line information.
+- Unknown conditions fail with file/line information.
 - Invalid quantization fails.
 - MIDI trigger conflicts are reported before mode is enabled.
 - Ramps must reject negative durations.

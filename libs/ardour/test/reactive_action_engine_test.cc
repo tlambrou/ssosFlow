@@ -376,3 +376,92 @@ ReactiveActionEngineTest::rejectMissingMacroSnapshotRecallWithoutChangingLastAct
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, engine.macro_value ("filter"), 0.0001);
 	CPPUNIT_ASSERT_EQUAL (std::string ("set.filter"), engine.last_action ());
 }
+
+void
+ReactiveActionEngineTest::blockUnmetStateConditionWithoutMutatingState ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION set.section\n"
+		"DO state section breakdown\n"
+		"END\n"
+		"ACTION gated\n"
+		"WHEN state section breakdown\n"
+		"DO macro filter 0.70\n"
+		"END\n"
+		"ACTION blocked\n"
+		"WHEN state section drop\n"
+		"DO macro filter 0.20\n"
+		"END\n");
+
+	ReactiveActionPlan preview = engine.preview_action ("gated");
+	ReactiveActionPlan blocked_before = engine.trigger_action ("gated");
+
+	CPPUNIT_ASSERT_EQUAL (false, preview.ok);
+	CPPUNIT_ASSERT (preview.error.find ("condition") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (false, blocked_before.ok);
+	CPPUNIT_ASSERT (blocked_before.error.find ("condition") != std::string::npos);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string (), engine.last_action ());
+
+	ReactiveActionPlan set = engine.trigger_action ("set.section");
+	ReactiveActionPlan gated = engine.trigger_action ("gated");
+
+	CPPUNIT_ASSERT_EQUAL (true, set.ok);
+	CPPUNIT_ASSERT_EQUAL (true, gated.ok);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.70, engine.macro_value ("filter"), 0.0001);
+
+	ReactiveActionPlan blocked_after = engine.trigger_action ("blocked");
+
+	CPPUNIT_ASSERT_EQUAL (false, blocked_after.ok);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.70, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("gated"), engine.last_action ());
+}
+
+void
+ReactiveActionEngineTest::matchMacroConditionAfterMacroChanges ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION set.filter\n"
+		"DO macro filter 0.75\n"
+		"END\n"
+		"ACTION gated\n"
+		"WHEN macro filter 0.75\n"
+		"DO state section drop\n"
+		"END\n");
+
+	ReactiveActionPlan blocked = engine.trigger_action ("gated");
+
+	CPPUNIT_ASSERT_EQUAL (false, blocked.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string (), engine.state_value ("section"));
+
+	ReactiveActionPlan set = engine.trigger_action ("set.filter");
+	ReactiveActionPlan gated = engine.trigger_action ("gated");
+
+	CPPUNIT_ASSERT_EQUAL (true, set.ok);
+	CPPUNIT_ASSERT_EQUAL (true, gated.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string ("drop"), engine.state_value ("section"));
+}
+
+void
+ReactiveActionEngineTest::blockTransportConditionWithoutAdvancingSequentialChain ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION gated.seq\n"
+		"CHAIN sequential\n"
+		"WHEN transport rolling\n"
+		"DO macro step 0.10\n"
+		"DO macro step 0.20\n"
+		"END\n");
+
+	ReactiveActionPlan first_blocked = engine.trigger_action ("gated.seq");
+	ReactiveActionPlan second_blocked = engine.trigger_action ("gated.seq");
+	engine.set_transport_rolling (true);
+	ReactiveActionPlan first_allowed = engine.trigger_action ("gated.seq");
+
+	CPPUNIT_ASSERT_EQUAL (false, first_blocked.ok);
+	CPPUNIT_ASSERT_EQUAL (false, second_blocked.ok);
+	CPPUNIT_ASSERT_EQUAL (true, first_allowed.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), first_allowed.commands.size ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.10, first_allowed.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.10, engine.macro_value ("step"), 0.0001);
+}

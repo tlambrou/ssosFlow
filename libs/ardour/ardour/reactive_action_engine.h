@@ -53,6 +53,7 @@ public:
 	ReactiveActionPlan preview_action (std::string const& name) const;
 	ReactiveActionPlan trigger_action (std::string const& name);
 	ReactiveActionPlan trigger_action (std::string const& name, ReactiveMidiEvent const* event);
+	void set_transport_rolling (bool rolling) { _transport_rolling = rolling; }
 	double macro_value (std::string const& name) const;
 	std::string state_value (std::string const& name) const;
 	std::string last_action () const { return _last_action; }
@@ -64,12 +65,14 @@ private:
 
 	bool preview_plan_commands (std::vector<ReactiveCommand> const&, ReactiveMidiEvent const*, std::vector<ReactiveCommand>&, std::string&) const;
 	bool trigger_plan_commands (std::vector<ReactiveCommand> const&, ReactiveMidiEvent const*, std::vector<ReactiveCommand>&, std::string&);
+	bool conditions_match (ReactiveAction const&, std::string&) const;
 
 	ReactiveActionDocument _document;
 	std::map<std::string, size_t> _sequential_positions;
 	std::map<std::string, double> _macros;
 	std::map<std::string, MacroSnapshot> _macro_snapshots;
 	std::map<std::string, std::string> _states;
+	bool _transport_rolling = false;
 	std::string _last_action;
 };
 

@@ -66,11 +66,26 @@ struct LIBARDOUR_API ReactiveCommand {
 	Temporal::BBT_Offset ramp;
 };
 
+struct LIBARDOUR_API ReactiveCondition {
+	enum Type {
+		StateEquals,
+		MacroEquals,
+		TransportRolling,
+		TransportStopped
+	};
+
+	Type type = StateEquals;
+	std::string name;
+	std::string text;
+	double value = 0.0;
+};
+
 struct LIBARDOUR_API ReactiveAction {
 	std::string name;
 	ReactiveChainMode chain_mode = ReactiveChainMode::All;
 	Temporal::BBT_Offset quantize;
 	std::vector<ReactiveTrigger> triggers;
+	std::vector<ReactiveCondition> conditions;
 	std::vector<ReactiveCommand> commands;
 };
 

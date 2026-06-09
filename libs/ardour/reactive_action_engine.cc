@@ -1,5 +1,6 @@
 #include "ardour/reactive_action_engine.h"
 
+#include <cmath>
 #include <cstdlib>
 
 using namespace ARDOUR;
@@ -10,6 +11,7 @@ static unsigned char const midi_status_mask = 0xf0;
 static unsigned char const midi_channel_mask = 0x0f;
 static unsigned char const midi_note_on = 0x90;
 static unsigned char const midi_control_change = 0xb0;
+static double const condition_value_tolerance = 0.0001;
 
 static bool
 matches_midi_note (ReactiveTrigger const& trigger, ReactiveMidiEvent const& event)
@@ -180,6 +182,11 @@ ReactiveActionEngine::preview_action (std::string const& name) const
 	plan.chain_mode = action->chain_mode;
 	plan.quantize = action->quantize;
 
+	if (!conditions_match (*action, plan.error)) {
+		plan.ok = false;
+		return plan;
+	}
+
 	if (action->chain_mode == ReactiveChainMode::Sequential) {
 		if (!action->commands.empty ()) {
 			size_t position = 0;
@@ -236,6 +243,11 @@ ReactiveActionEngine::trigger_action (std::string const& name, ReactiveMidiEvent
 	plan.action_name = action->name;
 	plan.chain_mode = action->chain_mode;
 	plan.quantize = action->quantize;
+
+	if (!conditions_match (*action, plan.error)) {
+		plan.ok = false;
+		return plan;
+	}
 
 	std::vector<ReactiveCommand> raw_commands;
 	bool advance_sequential = false;
@@ -327,6 +339,39 @@ ReactiveActionEngine::preview_plan_commands (std::vector<ReactiveCommand> const&
 		output.push_back (resolved);
 	}
 
+	return true;
+}
+
+bool
+ReactiveActionEngine::conditions_match (ReactiveAction const& action, std::string& error) const
+{
+	for (std::vector<ReactiveCondition>::const_iterator condition = action.conditions.begin (); condition != action.conditions.end (); ++condition) {
+		bool matches = false;
+
+		switch (condition->type) {
+		case ReactiveCondition::StateEquals: {
+			std::map<std::string, std::string>::const_iterator found = _states.find (condition->name);
+			matches = found != _states.end () && found->second == condition->text;
+			break;
+		}
+		case ReactiveCondition::MacroEquals:
+			matches = std::fabs (macro_value (condition->name) - condition->value) <= condition_value_tolerance;
+			break;
+		case ReactiveCondition::TransportRolling:
+			matches = _transport_rolling;
+			break;
+		case ReactiveCondition::TransportStopped:
+			matches = !_transport_rolling;
+			break;
+		}
+
+		if (!matches) {
+			error = "unmet condition for action '" + action.name + "'";
+			return false;
+		}
+	}
+
+	error.clear ();
 	return true;
 }
 
