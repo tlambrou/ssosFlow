@@ -360,7 +360,7 @@ Phase 6q adds route-scoped rhythm parameter actions:
 Phase 6r allows route-scoped rhythm commands to use controller-derived values:
 
 - `DO rhythm route <route-index> <param> midi-value` resolves the value from the MIDI event that triggered the action, using the same normalized `0.0..1.0` CC/velocity mapping as macro `midi-value`.
-- The MVP demo's CC 22 action inserts the route 0 rhythm module if needed, drives route 0 density from the controller value, and still updates the `filter` macro read model for UI feedback.
+- The MVP demo's CC 22 action inserts the route 0 rhythm module if needed, drives route 0 density from the controller value, and still updates the `filter` macro read model for UI feedback; the routing summary shows the resulting route 0 density.
 - General macro-to-plugin or macro-to-Ardour-parameter routing remains a follow-up; this slice only connects controller values to existing route-scoped rhythm parameters.
 
 Parameters:
@@ -474,6 +474,12 @@ Phase 5e adds the first visible reactive-routing read model:
 - The summary uses the same `Session::get_remote_nth_route(...)` order as route-scoped rhythm actions, so rows match `DO rhythm route <route-index> ...`.
 - The existing status dialog displays this compact routing section below the next-action preview.
 - MIDI feedback, a dedicated Cue-page panel, and live transport-clock release of queued actions remain follow-up work.
+
+Phase 5r makes that routing read model show live rhythm parameter values:
+
+- Inserted `Reactive Rhythm State MVP` routes expose structured density, chance, priority, and rotation values in `ReactiveRoutingSlotSummary`.
+- The formatted routing summary displays compact values such as `density=0.25 chance=0.50 priority=2 rotation=4`.
+- The existing status dialog and Cue-page panel summary inherit those values through `ReactiveSessionTarget::format_routing_summary(...)`, so controller-driven rhythm changes are visible without adding new UI ownership.
 
 Phase 5f adds an explicit mode-arm toggle:
 
@@ -625,6 +631,7 @@ Phase 7h makes the template-created lanes Cue-page visible:
 - Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
+- Session-target tests cover route-scoped rhythm insertion, parameter writes, missing-target errors, and routing summaries with live rhythm parameter values.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.

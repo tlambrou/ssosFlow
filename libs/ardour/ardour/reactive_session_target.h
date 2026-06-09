@@ -14,6 +14,11 @@ struct LIBARDOUR_API ReactiveRoutingSlotSummary {
 	size_t slot = 0;
 	std::string route_name;
 	bool reactive_rhythm_insert_present = false;
+	bool reactive_rhythm_values_present = false;
+	double rhythm_density = 0.0;
+	double rhythm_chance = 0.0;
+	double rhythm_priority = 0.0;
+	double rhythm_rotation = 0.0;
 	std::string status;
 };
 
