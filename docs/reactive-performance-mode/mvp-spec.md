@@ -179,6 +179,14 @@ Phase 6a adds the backend rhythm-state semantics first, independent of MIDI I/O:
 - Latch pending parameter changes until a configured step boundary.
 - Leave MIDI note-on/note-off handling, LuaProc wrapping, and demo routing for the next Phase 6 slice.
 
+Phase 6b adds a backend MIDI-shaped adapter before touching Ardour's live MIDI buffers:
+
+- Convert note-on events into `ReactiveRhythmEvent` inputs for the rhythm engine.
+- Forward passed note-ons and suppress dropped note-ons.
+- Track note history by channel/note so note-offs for passed notes are forwarded, while note-offs for suppressed notes do not create bogus releases.
+- Keep chance deterministic through explicit per-event chance values.
+- Leave direct `MidiBuffer` processing, LuaProc wrapping, randomness injection, and demo routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
