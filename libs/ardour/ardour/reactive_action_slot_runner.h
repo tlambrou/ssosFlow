@@ -53,6 +53,8 @@ public:
 	bool load_document (ReactiveActionDocument const&, std::string& error);
 	void clear ();
 
+	bool performance_enabled () const { return _performance_enabled; }
+	void set_performance_enabled (bool);
 	bool loaded () const { return _loaded; }
 	size_t action_count () const;
 	std::string action_name (size_t slot) const;
@@ -68,6 +70,7 @@ public:
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	ReactiveActionPreviewSummary const& next_action_preview () const { return _next_action_preview; }
 	std::string format_last_execution_status () const;
+	std::string format_performance_mode_status () const;
 	std::string format_next_action_preview () const;
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;
@@ -86,6 +89,7 @@ private:
 	ReactiveActionSlotExecutionStatus _last_execution_status;
 	ReactiveActionPreviewSummary _next_action_preview;
 	bool _loaded = false;
+	bool _performance_enabled = true;
 };
 
 } // namespace ARDOUR

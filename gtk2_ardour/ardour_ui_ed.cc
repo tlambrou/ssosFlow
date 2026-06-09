@@ -211,6 +211,7 @@ ARDOUR_UI::install_actions ()
 	}
 	ActionManager::register_action (reactive_actions, X_("reload-action-document"), _("Reload Reactive Action Document"), sigc::mem_fun (*this, &ARDOUR_UI::reload_reactive_action_document));
 	ActionManager::register_action (reactive_actions, X_("show-action-document-status"), _("Show Reactive Action Document Status"), sigc::mem_fun (*this, &ARDOUR_UI::show_reactive_action_document_status));
+	ActionManager::register_action (reactive_actions, X_("toggle-performance-mode"), _("Toggle Reactive Performance Mode"), sigc::mem_fun (*this, &ARDOUR_UI::toggle_reactive_performance_mode));
 
 	act = ActionManager::register_action (main_actions, X_("New"), _("New..."),  hide_return (sigc::bind (sigc::mem_fun(*this, &ARDOUR_UI::start_session_load), true)));
 

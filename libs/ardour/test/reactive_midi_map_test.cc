@@ -77,6 +77,10 @@ ReactiveMidiMapTest::mapContainsExpectedControllerBindings ()
 	CPPUNIT_ASSERT_EQUAL (
 		std::string ("Reactive/reload-action-document"),
 		actions_by_note[BindingKey ("10", "45")]);
+	CPPUNIT_ASSERT (actions_by_note.find (BindingKey ("10", "47")) != actions_by_note.end ());
+	CPPUNIT_ASSERT_EQUAL (
+		std::string ("Reactive/toggle-performance-mode"),
+		actions_by_note[BindingKey ("10", "47")]);
 }
 
 void

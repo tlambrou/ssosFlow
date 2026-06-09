@@ -115,6 +115,14 @@ command_names_from_actions (std::vector<ReactiveAction> const& actions, Reactive
 	return names;
 }
 
+static ReactiveExecutionResult
+disabled_execution_result ()
+{
+	ReactiveExecutionResult result;
+	result.error = "Reactive Performance Mode is disabled";
+	return result;
+}
+
 } // namespace
 
 bool
@@ -152,6 +160,19 @@ ReactiveActionSlotRunner::clear ()
 	clear_last_execution_status ();
 	clear_next_action_preview ();
 	_loaded = false;
+}
+
+void
+ReactiveActionSlotRunner::set_performance_enabled (bool enabled)
+{
+	if (_performance_enabled == enabled) {
+		return;
+	}
+
+	_performance_enabled = enabled;
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+	}
 }
 
 size_t
@@ -291,6 +312,11 @@ ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& targe
 	}
 
 	std::string const name = action_name (slot);
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (slot, name, disabled_execution_result ());
+	}
+
 	ReactiveActionPlan plan = _engine.trigger_action (name);
 	result = ReactiveActionExecutor::execute (plan, target);
 	_next_action_preview = preview_slot (slot);
@@ -321,6 +347,11 @@ ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, Re
 		result.error = "matched reactive MIDI action has no name";
 		clear_next_action_preview ();
 		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, name, disabled_execution_result ());
 	}
 
 	ReactiveActionPlan plan = _engine.trigger_action (name, &event);
@@ -377,6 +408,12 @@ ReactiveActionSlotRunner::format_last_execution_status () const
 	}
 
 	return status.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_performance_mode_status () const
+{
+	return std::string ("Reactive Performance Mode: ") + (_performance_enabled ? "enabled" : "disabled");
 }
 
 std::string
