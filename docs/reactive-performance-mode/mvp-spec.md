@@ -464,7 +464,7 @@ Phase 5e adds the first visible reactive-routing read model:
 - `ReactiveSessionTarget` can summarize the first controller-facing routes as route index, route name, whether `Reactive Rhythm State MVP` is present, and a compact routing status label.
 - The summary uses the same `Session::get_remote_nth_route(...)` order as route-scoped rhythm actions, so rows match `DO rhythm route <route-index> ...`.
 - The existing status dialog displays this compact routing section below the next-action preview.
-- MIDI feedback, a dedicated Cue-page panel, and true queued-action scheduling remain follow-up work.
+- MIDI feedback, a dedicated Cue-page panel, and live transport-clock release of queued actions remain follow-up work.
 
 Phase 5f adds an explicit mode-arm toggle:
 
@@ -532,6 +532,14 @@ Phase 5n wires those feedback bindings to Generic MIDI's output port through a c
 - `GenericMidiControlProtocol` caches the latest feedback messages and writes only cached byte vectors from its existing feedback tick with a try-lock, avoiding parser, document loading, runner planning, or allocation on the realtime feedback path.
 - Physical controller behavior remains hardware/output-routing dependent and should be smoke-tested with the selected controller after connecting Ardour's Generic MIDI Control Out port.
 
+Phase 5o adds the first backend queued-action scheduler:
+
+- `ReactiveActionScheduler` queues already-planned actions with slot index, action name, primary trigger label, quantize value, requested BBT, due BBT, and planned commands.
+- The scheduler reports bounded queued-action summary rows for UI/status surfaces, including formatted request/due times, command count, and whether the item is currently due.
+- `pop_due(...)` releases due actions in deterministic due-time order, preserving queue id order for actions due at the same BBT.
+- Zero-quantize plans are treated as due at the request BBT even when a later due BBT is supplied, so immediate actions cannot get stuck in the queue.
+- This slice is deliberately backend-only and non-realtime. The later session-clock bridge should compute due BBT from Ardour's `TempoMap`, enqueue non-immediate actions from the runner, and execute popped actions from a safe UI/session context.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.
@@ -578,6 +586,7 @@ Phase 7g makes the template setup path closer to one-step:
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
 - Engine tests cover action lookup, chain state, literal and event-derived macro state, and quantization calculation against a fixed TempoMap.
+- Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.
