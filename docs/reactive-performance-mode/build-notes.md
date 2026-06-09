@@ -171,7 +171,7 @@ Focused post-build results:
 - `build/libs/temporal/run-tests` passed.
 - `build/libs/audiographer/run-tests` passed.
 - `build/libs/pbd/run-tests` still fails in `RWLockTest::run_thread_sequence_test` with `assertion failed - Expression: rl2.locked()`.
-- `libs/ardour/run-tests.sh` sets the Ardour runtime environment and starts successfully, but segfaults during `LuaScriptTest::session_script_test` after earlier `AudioEngineTest`, `AutomationListPropertyTest`, `DSPLoadCalculatorTest`, and `FPUTest` checks pass.
+- `libs/ardour/run-tests.sh` sets the Ardour runtime environment and now runs with an isolated temporary `HOME` by default, preventing libardour session tests from reading or writing the user's real `~/Library/Preferences/Ardour9` preferences. Use `ARDOUR_TEST_HOME=/path/to/home` to keep an inspectable test home, or `ARDOUR_TEST_USE_REAL_HOME=1` only for tests that intentionally need real user config.
 
 Development wrapper smoke check:
 
