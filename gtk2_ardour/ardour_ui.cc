@@ -3192,7 +3192,15 @@ ARDOUR_UI::ensure_reactive_action_document ()
 		return true;
 	}
 
+	return load_reactive_action_document (false);
+}
+
+bool
+ARDOUR_UI::load_reactive_action_document (bool report_success)
+{
+	std::string session_path = _session ? _session->path () : std::string ();
 	ReactiveActionDocumentLoadResult load_result;
+
 	if (!ReactiveActionDocumentLoader::load_from_paths (
 		    _reactive_action_slots,
 		    session_path,
@@ -3205,7 +3213,24 @@ ARDOUR_UI::ensure_reactive_action_document ()
 	}
 
 	_reactive_action_document_session_path = session_path;
+	if (report_success) {
+		info << ReactiveActionDocumentLoader::describe_load_result (load_result) << endmsg;
+	}
+
 	return true;
+}
+
+void
+ARDOUR_UI::reload_reactive_action_document ()
+{
+	if (!_session) {
+		warning << _("Reactive action document reload ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	_reactive_action_slots.clear ();
+	_reactive_action_document_session_path.clear ();
+	load_reactive_action_document (true);
 }
 
 void

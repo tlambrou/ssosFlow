@@ -311,6 +311,7 @@ public:
 	void trigger_slot (int c, int r);
 	void trigger_cue_row (int r);
 	void trigger_reactive_action (int slot);
+	void reload_reactive_action_document ();
 	void stop_all_cues (bool immediately);
 	void stop_cues (int c, bool immediately);
 
@@ -648,6 +649,7 @@ private:
 	void we_have_dependents ();
 	void setup_action_tooltips ();
 	bool ensure_reactive_action_document ();
+	bool load_reactive_action_document (bool report_success);
 	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
 	std::string _reactive_action_document_session_path;
 

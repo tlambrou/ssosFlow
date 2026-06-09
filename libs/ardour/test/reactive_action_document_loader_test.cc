@@ -180,3 +180,25 @@ ReactiveActionDocumentLoaderTest::reportConfiguredDocumentParseFailureWithoutFal
 	CPPUNIT_ASSERT (result.error.find (result.path) != std::string::npos);
 	CPPUNIT_ASSERT_EQUAL (false, runner.loaded ());
 }
+
+void
+ReactiveActionDocumentLoaderTest::describeLoadStatusForConfiguredAndFallbackDocuments ()
+{
+	ReactiveActionDocumentLoadResult session_result;
+	session_result.ok = true;
+	session_result.source = "session";
+	session_result.path = "/tmp/set/reactive-actions.txt";
+
+	CPPUNIT_ASSERT_EQUAL (
+		std::string ("Loaded session reactive action document: /tmp/set/reactive-actions.txt"),
+		ReactiveActionDocumentLoader::describe_load_result (session_result));
+
+	ReactiveActionDocumentLoadResult fallback_result;
+	fallback_result.ok = true;
+	fallback_result.source = "fallback";
+	fallback_result.used_fallback = true;
+
+	CPPUNIT_ASSERT_EQUAL (
+		std::string ("Loaded built-in Reactive Performance MVP fallback"),
+		ReactiveActionDocumentLoader::describe_load_result (fallback_result));
+}
