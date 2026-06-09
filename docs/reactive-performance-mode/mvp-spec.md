@@ -343,6 +343,12 @@ Phase 6: add reactive rhythm buffer processing, LuaProc script or processor inse
 
 Phase 7: create demo session, docs, and follow-up roadmap.
 
+Phase 7a adds the first practical demo guide:
+
+- Document the local build/run path, minimal session layout, Generic MIDI map, built-in fallback pad behavior, and session-local `reactive-actions.txt` example.
+- Include smoke-test checks for app boot, action document status, slot execution feedback, rhythm insertion, and route-scoped rhythm parameter updates.
+- Keep the guide honest about current manual setup limits until an Ardour demo session archive is packaged.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, and macro ramps.
