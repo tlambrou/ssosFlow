@@ -13,6 +13,10 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (matchMidiCCWithoutThreshold);
 	CPPUNIT_TEST (ignoreMarkerTriggersForMidi);
 	CPPUNIT_TEST (keepDocumentOrderForMultipleMatches);
+	CPPUNIT_TEST (triggerAllChainReturnsAllCommandsAndMetadata);
+	CPPUNIT_TEST (rotateSequentialChainCommands);
+	CPPUNIT_TEST (rejectUnknownActionWithoutChangingLastAction);
+	CPPUNIT_TEST (trackMacroAndStateValuesFromSelectedCommands);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -23,4 +27,8 @@ public:
 	void matchMidiCCWithoutThreshold ();
 	void ignoreMarkerTriggersForMidi ();
 	void keepDocumentOrderForMultipleMatches ();
+	void triggerAllChainReturnsAllCommandsAndMetadata ();
+	void rotateSequentialChainCommands ();
+	void rejectUnknownActionWithoutChangingLastAction ();
+	void trackMacroAndStateValuesFromSelectedCommands ();
 };

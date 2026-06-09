@@ -132,3 +132,89 @@ ReactiveActionEngineTest::keepDocumentOrderForMultipleMatches ()
 	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), matches[1].action_index);
 }
+
+void
+ReactiveActionEngineTest::triggerAllChainReturnsAllCommandsAndMetadata ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION intro.drop\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 0\n"
+		"DO macro filter 0.72 ramp 0|2|0\n"
+		"DO scene apply 0\n"
+		"END\n");
+
+	ReactiveActionPlan plan = engine.trigger_action ("intro.drop");
+
+	CPPUNIT_ASSERT_EQUAL (true, plan.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), plan.action_name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), plan.action_index);
+	CPPUNIT_ASSERT (ReactiveChainMode::All == plan.chain_mode);
+	CPPUNIT_ASSERT_EQUAL (1, plan.quantize.bars);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), plan.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Cue, plan.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, plan.commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::SceneApply, plan.commands[2].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), engine.last_action ());
+}
+
+void
+ReactiveActionEngineTest::rotateSequentialChainCommands ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION drums.mutate\n"
+		"CHAIN sequential\n"
+		"DO rhythm density 0.35\n"
+		"DO rhythm density 0.55\n"
+		"DO rhythm density 0.80\n"
+		"END\n");
+
+	ReactiveActionPlan first = engine.trigger_action ("drums.mutate");
+	ReactiveActionPlan second = engine.trigger_action ("drums.mutate");
+	ReactiveActionPlan third = engine.trigger_action ("drums.mutate");
+	ReactiveActionPlan wrapped = engine.trigger_action ("drums.mutate");
+
+	CPPUNIT_ASSERT_EQUAL (true, first.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), first.commands.size ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.35, first.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.55, second.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, third.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.35, wrapped.commands[0].value, 0.0001);
+}
+
+void
+ReactiveActionEngineTest::rejectUnknownActionWithoutChangingLastAction ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION known\n"
+		"DO cue 0\n"
+		"END\n");
+
+	ReactiveActionPlan known = engine.trigger_action ("known");
+	ReactiveActionPlan missing = engine.trigger_action ("missing");
+
+	CPPUNIT_ASSERT_EQUAL (true, known.ok);
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("unknown action") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (std::string ("known"), engine.last_action ());
+}
+
+void
+ReactiveActionEngineTest::trackMacroAndStateValuesFromSelectedCommands ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION performance.mode\n"
+		"DO macro filter 0.80\n"
+		"DO state section breakdown\n"
+		"END\n");
+
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string (), engine.state_value ("section"));
+
+	ReactiveActionPlan plan = engine.trigger_action ("performance.mode");
+
+	CPPUNIT_ASSERT_EQUAL (true, plan.ok);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), engine.state_value ("section"));
+}
