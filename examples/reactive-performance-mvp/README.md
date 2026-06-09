@@ -7,11 +7,11 @@ This folder is a small demo asset for Reactive Performance Mode. It is not a ful
 ## Files
 
 - `reactive-actions.txt`: a valid session-local Reactive Performance action document. The template installs matching content into new demo sessions as `reactive-actions.txt`.
-- `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's MIDI route layout and installs the demo action document.
+- `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's Cue-page visible MIDI route layout and installs the demo action document.
 
 ## Setup
 
-1. Create a new Ardour session from the `Reactive Performance MVP` factory template. The bundled SessionInit script creates three MIDI-only routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, then installs the demo action document next to the `.ardour` session file.
+1. Create a new Ardour session from the `Reactive Performance MVP` factory template. The bundled SessionInit script creates three Cue-page visible MIDI-only routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, then installs the demo action document next to the `.ardour` session file.
 2. Enable the Generic MIDI control surface and select the `Reactive Performance MVP` MIDI map.
 3. Connect a controller or MIDI monitor to Ardour's `Generic MIDI Control Out` port if you want to inspect feedback messages.
 4. Use `Reactive/reload-action-document` or note 45 in the MVP map after editing the installed file.
@@ -42,4 +42,4 @@ The bundled MVP map uses:
 
 ## Current Limit
 
-This asset deliberately avoids a full `.ardour` session file because Ardour session XML contains many generated IDs, ports, and environment-dependent connections. The bundled SessionInit template is the first repeatable demo-session path and now installs the demo action document automatically; packaging a complete session archive remains a later demo-production step once the route/clip layout is stable enough to verify.
+This asset deliberately avoids a full `.ardour` session file because Ardour session XML contains many generated IDs, ports, and environment-dependent connections. The bundled SessionInit template is the repeatable demo-session path, creates Cue-page visible MIDI lanes, and installs the demo action document automatically; packaging generated clip/cue content remains a later demo-production step once the route/clip layout is stable enough to verify.

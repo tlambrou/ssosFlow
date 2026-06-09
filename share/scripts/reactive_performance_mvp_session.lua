@@ -120,7 +120,8 @@ function factory () return function ()
 		"Reactive Rhythm Lane",
 		ARDOUR.PresentationInfo.max_order,
 		ARDOUR.TrackMode.Normal,
-		false)
+		false,
+		true)
 
 	Session:new_midi_track (
 		input,
@@ -133,7 +134,8 @@ function factory () return function ()
 		"Reactive Harmony Lane",
 		ARDOUR.PresentationInfo.max_order,
 		ARDOUR.TrackMode.Normal,
-		false)
+		false,
+		true)
 
 	Session:new_midi_track (
 		input,
@@ -146,7 +148,8 @@ function factory () return function ()
 		"Reactive Macro Lane",
 		ARDOUR.PresentationInfo.max_order,
 		ARDOUR.TrackMode.Normal,
-		false)
+		false,
+		true)
 
 	install_demo_action_document ()
 

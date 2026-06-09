@@ -120,7 +120,8 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"  name = function () return 'Reactive Template Test' end,\n"
 		"  new_midi_track = function (...)\n"
 		"    local name = select (9, ...)\n"
-		"    table.insert (created_tracks, name)\n"
+		"    local trigger_visible = select (13, ...)\n"
+		"    table.insert (created_tracks, { name = name, trigger_visible = trigger_visible })\n"
 		"  end,\n"
 		"  save_state = function (...) saved = true end\n"
 		"}\n");
@@ -136,9 +137,12 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 
 	int const track_count_type = lua.do_command ("assert (#created_tracks == 3, 'expected three MIDI tracks')");
 	CPPUNIT_ASSERT_EQUAL (0, track_count_type);
-	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[1] == 'Reactive Rhythm Lane', 'expected rhythm lane')"));
-	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[2] == 'Reactive Harmony Lane', 'expected harmony lane')"));
-	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[3] == 'Reactive Macro Lane', 'expected macro lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[1].name == 'Reactive Rhythm Lane', 'expected rhythm lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[2].name == 'Reactive Harmony Lane', 'expected harmony lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[3].name == 'Reactive Macro Lane', 'expected macro lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[1].trigger_visible == true, 'expected rhythm lane to be trigger visible')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[2].trigger_visible == true, 'expected harmony lane to be trigger visible')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[3].trigger_visible == true, 'expected macro lane to be trigger visible')"));
 	int const save_type = lua.do_command ("assert (saved == true, 'expected template to save session')");
 	CPPUNIT_ASSERT_EQUAL (0, save_type);
 }
