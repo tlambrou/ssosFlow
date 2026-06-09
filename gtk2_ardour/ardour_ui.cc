@@ -97,6 +97,7 @@
 #include "ardour/plugin_manager.h"
 #include "ardour/process_thread.h"
 #include "ardour/profile.h"
+#include "ardour/reactive_session_target.h"
 #include "ardour/revision.h"
 #include "ardour/session_directory.h"
 #include "ardour/session_route.h"
@@ -203,6 +204,40 @@ using namespace ArdourWidgets;
 using namespace Gtk;
 using namespace std;
 using namespace Editing;
+
+namespace {
+
+static const char*
+reactive_performance_mvp_seed_source ()
+{
+	return
+		"ACTION mvp.cue.0\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION mvp.cue.1\n"
+		"DO cue 1\n"
+		"END\n"
+		"ACTION mvp.cue.2\n"
+		"DO cue 2\n"
+		"END\n"
+		"ACTION mvp.cue.3\n"
+		"DO cue 3\n"
+		"END\n"
+		"ACTION mvp.cue.4\n"
+		"DO cue 4\n"
+		"END\n"
+		"ACTION mvp.cue.5\n"
+		"DO cue 5\n"
+		"END\n"
+		"ACTION mvp.cue.6\n"
+		"DO cue 6\n"
+		"END\n"
+		"ACTION mvp.cue.7\n"
+		"DO cue 7\n"
+		"END\n";
+}
+
+} // namespace
 
 ARDOUR_UI *ARDOUR_UI::theArdourUI = 0;
 
@@ -3147,11 +3182,44 @@ ARDOUR_UI::trigger_cue_row (int r)
 	_basic_ui->trigger_cue_row (r);
 }
 
+bool
+ARDOUR_UI::ensure_reactive_action_document ()
+{
+	if (_reactive_action_slots.loaded ()) {
+		return true;
+	}
+
+	std::string error;
+	if (!_reactive_action_slots.load_source (reactive_performance_mvp_seed_source (), error)) {
+		warning << string_compose (_("Could not load Reactive Performance MVP seed actions: %1"), error) << endmsg;
+		return false;
+	}
+
+	return true;
+}
+
 void
 ARDOUR_UI::trigger_reactive_action (int slot)
 {
-	(void) slot;
-	/* Document loading and execution will be wired in the next reactive slice. */
+	if (!_session) {
+		warning << _("Reactive action ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	if (slot < 0) {
+		warning << string_compose (_("Reactive action slot %1 is invalid"), slot) << endmsg;
+		return;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return;
+	}
+
+	ReactiveSessionTarget target (*_session);
+	ReactiveExecutionResult result = _reactive_action_slots.execute_slot (static_cast<size_t> (slot), target);
+	if (!result.ok) {
+		warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
+	}
 }
 
 void
