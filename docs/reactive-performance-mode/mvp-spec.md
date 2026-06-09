@@ -171,7 +171,7 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, performance-control availability for the first eight slots, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
@@ -451,6 +451,13 @@ Phase 5f adds an explicit mode-arm toggle:
 - Disabled mode blocks slot, MIDI-event, and MIDI-byte execution before target dispatch or action-engine mutation.
 - `Reactive/toggle-performance-mode` toggles the state from Ardour action bindings, and the MVP MIDI map binds note 47 for controller-first arming/disarming.
 - A dedicated Cue-page panel and controller feedback output remain follow-up work.
+
+Phase 5g adds performance-safe controls to the status surface:
+
+- `ReactiveActionSlotRunner` exposes bounded performance-control rows with slot index, action name, primary trigger label, availability, enabled state, and a large-control button label.
+- The existing status dialog shows eight trigger buttons, disables unavailable or disarmed slots, and sends button presses through the same slot-execution path used by controller actions.
+- The same dialog includes an Enable/Disable Mode button and refreshes status text after mode changes, reloads, and slot execution.
+- A dedicated Cue-page panel, controller LED feedback, and richer layout remain follow-up work.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 

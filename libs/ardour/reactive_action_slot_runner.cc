@@ -217,6 +217,40 @@ ReactiveActionSlotRunner::action_bank_summary (size_t max_slots) const
 	return summary;
 }
 
+std::vector<ReactivePerformanceControlSummary>
+ReactiveActionSlotRunner::performance_control_summary (size_t max_slots) const
+{
+	std::vector<ReactivePerformanceControlSummary> summary;
+	if (max_slots == 0) {
+		return summary;
+	}
+
+	summary.reserve (max_slots);
+
+	size_t const count = _loaded ? action_count () : 0;
+	for (size_t slot = 0; slot < max_slots; ++slot) {
+		ReactivePerformanceControlSummary row;
+		row.slot = slot;
+		if (_loaded && slot < count) {
+			ReactiveAction const& action = _engine.document ().actions ()[slot];
+			std::ostringstream label;
+			label << slot << " " << action.name;
+			row.action_name = action.name;
+			row.primary_trigger = primary_trigger_label (action);
+			row.button_label = label.str ();
+			row.available = true;
+			row.enabled = _performance_enabled;
+		} else {
+			std::ostringstream label;
+			label << slot << " empty";
+			row.button_label = label.str ();
+		}
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
 std::vector<ReactiveMacroSlotSummary>
 ReactiveActionSlotRunner::macro_bank_summary (size_t max_slots) const
 {
@@ -414,6 +448,30 @@ std::string
 ReactiveActionSlotRunner::format_performance_mode_status () const
 {
 	return std::string ("Reactive Performance Mode: ") + (_performance_enabled ? "enabled" : "disabled");
+}
+
+std::string
+ReactiveActionSlotRunner::format_performance_control_summary (size_t max_slots) const
+{
+	std::vector<ReactivePerformanceControlSummary> const summary = performance_control_summary (max_slots);
+
+	if (summary.empty ()) {
+		return "Performance controls: none";
+	}
+
+	std::ostringstream text;
+	text << "Performance controls: " << (_performance_enabled ? "enabled" : "disabled");
+	for (std::vector<ReactivePerformanceControlSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": ";
+		if (!i->available) {
+			text << "empty - unavailable";
+			continue;
+		}
+
+		text << i->action_name << " [" << i->primary_trigger << "] - " << (i->enabled ? "enabled" : "disabled");
+	}
+
+	return text.str ();
 }
 
 std::string
