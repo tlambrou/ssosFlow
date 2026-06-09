@@ -191,6 +191,7 @@ libardour_sources = [
         'raw_midi_parser.cc',
         'reactive_action.cc',
         'reactive_action_engine.cc',
+        'reactive_action_executor.cc',
         'recent_sessions.cc',
         'record_enable_control.cc',
         'record_safe_control.cc',
@@ -647,6 +648,7 @@ def build(bld):
             create_ardour_test_program(bld, obj.includes, 'unit-test-region_naming', 'test_region_naming', ['test/region_naming_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action', 'test_reactive_action', ['test/reactive_action_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_engine', 'test_reactive_action_engine', ['test/reactive_action_engine_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_executor', 'test_reactive_action_executor', ['test/reactive_action_executor_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-control_surface', 'test_control_surfaces', ['test/control_surfaces_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-mtdm', 'test_mtdm', ['test/mtdm_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-sha1', 'test_sha1', ['test/sha1_test.cc'])
@@ -671,6 +673,7 @@ def build(bld):
             'test/region_naming_test.cc',
             'test/reactive_action_test.cc',
             'test/reactive_action_engine_test.cc',
+            'test/reactive_action_executor_test.cc',
             'test/control_surfaces_test.cc',
             'test/mtdm_test.cc',
             'test/sha1_test.cc',
