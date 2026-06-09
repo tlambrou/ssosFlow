@@ -64,6 +64,8 @@
 #include "ardour/debug.h"
 #include "ardour/well_known_enum.h"
 
+#include "control_protocol/basic_ui.h"
+
 #include "generic_midi_control_protocol.h"
 #include "midicontrollable.h"
 #include "midifunction.h"
@@ -132,6 +134,7 @@ GenericMidiControlProtocol::GenericMidiControlProtocol (Session& s, std::string 
 
 	Controllable::StartLearning.connect_same_thread (*this, std::bind (&GenericMidiControlProtocol::start_learning, this, _1));
 	Controllable::StopLearning.connect_same_thread (*this, std::bind (&GenericMidiControlProtocol::stop_learning, this, _1));
+	BasicUI::ReactiveFeedbackMidiMessagesChanged.connect (*this, MISSING_INVALIDATOR, std::bind (&GenericMidiControlProtocol::set_reactive_feedback_midi_messages, this, _1), this);
 
 	/* this signal is emitted by the process() callback, and if
 	 * send_feedback() is going to do anything, it should do it in the
@@ -267,6 +270,8 @@ GenericMidiControlProtocol::drop_all ()
 	}
 	reactive_actions.clear ();
 	reactive_feedback_bindings.clear ();
+	reactive_feedback_cache.clear ();
+	BasicUI::ReactiveFeedbackBindingsChanged (reactive_feedback_bindings);
 }
 
 void
@@ -395,6 +400,24 @@ GenericMidiControlProtocol::_send_feedback ()
 	MIDI::byte buf[bufsize];
 	int32_t bsize = bufsize;
 
+	class ReactiveFeedbackWriter {
+	public:
+		ReactiveFeedbackWriter (ARDOUR::AsyncMIDIPort* port)
+			: _port (port)
+		{}
+
+		void operator() (ReactiveControllerFeedbackMidiMessage const& message)
+		{
+			_port->write (&message.bytes[0], static_cast<int32_t> (message.bytes.size ()), 0);
+		}
+
+	private:
+		ARDOUR::AsyncMIDIPort* _port;
+	};
+
+	ReactiveFeedbackWriter reactive_writer (_output_port.get ());
+	reactive_feedback_cache.try_write_messages (reactive_writer);
+
 	/* XXX: due to bugs in some ALSA / JACK MIDI bridges, we have to do separate
 	   writes for each controllable here; if we send more than one MIDI message
 	   in a single jack_midi_event_write then some bridges will only pass the
@@ -412,6 +435,12 @@ GenericMidiControlProtocol::_send_feedback ()
 			_output_port->write (buf, (int32_t) (end - buf), 0);
 		}
 	}
+}
+
+void
+GenericMidiControlProtocol::set_reactive_feedback_midi_messages (std::vector<ReactiveControllerFeedbackMidiMessage> messages)
+{
+	reactive_feedback_cache.set_messages (messages);
 }
 
 bool
@@ -965,6 +994,8 @@ GenericMidiControlProtocol::load_bindings (const string& xmlpath)
 	if ((prop = root->property ("name")) != 0) {
 		_current_binding = prop->value ();
 	}
+
+	BasicUI::ReactiveFeedbackBindingsChanged (reactive_feedback_bindings);
 
 	reset_controllables ();
 

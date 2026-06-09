@@ -46,6 +46,8 @@ using namespace Temporal;
 
 PBD::Signal<void(std::string,std::string)> BasicUI::AccessAction;
 PBD::Signal<void(std::vector<unsigned char>)> BasicUI::ReactiveMidiBytes;
+PBD::Signal<void(std::vector<ReactiveControllerFeedbackBinding>)> BasicUI::ReactiveFeedbackBindingsChanged;
+PBD::Signal<void(std::vector<ReactiveControllerFeedbackMidiMessage>)> BasicUI::ReactiveFeedbackMidiMessagesChanged;
 
 BasicUI::BasicUI (Session& s)
 	: session (&s),

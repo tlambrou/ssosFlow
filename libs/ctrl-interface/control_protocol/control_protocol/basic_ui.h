@@ -35,6 +35,7 @@
 #include "ardour/location.h"
 #include "ardour/types.h"
 #include "ardour/presentation_info.h"
+#include "ardour/reactive_action_slot_runner.h"
 
 #include "temporal/time.h"
 
@@ -68,6 +69,8 @@ class LIBCONTROLCP_API BasicUI {
 	static PBD::Signal<void(std::string,std::string)> AccessAction;
 	void reactive_midi_bytes (unsigned char const* bytes, size_t size);
 	static PBD::Signal<void(std::vector<unsigned char>)> ReactiveMidiBytes;
+	static PBD::Signal<void(std::vector<ARDOUR::ReactiveControllerFeedbackBinding>)> ReactiveFeedbackBindingsChanged;
+	static PBD::Signal<void(std::vector<ARDOUR::ReactiveControllerFeedbackMidiMessage>)> ReactiveFeedbackMidiMessagesChanged;
 	void goto_zero ();
 	void goto_start (bool and_roll = false);
 	void goto_end ();

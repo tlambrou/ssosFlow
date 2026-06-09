@@ -32,6 +32,7 @@
 #include "ardour/types.h"
 #include "ardour/port.h"
 #include "ardour/reactive_action_slot_runner.h"
+#include "ardour/reactive_controller_feedback_midi_cache.h"
 
 #include "control_protocol/control_protocol.h"
 
@@ -150,6 +151,7 @@ private:
 	bool  do_feedback;
 	void _send_feedback ();
 	void  send_feedback ();
+	void set_reactive_feedback_midi_messages (std::vector<ARDOUR::ReactiveControllerFeedbackMidiMessage>);
 
 	typedef std::list<MIDIControllable*> MIDIControllables;
 	MIDIControllables controllables;
@@ -164,6 +166,7 @@ private:
 	MIDIReactiveActions reactive_actions;
 
 	std::vector<ARDOUR::ReactiveControllerFeedbackBinding> reactive_feedback_bindings;
+	ARDOUR::ReactiveControllerFeedbackMidiCache reactive_feedback_cache;
 
 	struct MIDIPendingControllable {
 		MIDIControllable* mc;
