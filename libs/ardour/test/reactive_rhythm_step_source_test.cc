@@ -38,3 +38,31 @@ ReactiveRhythmStepSourceTest::normalizesInvalidFramesPerStep ()
 	CPPUNIT_ASSERT_EQUAL (samplecnt_t (1), negative_source.frames_per_step ());
 	CPPUNIT_ASSERT_EQUAL (size_t (7), negative_source.step_for (7));
 }
+
+void
+ReactiveRhythmStepSourceTest::calculatesFramesPerStepFromTempo ()
+{
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (6000), ReactiveRhythmStepSource::frames_per_step_for_tempo (48000.0, 120.0, 4));
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (48000), ReactiveRhythmStepSource::frames_per_step_for_tempo (48000.0, 60.0, 1));
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (5513), ReactiveRhythmStepSource::frames_per_step_for_tempo (44100.0, 120.0, 4));
+}
+
+void
+ReactiveRhythmStepSourceTest::normalizesInvalidTempoInputs ()
+{
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (1), ReactiveRhythmStepSource::frames_per_step_for_tempo (0.0, 120.0, 4));
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (720000), ReactiveRhythmStepSource::frames_per_step_for_tempo (48000.0, 0.0, 4));
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (24000), ReactiveRhythmStepSource::frames_per_step_for_tempo (48000.0, 120.0, 0));
+}
+
+void
+ReactiveRhythmStepSourceTest::configuresStepSourceFromTempo ()
+{
+	ReactiveRhythmStepSource source;
+	source.configure_from_tempo (100, 48000.0, 120.0, 4);
+
+	CPPUNIT_ASSERT_EQUAL (samplepos_t (100), source.origin_frame ());
+	CPPUNIT_ASSERT_EQUAL (samplecnt_t (6000), source.frames_per_step ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), source.step_for (6099));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), source.step_for (6100));
+}
