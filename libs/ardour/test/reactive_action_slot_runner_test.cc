@@ -599,3 +599,99 @@ ReactiveActionSlotRunnerTest::summarizeStateBankForPerformancePanel ()
 	CPPUNIT_ASSERT (formatted.find ("1: energy = low") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("2: mode = mutate") != std::string::npos);
 }
+
+void
+ReactiveActionSlotRunnerTest::previewSlotForPerformancePanelWithoutMutatingState ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("Next action preview: none"), runner.format_next_action_preview ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION build\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"QUANTIZE 1|0|0\n"
+		"CHAIN sequential\n"
+		"DO macro filter 0.25\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveActionPreviewSummary preview = runner.preview_slot (0);
+
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), preview.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("build"), preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), preview.primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("sequential"), preview.chain_mode);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1|0|0"), preview.quantize);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (std::string (), runner.last_action ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, runner.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	preview = runner.preview_slot (0);
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.25:0|0|0"), target.calls[0]);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, runner.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("Next action preview: slot 0 (build)") != std::string::npos);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("sequential, quantize 1|0|0, 1 command") != std::string::npos);
+
+	preview = runner.preview_slot (0);
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:1"), target.calls[1]);
+}
+
+void
+ReactiveActionSlotRunnerTest::previewMidiEventForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION first\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"QUANTIZE 0|1|0\n"
+		"DO cue 0\n"
+		"DO state section intro\n"
+		"END\n"
+		"ACTION second\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveActionPreviewSummary preview = runner.preview_midi_event (ReactiveMidiEvent::note_on (10, 36, 100));
+
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), preview.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), preview.primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("all"), preview.chain_mode);
+	CPPUNIT_ASSERT_EQUAL (std::string ("0|1|0"), preview.quantize);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (std::string (), runner.state_value ("section"));
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
+
+	ReactiveActionPreviewSummary missing = runner.preview_midi_event (ReactiveMidiEvent::control_change (1, 22, 64));
+	CPPUNIT_ASSERT_EQUAL (false, missing.available);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target).ok);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("Next action preview: slot 0 (first)") != std::string::npos);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("MIDI note ch=10 note=36") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro"), runner.state_value ("section"));
+}

@@ -161,7 +161,7 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, next-action preview, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
@@ -411,7 +411,14 @@ Phase 5c adds the reusable state-bank read model for that panel:
 - State names are discovered from loaded action documents in stable first-seen document order, with duplicate state commands collapsed to one row.
 - State values default to an empty string before execution and update as `DO state ...` commands run through the action engine.
 - The existing status dialog displays this compact state bank below the macro bank.
-- MIDI feedback, visible routing, and queued-action preview remain follow-up work.
+
+Phase 5d adds the reusable next-action preview read model for that panel:
+
+- `ReactiveActionEngine::preview_action(...)` builds the same action-plan metadata as execution without running target commands, updating macro/state values, marking last action, or advancing sequential action chains.
+- `ReactiveActionSlotRunner` can preview a manual slot or the first matching MIDI event as slot index, action name, primary trigger label, chain mode, quantize label, and next command count.
+- After a slot or MIDI event is executed, the runner refreshes a cached next-action preview for the same control so repeated sequential actions show the next planned command count without consuming it.
+- The existing status dialog displays this compact next-action preview below the latest execution status.
+- MIDI feedback, visible routing, and true queued-action scheduling remain follow-up work.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 

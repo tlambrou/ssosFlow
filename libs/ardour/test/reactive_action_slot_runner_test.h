@@ -20,6 +20,8 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (summarizeActionBankForPerformancePanel);
 	CPPUNIT_TEST (summarizeMacroBankForPerformancePanel);
 	CPPUNIT_TEST (summarizeStateBankForPerformancePanel);
+	CPPUNIT_TEST (previewSlotForPerformancePanelWithoutMutatingState);
+	CPPUNIT_TEST (previewMidiEventForPerformancePanel);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -37,4 +39,6 @@ public:
 	void summarizeActionBankForPerformancePanel ();
 	void summarizeMacroBankForPerformancePanel ();
 	void summarizeStateBankForPerformancePanel ();
+	void previewSlotForPerformancePanelWithoutMutatingState ();
+	void previewMidiEventForPerformancePanel ();
 };
