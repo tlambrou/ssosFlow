@@ -6,6 +6,11 @@ using namespace ARDOUR;
 
 namespace {
 
+static unsigned char const midi_status_mask = 0xf0;
+static unsigned char const midi_channel_mask = 0x0f;
+static unsigned char const midi_note_on = 0x90;
+static unsigned char const midi_control_change = 0xb0;
+
 static bool
 matches_midi_note (ReactiveTrigger const& trigger, ReactiveMidiEvent const& event)
 {
@@ -57,6 +62,31 @@ ReactiveMidiEvent::control_change (int channel, int controller, int value)
 	event.number = controller;
 	event.value = value;
 	return event;
+}
+
+bool
+ReactiveMidiEvent::from_midi_bytes (unsigned char const* bytes, size_t size, ReactiveMidiEvent& event)
+{
+	if (!bytes || size < 3) {
+		return false;
+	}
+
+	unsigned char const status = bytes[0] & midi_status_mask;
+	int const channel = (bytes[0] & midi_channel_mask) + 1;
+	int const number = bytes[1];
+	int const value = bytes[2];
+
+	if (status == midi_note_on && value > 0) {
+		event = note_on (channel, number, value);
+		return true;
+	}
+
+	if (status == midi_control_change) {
+		event = control_change (channel, number, value);
+		return true;
+	}
+
+	return false;
 }
 
 bool

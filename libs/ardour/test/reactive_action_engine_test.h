@@ -7,6 +7,9 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE (ReactiveActionEngineTest);
 	CPPUNIT_TEST (matchMidiNoteTrigger);
+	CPPUNIT_TEST (mapMidiNoteBytesToTriggerEvent);
+	CPPUNIT_TEST (mapMidiCCBytesToTriggerEvent);
+	CPPUNIT_TEST (ignoreUnsupportedMidiBytes);
 	CPPUNIT_TEST (ignoreMismatchedMidiNote);
 	CPPUNIT_TEST (ignoreZeroVelocityNoteOn);
 	CPPUNIT_TEST (matchMidiCCThreshold);
@@ -21,6 +24,9 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 
 public:
 	void matchMidiNoteTrigger ();
+	void mapMidiNoteBytesToTriggerEvent ();
+	void mapMidiCCBytesToTriggerEvent ();
+	void ignoreUnsupportedMidiBytes ();
 	void ignoreMismatchedMidiNote ();
 	void ignoreZeroVelocityNoteOn ();
 	void matchMidiCCThreshold ();

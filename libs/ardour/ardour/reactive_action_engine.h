@@ -18,6 +18,7 @@ struct LIBARDOUR_API ReactiveMidiEvent {
 
 	static ReactiveMidiEvent note_on (int channel, int note, int velocity);
 	static ReactiveMidiEvent control_change (int channel, int controller, int value);
+	static bool from_midi_bytes (unsigned char const* bytes, size_t size, ReactiveMidiEvent& event);
 
 	Type type = NoteOn;
 	int channel = 0;
