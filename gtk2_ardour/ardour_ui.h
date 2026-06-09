@@ -65,6 +65,7 @@
 #include "ardour/types.h"
 #include "ardour/utils.h"
 #include "ardour/plugin.h"
+#include "ardour/reactive_action_slot_runner.h"
 #include "ardour/session_handle.h"
 #include "ardour/system_exec.h"
 
@@ -646,6 +647,8 @@ private:
 	void connect_dependents_to_session (ARDOUR::Session *);
 	void we_have_dependents ();
 	void setup_action_tooltips ();
+	bool ensure_reactive_action_document ();
+	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
 
 	void setup_session_options ();
 
