@@ -107,7 +107,7 @@ Phase 6h source review keeps this recommendation and narrows the insertion path:
 
 The MVP scaffold is therefore `ReactiveRhythmInsertionPlanner`: it chooses LuaProc/plugin insertion only when LuaProc, MIDI input/output, and DSP time info are available; it defers native processors and external plugins; it rejects MIDI route hooks and control surfaces as stream-processing targets; and it keeps live route mutation disabled until a later issue wires insertion safely.
 
-Phase 6i packages the first script at `share/scripts/reactive_rhythm_state_mvp.lua`. It is a bundled LuaProc MIDI processor named `Reactive Rhythm State MVP`, requests `time_info`, exposes density/chance/priority/rotation/latching controls, passes non-note MIDI through, and tracks forwarded note-ons to avoid stuck-note releases. Its current automated coverage proves discovery, load, insertion as a `PluginInsert`, and active processing through the LuaProc harness; event-level Lua MIDI buffer tests remain a follow-up.
+Phase 6i packages the first script at `share/scripts/reactive_rhythm_state_mvp.lua`. It is a bundled LuaProc MIDI processor named `Reactive Rhythm State MVP`, requests `time_info`, exposes density/chance/priority/rotation/latching controls, passes non-note MIDI through, and tracks forwarded note-ons to avoid stuck-note releases. Its automated coverage proves discovery, load, insertion as a `PluginInsert`, active processing through the LuaProc harness, and event-level behavior through `unit-test-reactive_rhythm_luaproc_harness`. Full Ardour MIDI-buffer execution through `PluginInsert` remains a follow-up.
 
 ### 5. Use SessionEvent carefully
 

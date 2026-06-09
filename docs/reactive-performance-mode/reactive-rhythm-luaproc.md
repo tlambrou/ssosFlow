@@ -29,5 +29,5 @@ The script proves the Phase 6h insertion recommendation at the plugin/LuaProc bo
 ## Limits
 
 - This does not insert itself into routes. Route insertion, script presets, and demo-session routing remain follow-up work.
-- Event-level Lua behavior is currently validated by conservative implementation plus LuaProc load/activation tests. The C++ backend has deeper MIDI note-on/note-off behavior tests; a future LuaProc harness should feed MIDI buffers through this exact script.
+- Event-level Lua behavior is covered by `unit-test-reactive_rhythm_luaproc_harness`, which embeds Lua, stubs the LuaProc globals, and calls this script's `dsp_run` with deterministic MIDI events. A future Ardour-buffer-through-`PluginInsert` test can still cover the full runtime path.
 - Step assignment uses the block's current beat time, not each event's sample offset inside the block. Sample-offset-aware Lua behavior is a later refinement.

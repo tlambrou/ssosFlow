@@ -242,6 +242,12 @@ Phase 6i adds the first LuaProc rhythm script prototype:
 - Validate script discovery and plugin activation through the LuaProc test harness.
 - Leave automated route insertion, script presets, event-level LuaProc buffer tests, and demo-session routing for follow-up work.
 
+Phase 6j adds event-level LuaProc script coverage:
+
+- Embed Lua in a CppUnit harness and stub the LuaProc globals used by `reactive_rhythm_state_mvp.lua`.
+- Cover default note pass-through, density-zero suppression, non-note pass-through, velocity-zero note-offs, velocity-priority filtering, and latched parameter updates.
+- Keep full Ardour `PluginInsert` MIDI-buffer execution and route insertion as follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
