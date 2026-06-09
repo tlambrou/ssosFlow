@@ -442,3 +442,54 @@ ReactiveActionSlotRunnerTest::resetExecutionStatusOnClearAndLoad ()
 	load_two_action_document (runner);
 	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
 }
+
+void
+ReactiveActionSlotRunnerTest::summarizeActionBankForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION knob.high\n"
+		"TRIGGER midi cc ch=1 cc=22 value>63\n"
+		"DO macro filter 0.80\n"
+		"END\n"
+		"ACTION manual.only\n"
+		"DO state section bridge\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveActionSlotSummary> summary = runner.action_bank_summary (8);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), summary[0].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), summary[0].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_count);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].latest_attempted);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.high"), summary[1].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI cc ch=1 cc=22 value>63"), summary[1].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].command_count);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].latest_attempted);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("manual.only"), summary[2].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("manual"), summary[2].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].command_count);
+	CPPUNIT_ASSERT_EQUAL (false, summary[2].latest_attempted);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+	summary = runner.action_bank_summary (8);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (true, summary[1].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (false, summary[2].latest_attempted);
+}

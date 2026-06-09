@@ -17,6 +17,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (rejectInvalidSource);
 	CPPUNIT_TEST (propagateTargetFailure);
 	CPPUNIT_TEST (resetExecutionStatusOnClearAndLoad);
+	CPPUNIT_TEST (summarizeActionBankForPerformancePanel);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -31,4 +32,5 @@ public:
 	void rejectInvalidSource ();
 	void propagateTargetFailure ();
 	void resetExecutionStatusOnClearAndLoad ();
+	void summarizeActionBankForPerformancePanel ();
 };

@@ -1,8 +1,48 @@
 #include "ardour/reactive_action_slot_runner.h"
 
+#include <algorithm>
 #include <sstream>
 
 using namespace ARDOUR;
+
+namespace {
+
+static std::string
+format_trigger_label (ReactiveTrigger const& trigger)
+{
+	std::ostringstream label;
+
+	switch (trigger.type) {
+	case ReactiveTrigger::MidiNote:
+		label << "MIDI note ch=" << trigger.channel << " note=" << trigger.number;
+		return label.str ();
+	case ReactiveTrigger::MidiCC:
+		label << "MIDI cc ch=" << trigger.channel << " cc=" << trigger.number;
+		if (trigger.threshold >= 0) {
+			label << " value>" << trigger.threshold;
+		}
+		return label.str ();
+	case ReactiveTrigger::Marker:
+		label << "marker " << trigger.name;
+		return label.str ();
+	case ReactiveTrigger::None:
+		break;
+	}
+
+	return "manual";
+}
+
+static std::string
+primary_trigger_label (ReactiveAction const& action)
+{
+	if (action.triggers.empty ()) {
+		return "manual";
+	}
+
+	return format_trigger_label (action.triggers.front ());
+}
+
+} // namespace
 
 bool
 ReactiveActionSlotRunner::load_source (std::string const& source, std::string& error)
@@ -53,6 +93,32 @@ ReactiveActionSlotRunner::action_name (size_t slot) const
 	}
 
 	return _engine.document ().actions ()[slot].name;
+}
+
+std::vector<ReactiveActionSlotSummary>
+ReactiveActionSlotRunner::action_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveActionSlotSummary> summary;
+	if (!_loaded || max_slots == 0) {
+		return summary;
+	}
+
+	std::vector<ReactiveAction> const& actions = _engine.document ().actions ();
+	size_t const count = std::min (max_slots, actions.size ());
+	summary.reserve (count);
+
+	for (size_t slot = 0; slot < count; ++slot) {
+		ReactiveAction const& action = actions[slot];
+		ReactiveActionSlotSummary row;
+		row.slot = slot;
+		row.action_name = action.name;
+		row.primary_trigger = primary_trigger_label (action);
+		row.command_count = action.commands.size ();
+		row.latest_attempted = _last_execution_status.attempted && _last_execution_status.slot == slot;
+		summary.push_back (row);
+	}
+
+	return summary;
 }
 
 ReactiveExecutionResult
@@ -152,6 +218,33 @@ ReactiveActionSlotRunner::format_last_execution_status () const
 	}
 
 	return status.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_action_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveActionSlotSummary> const summary = action_bank_summary (max_slots);
+
+	if (summary.empty ()) {
+		return "Action bank: none";
+	}
+
+	std::ostringstream text;
+	text << "Action bank:";
+	for (std::vector<ReactiveActionSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n";
+		if (i->latest_attempted) {
+			text << "> ";
+		} else {
+			text << "  ";
+		}
+		text << i->slot << ": " << i->action_name << " [" << i->primary_trigger << "] - " << i->command_count << " command";
+		if (i->command_count != 1) {
+			text << "s";
+		}
+	}
+
+	return text.str ();
 }
 
 void

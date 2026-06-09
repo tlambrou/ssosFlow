@@ -131,6 +131,8 @@ Phase 4e reviewed the live MIDI adapter hook. Ardour's Generic MIDI surface alre
 
 Phase 4f implements that live Generic MIDI hook in the narrow form recommended above. `reactive="trigger"` bindings now coexist with ordinary `action`, `function`, and `uri` bindings in Generic MIDI maps, but only for note-on and control-change messages. The surface reconstructs the matched 3-byte message, emits it through `BasicUI`, and the GTK-side Reactive Performance handler delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`. The MVP map adds note 46 on channel 10 and CC 22 on channel 1 as document-level trigger examples while preserving the fixed slot/status/reload bindings.
 
+Phase 5a starts the performance-panel work with a backend read model instead of a broad UI redesign. `ReactiveActionSlotRunner` now exposes action-bank rows for the first controller bank, including slot index, action name, primary trigger label, command count, and whether the row is the latest attempted slot. The existing status dialog uses that model to show a compact action bank, while a later Cue-page panel can reuse the same data alongside macro/state values and queued-action preview.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

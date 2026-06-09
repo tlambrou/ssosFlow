@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 #include "ardour/libardour_visibility.h"
 #include "ardour/reactive_action_engine.h"
@@ -16,6 +17,14 @@ struct LIBARDOUR_API ReactiveActionSlotExecutionStatus {
 	ReactiveExecutionResult result;
 };
 
+struct LIBARDOUR_API ReactiveActionSlotSummary {
+	size_t slot = 0;
+	std::string action_name;
+	std::string primary_trigger;
+	size_t command_count = 0;
+	bool latest_attempted = false;
+};
+
 class LIBARDOUR_API ReactiveActionSlotRunner {
 public:
 	bool load_source (std::string const&, std::string& error);
@@ -25,12 +34,14 @@ public:
 	bool loaded () const { return _loaded; }
 	size_t action_count () const;
 	std::string action_name (size_t slot) const;
+	std::vector<ReactiveActionSlotSummary> action_bank_summary (size_t max_slots) const;
 
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&);
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	std::string format_last_execution_status () const;
+	std::string format_action_bank_summary (size_t max_slots) const;
 
 	std::string last_action () const { return _engine.last_action (); }
 	double macro_value (std::string const& name) const { return _engine.macro_value (name); }

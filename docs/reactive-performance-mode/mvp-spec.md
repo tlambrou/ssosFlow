@@ -161,7 +161,7 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, and last load error. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, and the first eight action slots in a controller-bank-style summary. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots.
 
@@ -386,6 +386,13 @@ Phase 4f wires the live Generic MIDI adapter:
 - Keep existing `action="Reactive/trigger-action-N"` bindings unchanged for fixed slot launches.
 
 Phase 5: add minimal Reactive Performance UI panel.
+
+Phase 5a adds the reusable read model for that panel:
+
+- `ReactiveActionSlotRunner` can summarize the first controller action bank as slot index, action name, primary trigger label, command count, and latest-attempted marker.
+- MIDI note/CC triggers are formatted in musician-facing syntax such as `MIDI note ch=10 note=36` and `MIDI cc ch=1 cc=22 value>63`.
+- The existing status dialog displays this action-bank summary as the first panel-oriented UI slice.
+- The later full panel should still move this into the Cue-page performance surface with macro/state values and queued-action preview.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
