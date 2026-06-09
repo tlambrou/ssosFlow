@@ -26,6 +26,12 @@ struct LIBARDOUR_API ReactiveMidiEvent {
 	int value = 0;
 };
 
+struct LIBARDOUR_API ReactiveMarkerEvent {
+	static ReactiveMarkerEvent named (std::string const& name);
+
+	std::string name;
+};
+
 struct LIBARDOUR_API ReactiveActionMatch {
 	ReactiveAction const* action = 0;
 	size_t action_index = 0;
@@ -49,6 +55,7 @@ public:
 
 	/* MVP helper: returns an allocating vector, so it is not yet suitable for a realtime MIDI path. */
 	std::vector<ReactiveActionMatch> match_midi_event (ReactiveMidiEvent const&) const;
+	std::vector<ReactiveActionMatch> match_marker_event (ReactiveMarkerEvent const&) const;
 
 	ReactiveActionPlan preview_action (std::string const& name) const;
 	ReactiveActionPlan trigger_action (std::string const& name);

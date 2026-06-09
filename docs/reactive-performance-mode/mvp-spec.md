@@ -211,6 +211,8 @@ The backend runner can now execute a loaded document from a parsed `ReactiveMidi
 
 `ReactiveActionSlotRunner::execute_midi_bytes(...)` now provides the backend bridge from raw controller bytes to executable actions. It preserves the missing-document failure path, maps supported byte messages through `ReactiveMidiEvent::from_midi_bytes(...)`, delegates supported messages to `execute_midi_event(...)`, and records unsupported byte messages in the same last-execution status model.
 
+The backend runner can also execute loaded documents from a named `ReactiveMarkerEvent`. It matches exact `TRIGGER marker <name>` triggers through `ReactiveActionEngine::match_marker_event(...)`, uses the first matching action in document order, supports preview/status reporting, and can queue nonzero-quantized marker actions through the same scheduler path as manual slots and MIDI triggers. Live Session/Location marker crossing detection remains a follow-up adapter; this slice only adds the safe backend event model.
+
 Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needed one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance.
 
 Phase 4f adds that live adapter path for Generic MIDI note-on and control-change bindings. A map entry can now use `reactive="trigger"` with `note` or `ctl`; the Generic MIDI surface reconstructs the 3-byte controller message on Ardour's existing MIDI/control-surface thread, emits it through `BasicUI`, and the GTK-side Reactive Performance entry point delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`. The MVP map keeps notes 36 through 45 for fixed slot/status/reload actions and adds note 46 on channel 10 plus CC 22 on channel 1 as document-level trigger examples.
@@ -446,6 +448,14 @@ Phase 4g maps controller values to macros:
 - Resolve the command value from the matched MIDI CC value or note velocity during event-triggered execution.
 - Normalize controller values from `0..127` to `0.0..1.0` before updating macro state and dispatching the target command.
 - Preserve existing literal macro commands, ramp metadata, and MIDI trigger matching behavior.
+
+Phase 4i adds backend marker-trigger execution:
+
+- Represent marker hits as named `ReactiveMarkerEvent` values.
+- Match exact `TRIGGER marker <name>` declarations in document order without affecting MIDI matching.
+- Preview and execute the first matching marker action through `ReactiveActionSlotRunner`.
+- Queue nonzero-quantized marker actions using the same TempoMap-backed scheduler path and queued-action summaries.
+- Keep live Ardour `Session`/`Location` marker-crossing detection as a separate non-realtime adapter.
 
 Phase 5: add minimal Reactive Performance UI panel.
 

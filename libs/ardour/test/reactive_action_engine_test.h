@@ -15,6 +15,8 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (matchMidiCCThreshold);
 	CPPUNIT_TEST (matchMidiCCWithoutThreshold);
 	CPPUNIT_TEST (ignoreMarkerTriggersForMidi);
+	CPPUNIT_TEST (matchMarkerTriggerByName);
+	CPPUNIT_TEST (keepDocumentOrderForMultipleMarkerMatches);
 	CPPUNIT_TEST (keepDocumentOrderForMultipleMatches);
 	CPPUNIT_TEST (triggerAllChainReturnsAllCommandsAndMetadata);
 	CPPUNIT_TEST (triggerActionWithMidiEventResolvesMacroValue);
@@ -40,6 +42,8 @@ public:
 	void matchMidiCCThreshold ();
 	void matchMidiCCWithoutThreshold ();
 	void ignoreMarkerTriggersForMidi ();
+	void matchMarkerTriggerByName ();
+	void keepDocumentOrderForMultipleMarkerMatches ();
 	void keepDocumentOrderForMultipleMatches ();
 	void triggerAllChainReturnsAllCommandsAndMetadata ();
 	void triggerActionWithMidiEventResolvesMacroValue ();
