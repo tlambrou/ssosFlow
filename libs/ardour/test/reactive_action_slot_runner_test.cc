@@ -78,6 +78,11 @@ public:
 		return record ("state:" + name + ":" + value, error);
 	}
 
+	bool harmony (std::string const& name, std::string const& value, std::string& error)
+	{
+		return record ("harmony:" + name + ":" + value, error);
+	}
+
 	bool rhythm (std::string const& name, double value, std::string& error)
 	{
 		std::ostringstream call;
@@ -1053,6 +1058,60 @@ ReactiveActionSlotRunnerTest::summarizeStateBankForPerformancePanel ()
 }
 
 void
+ReactiveActionSlotRunnerTest::summarizeHarmonyBankForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT (runner.harmony_bank_summary (8).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Harmony bank: none"), runner.format_harmony_bank_summary (8));
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION setup\n"
+		"DO harmony key C_minor\n"
+		"DO harmony chord i\n"
+		"END\n"
+		"ACTION perform\n"
+		"DO harmony chord V\n"
+		"DO harmony scale aeolian\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveHarmonySlotSummary> summary = runner.harmony_bank_summary (8);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("key"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary[0].value);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chord"), summary[1].name);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary[1].value);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("scale"), summary[2].name);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary[2].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+
+	summary = runner.harmony_bank_summary (2);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("key"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("C_minor"), summary[0].value);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chord"), summary[1].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("V"), summary[1].value);
+	CPPUNIT_ASSERT_EQUAL (std::string ("V"), runner.harmony_value ("chord"));
+
+	std::string const formatted = runner.format_harmony_bank_summary (8);
+	CPPUNIT_ASSERT (formatted.find ("0: key = C_minor") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: chord = V") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("2: scale = aeolian") != std::string::npos);
+}
+
+void
 ReactiveActionSlotRunnerTest::previewSlotForPerformancePanelWithoutMutatingState ()
 {
 	ReactiveActionSlotRunner runner;
@@ -1156,18 +1215,20 @@ ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
 	RecordingTarget target;
 	std::string error;
 
-	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMacros: none\nStates: none"), runner.format_panel_summary (2));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMacros: none\nStates: none\nHarmony: none"), runner.format_panel_summary (2));
 
 	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
 		"ACTION setup\n"
 		"DO macro filter 0.25\n"
 		"DO state section intro\n"
+		"DO harmony key C_minor\n"
 		"DO cue 0\n"
 		"END\n"
 		"ACTION perform\n"
 		"DO macro resonance 0.55\n"
 		"DO state section drop\n"
 		"DO state energy high\n"
+		"DO harmony chord V\n"
 		"END\n",
 		error));
 	CPPUNIT_ASSERT (error.empty ());
@@ -1175,9 +1236,10 @@ ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
 	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
 
 	std::string const formatted = runner.format_panel_summary (2);
-	CPPUNIT_ASSERT (formatted.find ("Next: slot 0 setup - all, q 0|0|0, 3 cmds") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("Next: slot 0 setup - all, q 0|0|0, 4 cmds") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("Macros: filter=0.25, resonance=0") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("States: section=intro, energy=") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("Harmony: key=C_minor, chord=") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("Action bank:") == std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("Reactive Performance Mode") == std::string::npos);
 }

@@ -181,6 +181,7 @@ ReactiveSessionTargetTest::acceptNonSessionStateCommands ()
 
 	CPPUNIT_ASSERT_EQUAL (true, target.macro ("filter", 0.75, Temporal::BBT_Offset (0, 2, 0), error));
 	CPPUNIT_ASSERT_EQUAL (true, target.state ("section", "breakdown", error));
+	CPPUNIT_ASSERT_EQUAL (true, target.harmony ("key", "C_minor", error));
 	CPPUNIT_ASSERT_EQUAL (false, target.rhythm ("density", 0.50, error));
 	CPPUNIT_ASSERT (error.find ("no session") != std::string::npos);
 	CPPUNIT_ASSERT (target.calls.empty ());

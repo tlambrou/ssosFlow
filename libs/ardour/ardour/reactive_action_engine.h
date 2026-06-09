@@ -56,6 +56,7 @@ public:
 	void set_transport_rolling (bool rolling) { _transport_rolling = rolling; }
 	double macro_value (std::string const& name) const;
 	std::string state_value (std::string const& name) const;
+	std::string harmony_value (std::string const& name) const;
 	std::string last_action () const { return _last_action; }
 
 	ReactiveActionDocument const& document () const { return _document; }
@@ -72,6 +73,7 @@ private:
 	std::map<std::string, double> _macros;
 	std::map<std::string, MacroSnapshot> _macro_snapshots;
 	std::map<std::string, std::string> _states;
+	std::map<std::string, std::string> _harmony;
 	bool _transport_rolling = false;
 	std::string _last_action;
 };

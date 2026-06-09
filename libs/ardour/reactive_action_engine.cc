@@ -127,6 +127,7 @@ ReactiveActionEngine::load_document (ReactiveActionDocument const& document, std
 	_macros.clear ();
 	_macro_snapshots.clear ();
 	_states.clear ();
+	_harmony.clear ();
 	_last_action.clear ();
 	error.clear ();
 	return true;
@@ -310,6 +311,17 @@ ReactiveActionEngine::state_value (std::string const& name) const
 	return found->second;
 }
 
+std::string
+ReactiveActionEngine::harmony_value (std::string const& name) const
+{
+	std::map<std::string, std::string>::const_iterator found = _harmony.find (name);
+	if (found == _harmony.end ()) {
+		return std::string ();
+	}
+
+	return found->second;
+}
+
 bool
 ReactiveActionEngine::preview_plan_commands (std::vector<ReactiveCommand> const& input, ReactiveMidiEvent const* event, std::vector<ReactiveCommand>& output, std::string& error) const
 {
@@ -356,6 +368,11 @@ ReactiveActionEngine::conditions_match (ReactiveAction const& action, std::strin
 			matches = found != _states.end () && found->second == condition->text;
 			break;
 		}
+		case ReactiveCondition::HarmonyEquals: {
+			std::map<std::string, std::string>::const_iterator found = _harmony.find (condition->name);
+			matches = found != _harmony.end () && found->second == condition->text;
+			break;
+		}
 		case ReactiveCondition::MacroEquals:
 			matches = std::fabs (macro_value (condition->name) - condition->value) <= condition_value_tolerance;
 			break;
@@ -384,6 +401,7 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 	std::map<std::string, double> macros = _macros;
 	std::map<std::string, MacroSnapshot> macro_snapshots = _macro_snapshots;
 	std::map<std::string, std::string> states = _states;
+	std::map<std::string, std::string> harmony = _harmony;
 
 	error.clear ();
 
@@ -416,6 +434,8 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 			macros[resolved.name] = resolved.value;
 		} else if (resolved.type == ReactiveCommand::State) {
 			states[resolved.name] = resolved.text;
+		} else if (resolved.type == ReactiveCommand::Harmony) {
+			harmony[resolved.name] = resolved.text;
 		}
 
 		planned.push_back (resolved);
@@ -424,6 +444,7 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 	_macros = macros;
 	_macro_snapshots = macro_snapshots;
 	_states = states;
+	_harmony = harmony;
 	output = planned;
 	return true;
 }

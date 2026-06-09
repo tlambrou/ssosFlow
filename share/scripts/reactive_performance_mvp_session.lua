@@ -12,6 +12,9 @@ DO rhythm route 0 density 1
 DO rhythm route 0 chance 1
 DO rhythm route 0 priority_mode 0
 DO rhythm route 0 rotation 0
+DO harmony key C_minor
+DO harmony scale aeolian
+DO harmony chord i
 DO state groove reset
 DO cue 0
 END
@@ -22,6 +25,7 @@ DO rhythm insert 0
 DO rhythm route 0 density 0.75
 DO rhythm route 0 chance 1
 DO rhythm route 0 priority_mode 3
+DO harmony chord iv
 DO state groove tight
 DO cue 1
 END
@@ -32,6 +36,7 @@ DO rhythm insert 0
 DO rhythm route 0 density 0.35
 DO rhythm route 0 chance 0.5
 DO rhythm route 0 priority_mode 1
+DO harmony chord VI
 DO state groove sparse
 DO cue 2
 END
@@ -40,6 +45,7 @@ ACTION demo.rotate
 TRIGGER midi note ch=10 note=39
 DO rhythm insert 0
 DO rhythm route 0 rotation 4
+DO harmony chord V
 DO state groove rotated
 DO cue 3
 END

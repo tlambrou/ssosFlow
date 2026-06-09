@@ -425,6 +425,28 @@ ReactiveActionSlotRunner::state_bank_summary (size_t max_slots) const
 	return summary;
 }
 
+std::vector<ReactiveHarmonySlotSummary>
+ReactiveActionSlotRunner::harmony_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveHarmonySlotSummary> summary;
+	if (!_loaded || max_slots == 0) {
+		return summary;
+	}
+
+	std::vector<std::string> const names = command_names_from_actions (_engine.document ().actions (), ReactiveCommand::Harmony, max_slots);
+	summary.reserve (names.size ());
+
+	for (size_t slot = 0; slot < names.size (); ++slot) {
+		ReactiveHarmonySlotSummary row;
+		row.slot = slot;
+		row.name = names[slot];
+		row.value = _engine.harmony_value (row.name);
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
 ReactiveActionPreviewSummary
 ReactiveActionSlotRunner::preview_slot (size_t slot)
 {
@@ -958,6 +980,16 @@ ReactiveActionSlotRunner::format_panel_summary (size_t max_items) const
 		}
 	}
 
+	std::vector<ReactiveHarmonySlotSummary> const harmony = harmony_bank_summary (max_items);
+	text << "\nHarmony:";
+	if (harmony.empty ()) {
+		text << " none";
+	} else {
+		for (std::vector<ReactiveHarmonySlotSummary>::const_iterator i = harmony.begin (); i != harmony.end (); ++i) {
+			text << (i == harmony.begin () ? " " : ", ") << i->name << "=" << i->value;
+		}
+	}
+
 	return text.str ();
 }
 
@@ -1018,6 +1050,24 @@ ReactiveActionSlotRunner::format_state_bank_summary (size_t max_slots) const
 	std::ostringstream text;
 	text << "State bank:";
 	for (std::vector<ReactiveStateSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->name << " = " << i->value;
+	}
+
+	return text.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_harmony_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveHarmonySlotSummary> const summary = harmony_bank_summary (max_slots);
+
+	if (summary.empty ()) {
+		return "Harmony bank: none";
+	}
+
+	std::ostringstream text;
+	text << "Harmony bank:";
+	for (std::vector<ReactiveHarmonySlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
 		text << "\n  " << i->slot << ": " << i->name << " = " << i->value;
 	}
 

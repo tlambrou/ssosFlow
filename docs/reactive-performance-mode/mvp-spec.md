@@ -4,7 +4,7 @@ Issue: #1
 
 ## Product Intent
 
-Reactive Performance Mode turns Ardour into a playable song-system. The MVP should prove that clips, cues, tracks, macros, routing, MIDI input, rhythm state, and musical clock position can be declared as reactive state and controlled in real time without a mouse after setup.
+Reactive Performance Mode turns Ardour into a playable song-system. The MVP should prove that clips, cues, tracks, macros, routing, MIDI input, harmony state, rhythm state, and musical clock position can be declared as reactive state and controlled in real time without a mouse after setup.
 
 This is an experimental mode. Normal Ardour behavior must remain unchanged when the mode is not enabled.
 
@@ -33,6 +33,7 @@ The MVP state graph should expose stable node identities for:
 - Cues/scenes: cue row id, pending cue, active cue, mixer scene id, scene validity.
 - MIDI input: note on/off, CC, program, sysex/msg pattern, channel, value, velocity, source map.
 - Parameters/macros: named macro value, source control, target controls, ramp state, snapshot value.
+- Harmony states: named harmonic values such as key, scale, chord, section, or progression step declared by the action file.
 - Routing states: named route groups or route ids, input/output port names, send targets where available.
 - User performance states: booleans, enums, counters, and named modes declared by the action file.
 
@@ -71,6 +72,8 @@ QUANTIZE 0|1|0
 DO rhythm insert 0
 DO rhythm route 0 density midi-value
 DO macro filter midi-value ramp 0|1|0
+DO harmony key C_minor
+DO harmony chord i
 END
 
 ACTION breakdown
@@ -98,6 +101,7 @@ Required MVP commands:
 - `macro snapshot store <name>`
 - `macro snapshot recall <name> [ramp <bbt-offset>]`
 - `state <name> <value>`
+- `harmony <name> <value>`
 - `rhythm <param> <value>`
 - `rhythm insert <route-index>`
 - `rhythm route <route-index> <param> <value|midi-value>`
@@ -111,11 +115,12 @@ Required chain modes:
 Required MVP conditions:
 
 - `WHEN state <name> <value>`
+- `WHEN harmony <name> <value>`
 - `WHEN macro <name> <value>`
 - `WHEN transport rolling`
 - `WHEN transport stopped`
 
-Phase 3i stores and enforces these conditions in the Reactive action engine before previewing or triggering commands. Unmet conditions fail visibly without mutating macro/state values, advancing sequential chains, or updating the last action.
+Phase 3i stores and enforces these conditions in the Reactive action engine before previewing or triggering commands. Unmet conditions fail visibly without mutating macro/state/harmony values, advancing sequential chains, or updating the last action.
 
 Phase 4h wires transport conditions to the live Ardour bridge:
 
@@ -188,7 +193,7 @@ The existing Generic MIDI action names remain stable:
 
 The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots, note 44 to `Reactive/show-action-document-status`, note 45 to `Reactive/reload-action-document`, and note 47 to `Reactive/toggle-performance-mode`.
 
-`Reactive/toggle-performance-mode` arms or disarms Reactive Performance Mode from a controller or key binding. When disabled, manual slots and live MIDI-triggered reactive actions report a visible disabled execution status without dispatching target commands, mutating macro/state values, or advancing sequential chains. Status/reload commands remain available so a performer can inspect or repair the setup before re-enabling the mode.
+`Reactive/toggle-performance-mode` arms or disarms Reactive Performance Mode from a controller or key binding. When disabled, manual slots and live MIDI-triggered reactive actions report a visible disabled execution status without dispatching target commands, mutating macro/state/harmony values, or advancing sequential chains. Status/reload commands remain available so a performer can inspect or repair the setup before re-enabling the mode.
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
@@ -197,6 +202,8 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
 State-bank rows are discovered from `DO state ...` commands in the loaded action document. Names are listed once in first-seen document order, default to an empty value before execution, and reflect the latest values written by executed state commands.
+
+Harmony-bank rows are discovered from `DO harmony ...` commands in the loaded action document. Names are listed once in first-seen document order, default to an empty value before execution, and reflect the latest values written by executed harmony commands.
 
 The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots.
 
@@ -212,6 +219,8 @@ Phase 4g adds event-derived macro values. `DO macro <name> midi-value [ramp <bbt
 
 Phase 3h adds macro snapshot store/recall. `DO macro snapshot store <name>` captures the current Reactive macro values under a named snapshot after any earlier macro commands in the same action have been applied. `DO macro snapshot recall <name> [ramp <bbt-offset>]` expands the stored values back into normal macro commands, preserving the optional recall ramp so existing executor, controller feedback, and performance UI paths can apply the recalled values. Missing snapshots fail the action plan visibly instead of silently changing live macro state.
 
+Phase 3j adds first-class harmony state actions. `DO harmony <name> <value>` updates a dedicated harmony read model, and `WHEN harmony <name> <value>` gates actions against that model without conflating harmonic state with general user state. The executor currently treats harmony as a non-session no-op target command, so this slice gives the UI, controller workflow, and action engine stable key/chord/scale values before any MIDI chord generation or clip mutation work.
+
 ## Performance UI
 
 Add the smallest useful UI surface, preferably integrated with the existing Cue page:
@@ -220,6 +229,7 @@ Add the smallest useful UI surface, preferably integrated with the existing Cue 
 - Load/reload action file.
 - Show active action bank.
 - Show 8 macro values with names and current value.
+- Show 8 harmony values with names and current value.
 - Show last action and next quantized action preview.
 - Show parser/validation errors.
 - Provide large performance-safe controls.
@@ -444,7 +454,7 @@ Phase 5a adds the reusable read model for that panel:
 - `ReactiveActionSlotRunner` can summarize the first controller action bank as slot index, action name, primary trigger label, command count, and latest-attempted marker.
 - MIDI note/CC triggers are formatted in musician-facing syntax such as `MIDI note ch=10 note=36` and `MIDI cc ch=1 cc=22 value>63`.
 - The existing status dialog displays this action-bank summary as the first panel-oriented UI slice.
-- The later full panel should still move this into the Cue-page performance surface with macro/state values and queued-action preview.
+- The later full panel should still move this into the Cue-page performance surface with macro/state/harmony values and queued-action preview.
 
 Phase 5b adds the reusable macro-bank read model for that panel:
 
@@ -460,9 +470,16 @@ Phase 5c adds the reusable state-bank read model for that panel:
 - State values default to an empty string before execution and update as `DO state ...` commands run through the action engine.
 - The existing status dialog displays this compact state bank below the macro bank.
 
+Phase 5t adds the matching panel read model for harmony state:
+
+- `ReactiveActionSlotRunner` can summarize the first harmony bank as slot index, harmony name, and current value.
+- Harmony names are discovered from loaded action documents in stable first-seen document order, with duplicate harmony commands collapsed to one row.
+- Harmony values default to an empty string before execution and update as `DO harmony ...` commands run through the action engine.
+- The existing status dialog displays this compact harmony bank below the state bank, and the Cue-page panel summary includes the same harmony values.
+
 Phase 5d adds the reusable next-action preview read model for that panel:
 
-- `ReactiveActionEngine::preview_action(...)` builds the same action-plan metadata as execution without running target commands, updating macro/state values, marking last action, or advancing sequential action chains.
+- `ReactiveActionEngine::preview_action(...)` builds the same action-plan metadata as execution without running target commands, updating macro/state/harmony values, marking last action, or advancing sequential action chains.
 - `ReactiveActionSlotRunner` can preview a manual slot or the first matching MIDI event as slot index, action name, primary trigger label, chain mode, quantize label, and next command count.
 - Preview planning refreshes the live transport-state provider first, so transport-gated actions appear unavailable while their `WHEN transport ...` condition is unmet.
 - After a slot or MIDI event is executed, the runner refreshes a cached next-action preview for the same control so repeated sequential actions show the next planned command count without consuming it.
@@ -603,7 +620,7 @@ Phase 7b makes the MVP map more controller-first:
 
 Phase 7c packages a small demo asset:
 
-- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, transport-gated actions, state changes, and a CC-derived macro action.
+- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, harmony-state updates, transport-gated actions, state changes, and a CC-derived macro action.
 - `examples/reactive-performance-mvp/README.md` documents the manual session layout, controller map, feedback routing, and smoke checks.
 - `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads` loads the packaged action file as a session document so parser drift breaks automated tests.
 - A full `.ardour` session archive remains a follow-up because current session XML is generated, ID-heavy, and environment-dependent.
@@ -634,13 +651,13 @@ Phase 7h makes the template-created lanes Cue-page visible:
 
 ## Acceptance Tests
 
-- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, and route-scoped rhythm `midi-value`.
-- Engine tests cover action lookup, chain state, literal and event-derived macro state, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
+- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, route-scoped rhythm `midi-value`, and harmony commands/conditions.
+- Engine tests cover action lookup, chain state, literal and event-derived macro state, harmony state and conditions, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
 - Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
 - Session-target tests cover route-scoped rhythm insertion, parameter writes, missing-target errors, and routing summaries with live rhythm parameter values.
 - Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
-- Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
+- Manual smoke test can trigger one cue row, one harmony-state update, and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.

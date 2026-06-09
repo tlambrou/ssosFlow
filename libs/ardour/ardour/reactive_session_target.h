@@ -36,6 +36,7 @@ public:
 	bool scene_store (int index, std::string& error) override;
 	bool macro (std::string const& name, double value, Temporal::BBT_Offset const& ramp, std::string& error) override;
 	bool state (std::string const& name, std::string const& value, std::string& error) override;
+	bool harmony (std::string const& name, std::string const& value, std::string& error) override;
 	bool rhythm (std::string const& name, double value, std::string& error) override;
 	bool rhythm_route (int route, std::string const& name, double value, std::string& error) override;
 	bool rhythm_insert (int route, std::string& error) override;

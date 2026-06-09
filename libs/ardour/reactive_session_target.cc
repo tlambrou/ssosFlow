@@ -401,6 +401,16 @@ ReactiveSessionTarget::state (std::string const& name, std::string const& value,
 }
 
 bool
+ReactiveSessionTarget::harmony (std::string const& name, std::string const& value, std::string& error)
+{
+	(void) name;
+	(void) value;
+
+	error.clear ();
+	return true;
+}
+
+bool
 ReactiveSessionTarget::rhythm (std::string const& name, double value, std::string& error)
 {
 	if (!_session) {

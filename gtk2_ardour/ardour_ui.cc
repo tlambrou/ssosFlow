@@ -3290,7 +3290,9 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			_reactive_action_slots.format_macro_bank_summary (8) +
 			"\n\n" +
-			_reactive_action_slots.format_state_bank_summary (8);
+			_reactive_action_slots.format_state_bank_summary (8) +
+			"\n\n" +
+			_reactive_action_slots.format_harmony_bank_summary (8);
 	};
 
 	const auto refresh_controls = [&]() {

@@ -77,6 +77,11 @@ public:
 		return record ("state:" + name + ":" + value, error);
 	}
 
+	bool harmony (std::string const& name, std::string const& value, std::string& error)
+	{
+		return record ("harmony:" + name + ":" + value, error);
+	}
+
 	bool rhythm (std::string const& name, double value, std::string& error)
 	{
 		std::ostringstream call;
@@ -149,6 +154,7 @@ ReactiveActionExecutorTest::executeAllCommandTypesInOrder ()
 		"DO scene store 2\n"
 		"DO macro filter 0.75 ramp 0|2|0\n"
 		"DO state section breakdown\n"
+		"DO harmony key C_minor\n"
 		"DO rhythm density 0.50\n"
 		"DO rhythm insert 5\n"
 		"END\n");
@@ -158,8 +164,8 @@ ReactiveActionExecutorTest::executeAllCommandTypesInOrder ()
 	ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
 
 	CPPUNIT_ASSERT_EQUAL (true, result.ok);
-	CPPUNIT_ASSERT_EQUAL (size_t (12), result.commands_executed);
-	CPPUNIT_ASSERT_EQUAL (size_t (12), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (13), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (13), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("cue:2"), target.calls[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("trigger:3:4"), target.calls[1]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("trigger-stop:3"), target.calls[2]);
@@ -170,8 +176,9 @@ ReactiveActionExecutorTest::executeAllCommandTypesInOrder ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("scene-store:2"), target.calls[7]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.75:0|2|0"), target.calls[8]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("state:section:breakdown"), target.calls[9]);
-	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:density:0.5"), target.calls[10]);
-	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:5"), target.calls[11]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("harmony:key:C_minor"), target.calls[10]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:density:0.5"), target.calls[11]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:5"), target.calls[12]);
 }
 
 void
