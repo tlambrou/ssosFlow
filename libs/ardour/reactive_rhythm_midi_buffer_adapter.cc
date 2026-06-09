@@ -1,5 +1,7 @@
 #include "ardour/reactive_rhythm_midi_buffer_adapter.h"
 
+#include "ardour/reactive_rhythm_chance_source.h"
+
 #include <vector>
 
 using namespace ARDOUR;
@@ -89,6 +91,18 @@ ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, std::vector
 	}
 
 	return decisions;
+}
+
+std::vector<ReactiveRhythmMidiBufferDecision>
+ReactiveRhythmMidiBufferAdapter::process_buffer (MidiBuffer& buffer, ReactiveRhythmChanceSource& chance_source)
+{
+	std::vector<double> chance_values;
+
+	for (MidiBuffer::iterator i = buffer.begin (); i != buffer.end (); ++i) {
+		chance_values.push_back (chance_source.next ());
+	}
+
+	return process_buffer (buffer, chance_values);
 }
 
 ReactiveRhythmMidiBytes

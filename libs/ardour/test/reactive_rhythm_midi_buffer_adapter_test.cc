@@ -1,6 +1,7 @@
 #include "reactive_rhythm_midi_buffer_adapter_test.h"
 
 #include "ardour/midi_buffer.h"
+#include "ardour/reactive_rhythm_chance_source.h"
 #include "ardour/reactive_rhythm_midi_buffer_adapter.h"
 
 #include <vector>
@@ -132,6 +133,36 @@ ReactiveRhythmMidiBufferAdapterTest::chanceZeroDropsNoteOnDeterministically ()
 	CPPUNIT_ASSERT_EQUAL (false, decisions[0].forward);
 	CPPUNIT_ASSERT_EQUAL (false, decisions[1].forward);
 	CPPUNIT_ASSERT_EQUAL (true, buffer.empty ());
+}
+
+void
+ReactiveRhythmMidiBufferAdapterTest::chanceSourceDrivesPassAndDropDecisions ()
+{
+	MidiBuffer pass_buffer (512);
+	push (pass_buffer, 10, 0x90, 60, 100);
+	push (pass_buffer, 90, 0x80, 60, 0);
+
+	ReactiveRhythmSettings settings = settings_with_density (1.0);
+	settings.chance = 0.5;
+	ReactiveRhythmMidiBufferAdapter pass_adapter (settings);
+	ReactiveRhythmChanceSource pass_source (1);
+	std::vector<ReactiveRhythmMidiBufferDecision> pass_decisions = pass_adapter.process_buffer (pass_buffer, pass_source);
+
+	CPPUNIT_ASSERT_EQUAL (true, pass_decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (true, pass_decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (false, pass_buffer.empty ());
+
+	MidiBuffer drop_buffer (512);
+	push (drop_buffer, 10, 0x90, 60, 100);
+	push (drop_buffer, 90, 0x80, 60, 0);
+
+	ReactiveRhythmMidiBufferAdapter drop_adapter (settings);
+	ReactiveRhythmChanceSource drop_source (12345);
+	std::vector<ReactiveRhythmMidiBufferDecision> drop_decisions = drop_adapter.process_buffer (drop_buffer, drop_source);
+
+	CPPUNIT_ASSERT_EQUAL (false, drop_decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (false, drop_decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (true, drop_buffer.empty ());
 }
 
 void
