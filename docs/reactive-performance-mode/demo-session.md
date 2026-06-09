@@ -64,13 +64,14 @@ Reactive/trigger-action-6
 Reactive/trigger-action-7
 ```
 
-The status panel action is:
+Two utility buttons are also mapped:
 
 ```text
-Reactive/show-action-document-status
+note 44 -> Reactive/show-action-document-status
+note 45 -> Reactive/reload-action-document
 ```
 
-It is not bound in the MVP map yet, but it can be invoked from Ardour's action system or mapped manually.
+Use note 44 to inspect the currently loaded action document and latest slot execution. Use note 45 after editing `reactive-actions.txt`.
 
 ## Built-In Fallback Behavior
 
@@ -136,18 +137,18 @@ Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/
 Run this checklist after loading the session:
 
 - App boots from `gtk2_ardour/ardev`.
-- `Reactive/show-action-document-status` opens with either the session file path or `built-in MVP fallback`.
+- Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
 - Trigger pad 0, MIDI channel 10 note 36.
 - The status panel reports slot 0 and a successful last execution.
 - Route 0 contains an active LuaProc processor named `Reactive Rhythm State MVP`.
 - Cue row 0 launches if the row exists in the session.
 - Trigger pad 1 or 2 and confirm the status panel reports the matching slot/action.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
-- `Reactive/reload-action-document` reports parse errors instead of silently falling back when the session file is invalid.
+- Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 
 ## Current Limits
 
-- The MVP map only binds eight pad notes. Macro CCs and status/feedback bindings remain follow-up work.
+- The MVP map binds eight pad notes and two utility notes. Macro CCs and MIDI feedback output remain follow-up work.
 - The status panel is a compact diagnostic dialog, not the final performance panel.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.

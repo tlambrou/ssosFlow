@@ -4,7 +4,8 @@
 <!--
   Reactive Performance Mode MVP bridge map.
 
-  This binds an eight-pad performance row to the first Reactive action slots.
+  This binds an eight-pad performance row to the first Reactive action slots,
+  plus two utility buttons for status and action-document reload.
   With no session-local or user reactive-actions.txt, the built-in MVP fallback
   uses pad 0 to insert/reset the rhythm prototype on controller route 0 and
   uses later pads to launch cue rows while mutating rhythm density, chance,
@@ -21,5 +22,8 @@
 	<Binding channel="10" note="41" action="Reactive/trigger-action-5" momentary="yes"/>
 	<Binding channel="10" note="42" action="Reactive/trigger-action-6" momentary="yes"/>
 	<Binding channel="10" note="43" action="Reactive/trigger-action-7" momentary="yes"/>
+
+	<Binding channel="10" note="44" action="Reactive/show-action-document-status" momentary="yes"/>
+	<Binding channel="10" note="45" action="Reactive/reload-action-document" momentary="yes"/>
 
 </ArdourMIDIBindings>

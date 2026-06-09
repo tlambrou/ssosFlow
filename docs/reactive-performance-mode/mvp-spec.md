@@ -157,7 +157,7 @@ The existing Generic MIDI action names remain stable:
 - `Reactive/trigger-action-6`
 - `Reactive/trigger-action-7`
 
-The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots.
+The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots, note 44 to `Reactive/show-action-document-status`, and note 45 to `Reactive/reload-action-document`.
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
@@ -348,6 +348,12 @@ Phase 7a adds the first practical demo guide:
 - Document the local build/run path, minimal session layout, Generic MIDI map, built-in fallback pad behavior, and session-local `reactive-actions.txt` example.
 - Include smoke-test checks for app boot, action document status, slot execution feedback, rhythm insertion, and route-scoped rhythm parameter updates.
 - Keep the guide honest about current manual setup limits until an Ardour demo session archive is packaged.
+
+Phase 7b makes the MVP map more controller-first:
+
+- Keep notes 36 through 43 mapped to `Reactive/trigger-action-0` through `Reactive/trigger-action-7`.
+- Bind note 44 to `Reactive/show-action-document-status`.
+- Bind note 45 to `Reactive/reload-action-document`.
 
 ## Acceptance Tests
 
