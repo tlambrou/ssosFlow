@@ -89,6 +89,13 @@ public:
 		return record (compose_one ("rhythm-insert", route), error);
 	}
 
+	bool rhythm_route (int route, std::string const& name, double value, std::string& error)
+	{
+		std::ostringstream call;
+		call << "rhythm-route:" << route << ":" << name << ":" << value;
+		return record (call.str (), error);
+	}
+
 	std::vector<std::string> calls;
 
 private:
@@ -183,6 +190,24 @@ ReactiveActionExecutorTest::executeRhythmInsertCommand ()
 	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:2"), target.calls[0]);
+}
+
+void
+ReactiveActionExecutorTest::executeRouteScopedRhythmCommand ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION route.rhythm\n"
+		"DO rhythm route 2 density 0.35\n"
+		"END\n");
+	ReactiveActionPlan plan = engine.trigger_action ("route.rhythm");
+	RecordingTarget target;
+
+	ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-route:2:density:0.35"), target.calls[0]);
 }
 
 void

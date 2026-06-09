@@ -8,6 +8,7 @@ class ReactiveActionExecutorTest : public CppUnit::TestFixture
 	CPPUNIT_TEST_SUITE (ReactiveActionExecutorTest);
 	CPPUNIT_TEST (executeAllCommandTypesInOrder);
 	CPPUNIT_TEST (executeRhythmInsertCommand);
+	CPPUNIT_TEST (executeRouteScopedRhythmCommand);
 	CPPUNIT_TEST (refuseFailedPlan);
 	CPPUNIT_TEST (stopAfterFirstTargetFailure);
 	CPPUNIT_TEST_SUITE_END ();
@@ -15,6 +16,7 @@ class ReactiveActionExecutorTest : public CppUnit::TestFixture
 public:
 	void executeAllCommandTypesInOrder ();
 	void executeRhythmInsertCommand ();
+	void executeRouteScopedRhythmCommand ();
 	void refuseFailedPlan ();
 	void stopAfterFirstTargetFailure ();
 };

@@ -88,6 +88,13 @@ public:
 		return record (compose_one ("rhythm-insert", route), error);
 	}
 
+	bool rhythm_route (int route, std::string const& name, double value, std::string& error)
+	{
+		std::ostringstream call;
+		call << "rhythm-route:" << route << ":" << name << ":" << value;
+		return record (call.str (), error);
+	}
+
 	std::vector<std::string> calls;
 
 private:

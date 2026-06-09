@@ -60,6 +60,7 @@ QUANTIZE 0|1|0
 CHAIN random
 DO rhythm insert 0
 DO rhythm density 0.35
+DO rhythm route 0 chance 0.50
 DO rhythm density 0.55
 DO rhythm density 0.80
 END
@@ -298,6 +299,14 @@ Phase 6p adds the first execution-status read model for UI and controller feedba
 - Clearing or loading an action document resets stale execution status.
 - The Reactive Performance status dialog includes this latest execution summary.
 - Actual MIDI feedback output remains a follow-up so this slice stays backend-first and reusable.
+
+Phase 6q adds route-scoped rhythm parameter actions:
+
+- Parse `DO rhythm route <route-index> <param> <value>` as a distinct command from global rhythm updates and route insertion.
+- Resolve `<route-index>` through Ardour's controller-facing remote route order, matching `DO rhythm insert <route-index>`.
+- Update only the targeted route's `Reactive Rhythm State MVP` insert.
+- Keep `DO rhythm <param> <value>` as the broadcast form for simple demo-wide changes.
+- Return explicit errors for missing routes, missing rhythm inserts on the target route, and unknown rhythm parameters.
 
 Parameters:
 

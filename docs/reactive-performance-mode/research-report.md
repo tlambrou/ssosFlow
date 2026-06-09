@@ -119,6 +119,8 @@ Phase 6o maps `DO rhythm <param> <value>` actions onto existing `Reactive Rhythm
 
 Phase 6p adds a native execution-status read model to `ReactiveActionSlotRunner`. The runner now records the latest slot attempt, action name when known, success/failure, error text, and executed command count; status is reset when the document is cleared or replaced. The existing Reactive Performance status dialog shows the summary as a first UI feedback surface. Controller feedback messages, script presets, live route mutation policy beyond explicit action commands, and full demo-session routing remain follow-up work.
 
+Phase 6q adds `DO rhythm route <route-index> <param> <value>` for route-scoped rhythm parameter updates. The parser keeps it distinct from broadcast `DO rhythm <param> <value>` and insertion `DO rhythm insert <route-index>`, the executor dispatches it through `ReactiveActionTarget::rhythm_route`, and `ReactiveSessionTarget` resolves the route through `Session::get_remote_nth_route()`. This keeps broadcast changes available for simple demos while allowing a controller action to mutate one live lane without touching every inserted rhythm processor.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.
