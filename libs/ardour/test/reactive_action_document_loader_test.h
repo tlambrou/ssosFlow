@@ -11,6 +11,7 @@ class ReactiveActionDocumentLoaderTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (useFallbackSeedWhenNoDocumentFileExists);
 	CPPUNIT_TEST (reportConfiguredDocumentParseFailureWithoutFallback);
 	CPPUNIT_TEST (describeLoadStatusForConfiguredAndFallbackDocuments);
+	CPPUNIT_TEST (formatDocumentStatusWithActionCountAndErrors);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -19,4 +20,5 @@ public:
 	void useFallbackSeedWhenNoDocumentFileExists ();
 	void reportConfiguredDocumentParseFailureWithoutFallback ();
 	void describeLoadStatusForConfiguredAndFallbackDocuments ();
+	void formatDocumentStatusWithActionCountAndErrors ();
 };

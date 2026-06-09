@@ -3207,11 +3207,13 @@ ARDOUR_UI::load_reactive_action_document (bool report_success)
 		    user_config_directory (),
 		    reactive_performance_mvp_seed_source (),
 		    load_result)) {
+		_reactive_action_document_load_result = load_result;
 		_reactive_action_document_session_path.clear ();
 		warning << string_compose (_("Could not load Reactive Performance action document: %1"), load_result.error) << endmsg;
 		return false;
 	}
 
+	_reactive_action_document_load_result = load_result;
 	_reactive_action_document_session_path = session_path;
 	if (report_success) {
 		info << ReactiveActionDocumentLoader::describe_load_result (load_result) << endmsg;
@@ -3220,17 +3222,53 @@ ARDOUR_UI::load_reactive_action_document (bool report_success)
 	return true;
 }
 
-void
-ARDOUR_UI::reload_reactive_action_document ()
+bool
+ARDOUR_UI::reload_reactive_action_document_from_disk (bool report_success)
 {
 	if (!_session) {
 		warning << _("Reactive action document reload ignored: no session is loaded") << endmsg;
-		return;
+		return false;
 	}
 
 	_reactive_action_slots.clear ();
 	_reactive_action_document_session_path.clear ();
-	load_reactive_action_document (true);
+	return load_reactive_action_document (report_success);
+}
+
+void
+ARDOUR_UI::reload_reactive_action_document ()
+{
+	reload_reactive_action_document_from_disk (true);
+}
+
+void
+ARDOUR_UI::show_reactive_action_document_status ()
+{
+	if (!_session) {
+		warning << _("Reactive action document status ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	ensure_reactive_action_document ();
+
+	ArdourDialog dialog (_("Reactive Performance"), true, false);
+	Gtk::Label status (ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result));
+	status.set_alignment (0.0, 0.0);
+	status.set_line_wrap (true);
+	status.set_selectable (true);
+
+	dialog.get_vbox()->pack_start (status, true, true, 12);
+	dialog.add_button (_("Reload"), RESPONSE_APPLY);
+	dialog.add_button (Stock::CLOSE, RESPONSE_CLOSE);
+	dialog.set_default_response (RESPONSE_CLOSE);
+	dialog.set_resizable (false);
+	dialog.show_all ();
+
+	while (dialog.run () == RESPONSE_APPLY) {
+		reload_reactive_action_document_from_disk (true);
+		status.set_text (ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result));
+		dialog.show_all ();
+	}
 }
 
 void

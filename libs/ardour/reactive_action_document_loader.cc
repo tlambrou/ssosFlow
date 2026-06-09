@@ -3,6 +3,7 @@
 #include "ardour/reactive_action_slot_runner.h"
 
 #include <exception>
+#include <sstream>
 #include <string>
 
 #include <glibmm/fileutils.h>
@@ -24,6 +25,7 @@ load_configured_file (
 {
 	result.ok = false;
 	result.used_fallback = false;
+	result.action_count = 0;
 	result.source = source;
 	result.path = path;
 	result.error.clear ();
@@ -50,6 +52,7 @@ load_configured_file (
 	}
 
 	result.ok = true;
+	result.action_count = runner.action_count ();
 	result.error.clear ();
 	return true;
 }
@@ -110,6 +113,26 @@ ReactiveActionDocumentLoader::describe_load_result (ReactiveActionDocumentLoadRe
 	return string_compose ("Loaded %1 reactive action document", result.source);
 }
 
+std::string
+ReactiveActionDocumentLoader::format_status (ReactiveActionDocumentLoadResult const& result)
+{
+	std::ostringstream status;
+
+	status << "Source: " << (result.source.empty () ? "none" : result.source) << "\n";
+	if (result.used_fallback || result.source == "fallback") {
+		status << "Path: built-in MVP fallback\n";
+	} else {
+		status << "Path: " << (result.path.empty () ? "not configured" : result.path) << "\n";
+	}
+	status << "Actions: " << result.action_count;
+
+	if (!result.ok && !result.error.empty ()) {
+		status << "\nError: " << result.error;
+	}
+
+	return status.str ();
+}
+
 bool
 ReactiveActionDocumentLoader::load_from_paths (
 	ReactiveActionSlotRunner& runner,
@@ -153,5 +176,6 @@ ReactiveActionDocumentLoader::load_from_paths (
 	}
 
 	result.ok = true;
+	result.action_count = runner.action_count ();
 	return true;
 }

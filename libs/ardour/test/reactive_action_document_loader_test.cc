@@ -94,6 +94,7 @@ ReactiveActionDocumentLoaderTest::preferSessionDocumentOverUserDocument ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
 	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (session_dir.path ()), result.path);
 	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.action_count);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.action_count ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("session.first"), runner.action_name (0));
 }
@@ -118,6 +119,7 @@ ReactiveActionDocumentLoaderTest::loadUserDocumentWhenSessionDocumentMissing ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("user"), result.source);
 	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::user_document_path (user_dir.path ()), result.path);
 	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.action_count);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.action_count ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("user.first"), runner.action_name (0));
 }
@@ -140,6 +142,7 @@ ReactiveActionDocumentLoaderTest::useFallbackSeedWhenNoDocumentFileExists ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("fallback"), result.source);
 	CPPUNIT_ASSERT (result.path.empty ());
 	CPPUNIT_ASSERT_EQUAL (true, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.action_count);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.action_count ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("fallback.first"), runner.action_name (0));
 }
@@ -176,6 +179,7 @@ ReactiveActionDocumentLoaderTest::reportConfiguredDocumentParseFailureWithoutFal
 	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
 	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (session_dir.path ()), result.path);
 	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), result.action_count);
 	CPPUNIT_ASSERT (result.error.find ("unknown command") != std::string::npos);
 	CPPUNIT_ASSERT (result.error.find (result.path) != std::string::npos);
 	CPPUNIT_ASSERT_EQUAL (false, runner.loaded ());
@@ -188,6 +192,7 @@ ReactiveActionDocumentLoaderTest::describeLoadStatusForConfiguredAndFallbackDocu
 	session_result.ok = true;
 	session_result.source = "session";
 	session_result.path = "/tmp/set/reactive-actions.txt";
+	session_result.action_count = 3;
 
 	CPPUNIT_ASSERT_EQUAL (
 		std::string ("Loaded session reactive action document: /tmp/set/reactive-actions.txt"),
@@ -197,8 +202,48 @@ ReactiveActionDocumentLoaderTest::describeLoadStatusForConfiguredAndFallbackDocu
 	fallback_result.ok = true;
 	fallback_result.source = "fallback";
 	fallback_result.used_fallback = true;
+	fallback_result.action_count = 8;
 
 	CPPUNIT_ASSERT_EQUAL (
 		std::string ("Loaded built-in Reactive Performance MVP fallback"),
 		ReactiveActionDocumentLoader::describe_load_result (fallback_result));
+}
+
+void
+ReactiveActionDocumentLoaderTest::formatDocumentStatusWithActionCountAndErrors ()
+{
+	ReactiveActionDocumentLoadResult loaded;
+	loaded.ok = true;
+	loaded.source = "session";
+	loaded.path = "/tmp/set/reactive-actions.txt";
+	loaded.action_count = 3;
+
+	std::string status = ReactiveActionDocumentLoader::format_status (loaded);
+	CPPUNIT_ASSERT (status.find ("Source: session") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Path: /tmp/set/reactive-actions.txt") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Actions: 3") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Error:") == std::string::npos);
+
+	ReactiveActionDocumentLoadResult failed;
+	failed.ok = false;
+	failed.source = "session";
+	failed.path = "/tmp/set/reactive-actions.txt";
+	failed.error = "/tmp/set/reactive-actions.txt: line 2: unknown command";
+
+	status = ReactiveActionDocumentLoader::format_status (failed);
+	CPPUNIT_ASSERT (status.find ("Source: session") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Path: /tmp/set/reactive-actions.txt") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Actions: 0") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Error: /tmp/set/reactive-actions.txt: line 2: unknown command") != std::string::npos);
+
+	ReactiveActionDocumentLoadResult fallback;
+	fallback.ok = true;
+	fallback.source = "fallback";
+	fallback.used_fallback = true;
+	fallback.action_count = 8;
+
+	status = ReactiveActionDocumentLoader::format_status (fallback);
+	CPPUNIT_ASSERT (status.find ("Source: fallback") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Path: built-in MVP fallback") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Actions: 8") != std::string::npos);
 }
