@@ -189,6 +189,7 @@ libardour_sources = [
         'readable.cc',
         'readonly_control.cc',
         'raw_midi_parser.cc',
+        'reactive_action.cc',
         'recent_sessions.cc',
         'record_enable_control.cc',
         'record_safe_control.cc',
@@ -643,6 +644,7 @@ def build(bld):
             create_ardour_test_program(bld, obj.includes, 'unit-test-playlist_layering', 'test_playlist_layering', ['test/playlist_layering_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-plugins', 'test_plugins', ['test/plugins_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-region_naming', 'test_region_naming', ['test/region_naming_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action', 'test_reactive_action', ['test/reactive_action_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-control_surface', 'test_control_surfaces', ['test/control_surfaces_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-mtdm', 'test_mtdm', ['test/mtdm_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-sha1', 'test_sha1', ['test/sha1_test.cc'])
@@ -665,6 +667,7 @@ def build(bld):
             'test/playlist_layering_test.cc',
             'test/plugins_test.cc',
             'test/region_naming_test.cc',
+            'test/reactive_action_test.cc',
             'test/control_surfaces_test.cc',
             'test/mtdm_test.cc',
             'test/sha1_test.cc',

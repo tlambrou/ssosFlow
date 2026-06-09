@@ -1,0 +1,167 @@
+#include "reactive_action_test.h"
+
+#include "ardour/reactive_action.h"
+
+#include <string>
+
+CPPUNIT_TEST_SUITE_REGISTRATION (ReactiveActionTest);
+
+using namespace ARDOUR;
+
+void
+ReactiveActionTest::parseMinimalAction ()
+{
+	const char* src =
+		"ACTION intro.drop\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), result.document.actions ().front ().name);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Cue, result.document.actions ().front ().commands.front ().type);
+}
+
+void
+ReactiveActionTest::rejectDuplicateActionNames ()
+{
+	const char* src =
+		"ACTION a\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION a\n"
+		"DO cue 1\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("duplicate action") != std::string::npos);
+}
+
+void
+ReactiveActionTest::parseMidiNoteTrigger ()
+{
+	const char* src =
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveTrigger::MidiNote, result.document.actions ().front ().triggers.front ().type);
+	CPPUNIT_ASSERT_EQUAL (10, result.document.actions ().front ().triggers.front ().channel);
+	CPPUNIT_ASSERT_EQUAL (36, result.document.actions ().front ().triggers.front ().number);
+}
+
+void
+ReactiveActionTest::parseMidiCCTrigger ()
+{
+	const char* src =
+		"ACTION knob.high\n"
+		"TRIGGER midi cc ch=1 cc=22 value>63\n"
+		"DO macro filter 0.80 ramp 0|1|0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveTrigger::MidiCC, result.document.actions ().front ().triggers.front ().type);
+	CPPUNIT_ASSERT_EQUAL (22, result.document.actions ().front ().triggers.front ().number);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, result.document.actions ().front ().commands.front ().type);
+}
+
+void
+ReactiveActionTest::parseSequentialAndRandomChains ()
+{
+	const char* src =
+		"ACTION mutate\n"
+		"CHAIN sequential\n"
+		"DO rhythm density 0.35\n"
+		"DO rhythm density 0.55\n"
+		"END\n"
+		"ACTION choose\n"
+		"CHAIN random\n"
+		"DO cue 1\n"
+		"DO cue 2\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT (ReactiveChainMode::Sequential == result.document.actions ()[0].chain_mode);
+	CPPUNIT_ASSERT (ReactiveChainMode::Random == result.document.actions ()[1].chain_mode);
+}
+
+void
+ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
+{
+	const char* src =
+		"ACTION breakdown\n"
+		"TRIGGER marker Breakdown\n"
+		"DO transport play\n"
+		"DO transport stop after 4|0|0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveTrigger::Marker, result.document.actions ().front ().triggers.front ().type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Breakdown"), result.document.actions ().front ().triggers.front ().name);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::TransportPlay, result.document.actions ().front ().commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::TransportStop, result.document.actions ().front ().commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (4, result.document.actions ().front ().commands[1].ramp.bars);
+}
+
+void
+ReactiveActionTest::parseSceneStateAndTriggerCommands ()
+{
+	const char* src =
+		"ACTION scene.ops\n"
+		"DO trigger 2 4\n"
+		"DO trigger-stop 2\n"
+		"DO stop-all\n"
+		"DO scene apply 3\n"
+		"DO scene store 4\n"
+		"DO state mode breakdown\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Trigger, result.document.actions ().front ().commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (2, result.document.actions ().front ().commands[0].first);
+	CPPUNIT_ASSERT_EQUAL (4, result.document.actions ().front ().commands[0].second);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::TriggerStop, result.document.actions ().front ().commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::StopAll, result.document.actions ().front ().commands[2].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::SceneApply, result.document.actions ().front ().commands[3].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::SceneStore, result.document.actions ().front ().commands[4].type);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::State, result.document.actions ().front ().commands[5].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("mode"), result.document.actions ().front ().commands[5].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), result.document.actions ().front ().commands[5].text);
+}
+
+void
+ReactiveActionTest::rejectInvalidQuantize ()
+{
+	const char* src =
+		"ACTION broken\n"
+		"QUANTIZE potatoes\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("invalid quantize") != std::string::npos);
+}
+
+void
+ReactiveActionTest::rejectUnknownCommand ()
+{
+	const char* src =
+		"ACTION broken\n"
+		"DO warp now\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("unknown command") != std::string::npos);
+	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
+}
