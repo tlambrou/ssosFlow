@@ -47,6 +47,7 @@ struct LIBARDOUR_API ReactiveControllerFeedbackSummary {
 	bool available = false;
 	bool enabled = false;
 	bool latest_attempted = false;
+	bool queued = false;
 	int value = 0;
 };
 

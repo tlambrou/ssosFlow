@@ -575,6 +575,14 @@ Phase 5q connects queued actions to the session clock without adding a native re
 - The always-visible panel summary and detailed status dialog now include queued-action summary text so performers can see pending quantized work.
 - This is still an MVP clock bridge: it uses polling rather than sample-accurate native `SessionEvent` scheduling, and exact hardware/controller smoke testing remains follow-up.
 
+Phase 5s makes queued quantized actions visible in that controller-feedback model:
+
+- `ReactiveControllerFeedbackSummary` marks slots with pending queued Reactive actions.
+- Deterministic MVP feedback values are now `0` for unavailable or disabled, `32` for enabled idle, `96` for enabled queued, and `127` for the latest attempted enabled slot.
+- Latest-attempted feedback takes priority over queued feedback for the same slot, so a just-pressed quantized action still gives immediate full-bright confirmation while it remains pending.
+- Queued feedback clears when pending actions release, when Reactive Performance Mode is disabled, or when the action document is cleared/reloaded through the existing queue-clearing paths.
+- The existing cached Generic MIDI feedback bridge inherits the queued value through `controller_feedback_midi_messages(...)`; no new realtime scheduling or hardware-specific controller behavior is added in this slice.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.
@@ -632,6 +640,7 @@ Phase 7h makes the template-created lanes Cue-page visible:
 - Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
 - Session-target tests cover route-scoped rhythm insertion, parameter writes, missing-target errors, and routing summaries with live rhythm parameter values.
+- Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.
