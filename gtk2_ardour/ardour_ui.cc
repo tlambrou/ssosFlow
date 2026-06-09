@@ -3221,12 +3221,15 @@ ARDOUR_UI::show_reactive_action_document_status ()
 	ensure_reactive_action_document ();
 
 	ArdourDialog dialog (_("Reactive Performance"), true, false);
+	ReactiveSessionTarget target (*_session);
 	Gtk::Label status (
 		ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
 		"\n\n" +
 		_reactive_action_slots.format_last_execution_status () +
 		"\n\n" +
 		_reactive_action_slots.format_next_action_preview () +
+		"\n\n" +
+		target.format_routing_summary (8) +
 		"\n\n" +
 		_reactive_action_slots.format_action_bank_summary (8) +
 		"\n\n" +
@@ -3252,6 +3255,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			_reactive_action_slots.format_last_execution_status () +
 			"\n\n" +
 			_reactive_action_slots.format_next_action_preview () +
+			"\n\n" +
+			target.format_routing_summary (8) +
 			"\n\n" +
 			_reactive_action_slots.format_action_bank_summary (8) +
 			"\n\n" +

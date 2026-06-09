@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "ardour/libardour_visibility.h"
 #include "ardour/reactive_action_executor.h"
@@ -8,6 +9,13 @@
 namespace ARDOUR {
 
 class Session;
+
+struct LIBARDOUR_API ReactiveRoutingSlotSummary {
+	size_t slot = 0;
+	std::string route_name;
+	bool reactive_rhythm_insert_present = false;
+	std::string status;
+};
 
 class LIBARDOUR_API ReactiveSessionTarget : public ReactiveActionTarget {
 public:
@@ -26,6 +34,8 @@ public:
 	bool rhythm (std::string const& name, double value, std::string& error) override;
 	bool rhythm_route (int route, std::string const& name, double value, std::string& error) override;
 	bool rhythm_insert (int route, std::string& error) override;
+	std::vector<ReactiveRoutingSlotSummary> routing_summary (size_t max_routes) const;
+	std::string format_routing_summary (size_t max_routes) const;
 
 protected:
 	ReactiveSessionTarget ();

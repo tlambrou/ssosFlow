@@ -13,6 +13,8 @@ class ReactiveSessionTargetRhythmInsertTest : public TestNeedingSession
 	CPPUNIT_TEST (routeScopedRhythmParameterActionsReportMissingTargets);
 	CPPUNIT_TEST (rhythmParameterActionsReportMissingInsertAndUnknownName);
 	CPPUNIT_TEST (rhythmInsertReportsMissingRoute);
+	CPPUNIT_TEST (summarizeReactiveRhythmRoutingStatus);
+	CPPUNIT_TEST (formatEmptyReactiveRhythmRoutingStatus);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -22,4 +24,6 @@ public:
 	void routeScopedRhythmParameterActionsReportMissingTargets ();
 	void rhythmParameterActionsReportMissingInsertAndUnknownName ();
 	void rhythmInsertReportsMissingRoute ();
+	void summarizeReactiveRhythmRoutingStatus ();
+	void formatEmptyReactiveRhythmRoutingStatus ();
 };
