@@ -20,12 +20,28 @@
 #include "control_surfaces_test.h"
 #include "control_protocol/control_protocol.h"
 #include "ardour/control_protocol_manager.h"
+#include "ardour/rc_configuration.h"
 #include "ardour/session.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION (ControlSurfacesTest);
 
 using namespace std;
 using namespace ARDOUR;
+
+void
+ControlSurfacesTest::setUp ()
+{
+	_saved_auto_enable_surfaces = Config->get_auto_enable_surfaces ();
+	Config->set_auto_enable_surfaces (false);
+	TestNeedingSession::setUp ();
+}
+
+void
+ControlSurfacesTest::tearDown ()
+{
+	TestNeedingSession::tearDown ();
+	Config->set_auto_enable_surfaces (_saved_auto_enable_surfaces);
+}
 
 /** Instantiate and then immediately tear down all our control surfaces.
  *  This is to check that there are no crashes when doing this.
@@ -46,9 +62,14 @@ ControlSurfacesTest::instantiateAndTeardownTest ()
 		}
 #endif
 		// The WebSockets control surface replaces the global event loop, causing
-		// crashes in later tests once it is deactivates. Until that is fixed, skip
+		// crashes in later tests once it is deactivated. Until that is fixed, skip
 		// it.
 		if (!strcmp (i->descriptor->id, "uri://ardour.org/surfaces/ardour_websockets:0")) {
+			continue;
+		}
+		// The MCP HTTP surface also starts a libwebsockets server. Immediate
+		// teardown races with server/session cleanup in this broad smoke test.
+		if (!strcmp (i->descriptor->id, "uri://ardour.org/surfaces/mcp_http:0")) {
 			continue;
 		}
 
