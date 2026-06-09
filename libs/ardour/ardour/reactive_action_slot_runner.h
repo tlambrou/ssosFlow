@@ -27,6 +27,7 @@ public:
 	std::string action_name (size_t slot) const;
 
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
+	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	std::string format_last_execution_status () const;
 

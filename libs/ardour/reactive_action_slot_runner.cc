@@ -78,6 +78,34 @@ ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& targe
 	return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
 }
 
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, ReactiveActionTarget& target)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		return record_execution_status (0, std::string (), result);
+	}
+
+	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
+	if (matches.empty ()) {
+		result.error = "no reactive action matched MIDI event";
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	std::string const name = match.action ? match.action->name : std::string ();
+	if (name.empty ()) {
+		result.error = "matched reactive MIDI action has no name";
+		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	result = ReactiveActionExecutor::execute (plan, target);
+	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
 std::string
 ReactiveActionSlotRunner::format_last_execution_status () const
 {

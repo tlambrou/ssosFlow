@@ -163,6 +163,8 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, and last load error. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
+The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots. A live MIDI/control-surface adapter that feeds controller events directly into this runner remains follow-up work.
+
 ## Performance UI
 
 Add the smallest useful UI surface, preferably integrated with the existing Cue page:
@@ -336,6 +338,14 @@ Phase 2: build Ardour locally and generate compile database.
 Phase 3: implement parser, validator, action registry, and minimal action engine.
 
 Phase 4: expose MIDI-triggerable actions through Generic MIDI and/or a new reactive control surface adapter.
+
+Phase 4b adds backend MIDI-trigger execution from loaded action documents:
+
+- Execute a loaded action document from a parsed `ReactiveMidiEvent`.
+- Support note and CC trigger matches through the existing engine matcher.
+- Use the first matching action in document order while preserving explicit numbered slot execution.
+- Record last-execution status for matched MIDI-triggered actions.
+- Keep live controller-event plumbing as a follow-up to avoid changing Ardour behavior outside explicit Reactive paths.
 
 Phase 5: add minimal Reactive Performance UI panel.
 
