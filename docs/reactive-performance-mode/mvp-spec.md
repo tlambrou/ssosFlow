@@ -112,7 +112,13 @@ Required MVP conditions:
 - `WHEN transport rolling`
 - `WHEN transport stopped`
 
-Phase 3i stores and enforces these conditions in the Reactive action engine before previewing or triggering commands. Unmet conditions fail visibly without mutating macro/state values, advancing sequential chains, or updating the last action. Transport conditions are engine-level for now; the live session bridge still needs a later slice to update the engine's rolling/stopped flag from Ardour transport state.
+Phase 3i stores and enforces these conditions in the Reactive action engine before previewing or triggering commands. Unmet conditions fail visibly without mutating macro/state values, advancing sequential chains, or updating the last action.
+
+Phase 4h wires transport conditions to the live Ardour bridge:
+
+- `ReactiveActionSlotRunner` accepts a transport-state provider and refreshes the engine's rolling/stopped flag before manual-slot previews, MIDI-event previews, manual-slot execution, and MIDI-event/MIDI-byte execution.
+- `ARDOUR_UI` supplies that provider from `Session::transport_state_rolling()`, so `WHEN transport rolling` and `WHEN transport stopped` follow Ardour's transport state machine rather than a stale engine default.
+- The provider is deliberately non-realtime and lives at the GTK/session bridge boundary; Generic MIDI continues to send only compact trigger bytes through `BasicUI`, and action planning remains outside the audio process callback.
 
 Required validation:
 
@@ -449,6 +455,7 @@ Phase 5d adds the reusable next-action preview read model for that panel:
 
 - `ReactiveActionEngine::preview_action(...)` builds the same action-plan metadata as execution without running target commands, updating macro/state values, marking last action, or advancing sequential action chains.
 - `ReactiveActionSlotRunner` can preview a manual slot or the first matching MIDI event as slot index, action name, primary trigger label, chain mode, quantize label, and next command count.
+- Preview planning refreshes the live transport-state provider first, so transport-gated actions appear unavailable while their `WHEN transport ...` condition is unmet.
 - After a slot or MIDI event is executed, the runner refreshes a cached next-action preview for the same control so repeated sequential actions show the next planned command count without consuming it.
 - The existing status dialog displays this compact next-action preview below the latest execution status.
 

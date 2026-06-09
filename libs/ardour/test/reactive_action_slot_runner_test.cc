@@ -1017,3 +1017,90 @@ ReactiveActionSlotRunnerTest::previewMidiEventForPerformancePanel ()
 	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("MIDI note ch=10 note=36") != std::string::npos);
 	CPPUNIT_ASSERT_EQUAL (std::string ("intro"), runner.state_value ("section"));
 }
+
+void
+ReactiveActionSlotRunnerTest::transportProviderControlsSlotConditions ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+	bool rolling = false;
+
+	runner.set_transport_rolling_provider ([&rolling] () { return rolling; });
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION rolling.only\n"
+		"WHEN transport rolling\n"
+		"DO cue 0\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult stopped = runner.execute_slot (0, target);
+	CPPUNIT_ASSERT_EQUAL (false, stopped.ok);
+	CPPUNIT_ASSERT (stopped.error.find ("unmet condition") != std::string::npos);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	rolling = true;
+	ReactiveExecutionResult live = runner.execute_slot (0, target);
+	CPPUNIT_ASSERT_EQUAL (true, live.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:0"), target.calls[0]);
+}
+
+void
+ReactiveActionSlotRunnerTest::transportProviderControlsMidiConditions ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+	bool rolling = true;
+
+	runner.set_transport_rolling_provider ([&rolling] () { return rolling; });
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION stopped.pad\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"WHEN transport stopped\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult blocked = runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target);
+	CPPUNIT_ASSERT_EQUAL (false, blocked.ok);
+	CPPUNIT_ASSERT (blocked.error.find ("unmet condition") != std::string::npos);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	rolling = false;
+	ReactiveExecutionResult stopped = runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target);
+	CPPUNIT_ASSERT_EQUAL (true, stopped.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:1"), target.calls[0]);
+}
+
+void
+ReactiveActionSlotRunnerTest::transportProviderControlsPreviewConditions ()
+{
+	ReactiveActionSlotRunner runner;
+	std::string error;
+	bool rolling = false;
+
+	runner.set_transport_rolling_provider ([&rolling] () { return rolling; });
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION rolling.pad\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"WHEN transport rolling\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	CPPUNIT_ASSERT_EQUAL (false, runner.preview_slot (0).available);
+	CPPUNIT_ASSERT_EQUAL (false, runner.preview_midi_event (ReactiveMidiEvent::note_on (10, 36, 100)).available);
+
+	rolling = true;
+	CPPUNIT_ASSERT_EQUAL (true, runner.preview_slot (0).available);
+	CPPUNIT_ASSERT_EQUAL (true, runner.preview_midi_event (ReactiveMidiEvent::note_on (10, 36, 100)).available);
+}
