@@ -158,6 +158,32 @@ bounded_controller_feedback_value (int value)
 	return static_cast<unsigned char> (std::max (0, std::min (127, value)));
 }
 
+static bool
+zero_quantize (Temporal::BBT_Offset const& quantize)
+{
+	return quantize.bars == 0 && quantize.beats == 0 && quantize.ticks == 0;
+}
+
+static ReactiveExecutionResult
+failed_plan_result (ReactiveActionPlan const& plan)
+{
+	ReactiveExecutionResult result;
+	result.error = plan.error.empty () ? "cannot execute failed reactive action plan" : plan.error;
+	return result;
+}
+
+static ReactiveActionPlan
+plan_from_queued_action (ReactiveQueuedAction const& queued)
+{
+	ReactiveActionPlan plan;
+	plan.ok = true;
+	plan.action_name = queued.action_name;
+	plan.action_index = queued.slot;
+	plan.quantize = queued.quantize;
+	plan.commands = queued.commands;
+	return plan;
+}
+
 } // namespace
 
 bool
@@ -182,6 +208,7 @@ ReactiveActionSlotRunner::load_document (ReactiveActionDocument const& document,
 	}
 
 	_loaded = true;
+	_scheduler.clear ();
 	clear_last_execution_status ();
 	clear_next_action_preview ();
 	error.clear ();
@@ -192,6 +219,7 @@ void
 ReactiveActionSlotRunner::clear ()
 {
 	_engine = ReactiveActionEngine ();
+	_scheduler.clear ();
 	clear_last_execution_status ();
 	clear_next_action_preview ();
 	_loaded = false;
@@ -206,6 +234,7 @@ ReactiveActionSlotRunner::set_performance_enabled (bool enabled)
 
 	_performance_enabled = enabled;
 	if (!_performance_enabled) {
+		_scheduler.clear ();
 		clear_next_action_preview ();
 	}
 }
@@ -419,6 +448,107 @@ ReactiveActionSlotRunner::preview_midi_event (ReactiveMidiEvent const& event)
 }
 
 ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_slot (
+	size_t slot,
+	ReactiveActionTarget& target,
+	Temporal::BBT_Time const& requested_at,
+	Temporal::BBT_Time const& due_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (slot, std::string (), result);
+	}
+
+	if (slot >= action_count ()) {
+		std::ostringstream msg;
+		msg << "reactive action slot " << slot << " is out of range";
+		result.error = msg.str ();
+		clear_next_action_preview ();
+		return record_execution_status (slot, std::string (), result);
+	}
+
+	std::string const name = action_name (slot);
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (slot, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveAction const& action = _engine.document ().actions ()[slot];
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	if (!plan.ok) {
+		clear_next_action_preview ();
+		return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, failed_plan_result (plan));
+	}
+
+	if (zero_quantize (plan.quantize)) {
+		result = ReactiveActionExecutor::execute (plan, target);
+		_next_action_preview = preview_slot (slot);
+		return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
+	}
+
+	result = queue_plan (slot, primary_trigger_label (action), plan, requested_at, due_at);
+	_next_action_preview = preview_slot (slot);
+	return record_execution_status (slot, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_midi_event (
+	ReactiveMidiEvent const& event,
+	ReactiveActionTarget& target,
+	Temporal::BBT_Time const& requested_at,
+	Temporal::BBT_Time const& due_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
+	if (matches.empty ()) {
+		result.error = "no reactive action matched MIDI event";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	std::string const name = match.action ? match.action->name : std::string ();
+	if (name.empty ()) {
+		result.error = "matched reactive MIDI action has no name";
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveActionPlan plan = _engine.trigger_action (name, &event);
+	if (!plan.ok) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, failed_plan_result (plan));
+	}
+
+	if (zero_quantize (plan.quantize)) {
+		result = ReactiveActionExecutor::execute (plan, target);
+		_next_action_preview = preview_midi_event (event);
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+	}
+
+	result = queue_plan (match.action_index, match.action ? primary_trigger_label (*match.action) : std::string (), plan, requested_at, due_at);
+	_next_action_preview = preview_midi_event (event);
+	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
 ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& target)
 {
 	ReactiveExecutionResult result;
@@ -509,6 +639,35 @@ ReactiveActionSlotRunner::execute_midi_bytes (unsigned char const* bytes, size_t
 	return execute_midi_event (event, target);
 }
 
+ReactiveExecutionResult
+ReactiveActionSlotRunner::release_due_queued_actions (Temporal::BBT_Time const& now, ReactiveActionTarget& target)
+{
+	ReactiveExecutionResult aggregate;
+	aggregate.ok = true;
+
+	if (!_performance_enabled) {
+		return disabled_execution_result ();
+	}
+
+	std::vector<ReactiveQueuedAction> const due = _scheduler.pop_due (now);
+	for (std::vector<ReactiveQueuedAction>::const_iterator queued = due.begin (); queued != due.end (); ++queued) {
+		ReactiveActionPlan const plan = plan_from_queued_action (*queued);
+		ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
+		record_execution_status (queued->slot, queued->action_name, result);
+
+		if (!result.ok) {
+			aggregate.ok = false;
+			aggregate.error = result.error;
+			aggregate.commands_executed += result.commands_executed;
+			return aggregate;
+		}
+
+		aggregate.commands_executed += result.commands_executed;
+	}
+
+	return aggregate;
+}
+
 void
 ReactiveActionSlotRunner::refresh_transport_state ()
 {
@@ -594,6 +753,33 @@ ReactiveActionSlotRunner::format_next_action_preview () const
 	}
 
 	return status.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_queued_action_summary (size_t max_items, Temporal::BBT_Time const& now) const
+{
+	std::vector<ReactiveQueuedActionSummary> const summary = queued_action_summary (max_items, now);
+	if (summary.empty ()) {
+		return "Queued actions: none";
+	}
+
+	std::ostringstream text;
+	text << "Queued actions:";
+	for (std::vector<ReactiveQueuedActionSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  #" << i->id << " slot " << i->slot << " " << i->action_name
+		     << " [" << i->primary_trigger << "]"
+		     << " due " << i->due_at
+		     << " q " << i->quantize
+		     << " - " << i->command_count << " command";
+		if (i->command_count != 1) {
+			text << "s";
+		}
+		if (i->due) {
+			text << " - due";
+		}
+	}
+
+	return text.str ();
 }
 
 std::string
@@ -730,6 +916,24 @@ ReactiveActionSlotRunner::controller_feedback_summary_row (size_t slot) const
 
 	row.value = controller_feedback_value (row.available, row.enabled, row.latest_attempted);
 	return row;
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::queue_plan (
+	size_t slot,
+	std::string const& primary_trigger,
+	ReactiveActionPlan const& plan,
+	Temporal::BBT_Time const& requested_at,
+	Temporal::BBT_Time const& due_at)
+{
+	ReactiveExecutionResult result;
+	if (!plan.ok) {
+		return failed_plan_result (plan);
+	}
+
+	_scheduler.queue_action (slot, primary_trigger, plan, requested_at, due_at);
+	result.ok = true;
+	return result;
 }
 
 ReactiveExecutionResult
