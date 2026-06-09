@@ -562,8 +562,17 @@ Phase 7e adds the first repeatable demo-session template path:
 - `share/scripts/reactive_performance_mvp_session.lua` is a bundled `SessionInit` script named `Reactive Performance MVP`, so it appears in Ardour's new-session template list as a factory template.
 - The script creates three MIDI-only controller-facing routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, giving the demo action document stable route-index targets without hand-authoring generated session XML.
 - `LuaScriptTest::reactive_performance_session_init_script_test` verifies the script is discoverable in the `SessionInit` catalog and compiles through Ardour's Lua factory path.
-- The example README now recommends creating a session from this template, then copying the session-local `reactive-actions.txt` next to the `.ardour` file.
+- The example README now recommends creating a session from this template; Phase 7g removes the remaining manual copy step by having the template install the demo action document.
 - A full session archive with clips/cues remains a later demo-production step; the template script keeps this slice repeatable while the final route/clip layout is still evolving.
+
+Phase 7g makes the template setup path closer to one-step:
+
+- `share/scripts/reactive_performance_mvp_session.lua` now writes the demo `reactive-actions.txt` into the new session folder after creating the three MIDI lanes.
+- The script leaves an existing session-local `reactive-actions.txt` untouched, so user-edited action documents are not overwritten.
+- `LuaScriptTest::reactive_performance_session_init_installs_demo_action_document_test` executes the actual Lua template against a fake session and verifies the installed document exactly matches `examples/reactive-performance-mvp/reactive-actions.txt`.
+- `LuaScriptTest::reactive_performance_session_init_keeps_existing_action_document_test` verifies the template does not overwrite an existing document.
+- `LuaScriptTest::reactive_performance_session_init_tolerates_unavailable_file_io_test` verifies that hardened Lua settings which remove file I/O do not crash the template; in that case users can still copy the packaged action file manually.
+- The example README and demo guide no longer require manual action-file copying for new sessions created from the factory template; manual existing-session setup still uses the packaged example file.
 
 ## Acceptance Tests
 

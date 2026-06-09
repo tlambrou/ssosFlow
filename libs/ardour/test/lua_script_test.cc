@@ -1,4 +1,5 @@
 #include <list>
+#include <fstream>
 #include <glibmm.h>
 
 #include "ardour/audio_track.h"
@@ -11,9 +12,138 @@
 
 #include "lua_script_test.h"
 
+#include "pbd/gstdio_compat.h"
+
+#include "lua/luastate.h"
+
 using namespace ARDOUR;
 
 CPPUNIT_TEST_SUITE_REGISTRATION(LuaScriptTest);
+
+namespace {
+
+class TemporaryDirectory {
+public:
+	explicit TemporaryDirectory (std::string const& prefix)
+	{
+		GError* error = 0;
+		char* tmp = g_dir_make_tmp (prefix.c_str (), &error);
+		if (!tmp) {
+			std::string message = error ? error->message : "unknown temporary directory error";
+			if (error) {
+				g_error_free (error);
+			}
+			CPPUNIT_FAIL ("could not create temporary directory: " + message);
+		}
+
+		_path = tmp;
+		g_free (tmp);
+	}
+
+	~TemporaryDirectory ()
+	{
+		if (!_path.empty ()) {
+			g_remove (Glib::build_filename (_path, "reactive-actions.txt").c_str ());
+			g_rmdir (_path.c_str ());
+		}
+	}
+
+	std::string const& path () const
+	{
+		return _path;
+	}
+
+private:
+	std::string _path;
+};
+
+static std::string
+lua_literal (std::string const& value)
+{
+	CPPUNIT_ASSERT_MESSAGE ("test path cannot be represented as a Lua long string", value.find ("]]") == std::string::npos);
+	return "[[" + value + "]]";
+}
+
+static void
+write_file (std::string const& path, std::string const& content)
+{
+	std::ofstream out (path.c_str ());
+	CPPUNIT_ASSERT (out.good ());
+	out << content;
+	out.close ();
+}
+
+static std::string
+reactive_template_path ()
+{
+	LuaScriptList scripts (LuaScripting::instance ().scripts (LuaScriptInfo::SessionInit));
+
+	for (LuaScriptList::const_iterator s = scripts.begin(); s != scripts.end(); ++s) {
+		if ((*s)->name == "Reactive Performance MVP") {
+			return (*s)->path;
+		}
+	}
+
+	CPPUNIT_FAIL ("Reactive Performance MVP SessionInit script was not discoverable");
+	return std::string ();
+}
+
+static void
+run_reactive_template_with_fake_session (std::string const& session_path, bool file_io_available = true)
+{
+	LuaState lua (true, false);
+
+	lua.do_command (
+		"function ardour (entry) ardour_metadata = entry end\n"
+		"created_tracks = {}\n"
+		"saved = false\n"
+		"ARDOUR = {\n"
+		"  LuaAPI = {\n"
+		"    build_filename = function (...)\n"
+		"      local path = ''\n"
+		"      for i = 1, select ('#', ...) do\n"
+		"        local part = select (i, ...)\n"
+		"        if i == 1 then path = part else path = path .. '/' .. part end\n"
+		"      end\n"
+		"      return path\n"
+		"    end\n"
+		"  },\n"
+		"  DataType = function (name) return { name = name } end,\n"
+		"  ChanCount = function (data_type, count) return { data_type = data_type, count = count } end,\n"
+		"  PluginInfo = function () return {} end,\n"
+		"  RouteGroup = function () return {} end,\n"
+		"  PresentationInfo = { max_order = 0 },\n"
+		"  TrackMode = { Normal = 0 }\n"
+		"}\n"
+		"Session = {\n"
+		"  path = function () return " + lua_literal (session_path) + " end,\n"
+		"  name = function () return 'Reactive Template Test' end,\n"
+		"  new_midi_track = function (...)\n"
+		"    local name = select (9, ...)\n"
+		"    table.insert (created_tracks, name)\n"
+		"  end,\n"
+		"  save_state = function (...) saved = true end\n"
+		"}\n");
+
+	if (!file_io_available) {
+		lua.do_command ("io = nil");
+	}
+
+	int const load_type = lua.do_file (reactive_template_path ());
+	CPPUNIT_ASSERT_EQUAL (0, load_type);
+	int const run_type = lua.do_command ("factory () ()");
+	CPPUNIT_ASSERT_EQUAL (0, run_type);
+
+	int const track_count_type = lua.do_command ("assert (#created_tracks == 3, 'expected three MIDI tracks')");
+	CPPUNIT_ASSERT_EQUAL (0, track_count_type);
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[1] == 'Reactive Rhythm Lane', 'expected rhythm lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[2] == 'Reactive Harmony Lane', 'expected harmony lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[3] == 'Reactive Macro Lane', 'expected macro lane')"));
+	int const save_type = lua.do_command ("assert (saved == true, 'expected template to save session')");
+	CPPUNIT_ASSERT_EQUAL (0, save_type);
+}
+
+} // anonymous namespace
 
 void
 LuaScriptTest::session_script_test ()
@@ -84,6 +214,45 @@ LuaScriptTest::reactive_performance_session_init_script_test ()
 	CPPUNIT_ASSERT_MESSAGE (
 		"Reactive Performance MVP SessionInit factory did not compile",
 		LuaScripting::try_compile (script, LuaScriptParamList ()));
+}
+
+void
+LuaScriptTest::reactive_performance_session_init_installs_demo_action_document_test ()
+{
+	TemporaryDirectory session_dir ("reactive-template-session-XXXXXX");
+
+	run_reactive_template_with_fake_session (session_dir.path ());
+
+	std::string const generated_path = Glib::build_filename (session_dir.path (), "reactive-actions.txt");
+	CPPUNIT_ASSERT_MESSAGE ("Reactive Performance MVP template did not install reactive-actions.txt", Glib::file_test (generated_path, Glib::FILE_TEST_IS_REGULAR));
+
+	std::string const generated = Glib::file_get_contents (generated_path);
+	std::string const example = Glib::file_get_contents (Glib::build_filename ("examples", "reactive-performance-mvp", "reactive-actions.txt"));
+	CPPUNIT_ASSERT_EQUAL (example, generated);
+}
+
+void
+LuaScriptTest::reactive_performance_session_init_keeps_existing_action_document_test ()
+{
+	TemporaryDirectory session_dir ("reactive-template-session-XXXXXX");
+	std::string const generated_path = Glib::build_filename (session_dir.path (), "reactive-actions.txt");
+	std::string const existing = "ACTION custom.keep\nDO state preserved yes\nEND\n";
+	write_file (generated_path, existing);
+
+	run_reactive_template_with_fake_session (session_dir.path ());
+
+	CPPUNIT_ASSERT_EQUAL (existing, Glib::file_get_contents (generated_path));
+}
+
+void
+LuaScriptTest::reactive_performance_session_init_tolerates_unavailable_file_io_test ()
+{
+	TemporaryDirectory session_dir ("reactive-template-session-XXXXXX");
+
+	run_reactive_template_with_fake_session (session_dir.path (), false);
+
+	std::string const generated_path = Glib::build_filename (session_dir.path (), "reactive-actions.txt");
+	CPPUNIT_ASSERT_EQUAL (false, Glib::file_test (generated_path, Glib::FILE_TEST_EXISTS));
 }
 
 void
