@@ -171,6 +171,10 @@ ReactiveActionSlotRunnerTest::rejectInvalidSource ()
 	ReactiveActionSlotRunner runner;
 	std::string error;
 
+	load_two_action_document (runner);
+	CPPUNIT_ASSERT_EQUAL (true, runner.loaded ());
+	CPPUNIT_ASSERT_EQUAL (size_t (2), runner.action_count ());
+
 	CPPUNIT_ASSERT_EQUAL (false, runner.load_source (
 		"ACTION broken\n"
 		"DO warp now\n"

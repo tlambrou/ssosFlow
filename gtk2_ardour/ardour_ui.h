@@ -649,6 +649,7 @@ private:
 	void setup_action_tooltips ();
 	bool ensure_reactive_action_document ();
 	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
+	std::string _reactive_action_document_session_path;
 
 	void setup_session_options ();
 
