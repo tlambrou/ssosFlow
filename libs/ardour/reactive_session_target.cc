@@ -3,6 +3,7 @@
 #include <memory>
 #include <sstream>
 
+#include "ardour/reactive_rhythm_route_inserter.h"
 #include "ardour/session.h"
 #include "ardour/triggerbox.h"
 
@@ -153,6 +154,12 @@ ReactiveSessionTarget::rhythm (std::string const& name, double value, std::strin
 	return true;
 }
 
+bool
+ReactiveSessionTarget::rhythm_insert (int route, std::string& error)
+{
+	return session_insert_reactive_rhythm (route, error);
+}
+
 void
 ReactiveSessionTarget::session_trigger_cue_row (int row)
 {
@@ -231,4 +238,59 @@ ReactiveSessionTarget::session_store_nth_mixer_scene (int index)
 	if (_session) {
 		_session->store_nth_mixer_scene (static_cast<size_t> (index));
 	}
+}
+
+bool
+ReactiveSessionTarget::session_insert_reactive_rhythm (int route, std::string& error)
+{
+	if (!_session) {
+		error = "reactive session target has no session";
+		return false;
+	}
+
+	if (route < 0) {
+		error = "reactive rhythm insert route index must be non-negative";
+		return false;
+	}
+
+	std::shared_ptr<Route> target = _session->get_remote_nth_route (static_cast<PresentationInfo::order_t> (route));
+	if (!target) {
+		std::ostringstream msg;
+		msg << "missing route for reactive rhythm insert " << route;
+		error = msg.str ();
+		return false;
+	}
+
+	ReactiveRhythmRouteInsertionResult result = ReactiveRhythmRouteInserter::ensure_inserted (*_session, target);
+	if (result.ok ()) {
+		error.clear ();
+		return true;
+	}
+
+	std::ostringstream msg;
+	msg << "reactive rhythm insert route " << route << " failed: ";
+	switch (result.status) {
+	case ReactiveRhythmRouteInsertionStatus::MissingLuaProc:
+		msg << "Reactive Rhythm State MVP LuaProc script was not discoverable";
+		break;
+	case ReactiveRhythmRouteInsertionStatus::PluginLoadFailed:
+		msg << "Reactive Rhythm State MVP LuaProc script failed to load";
+		break;
+	case ReactiveRhythmRouteInsertionStatus::ConfigureFailed:
+		msg << "PluginInsert MIDI configuration failed";
+		break;
+	case ReactiveRhythmRouteInsertionStatus::AddFailed:
+		msg << "Route::add_processor returned " << result.route_result;
+		break;
+	case ReactiveRhythmRouteInsertionStatus::InvalidRoute:
+		msg << "invalid route";
+		break;
+	case ReactiveRhythmRouteInsertionStatus::Inserted:
+	case ReactiveRhythmRouteInsertionStatus::AlreadyPresent:
+		msg << "unexpected successful status";
+		break;
+	}
+
+	error = msg.str ();
+	return false;
 }

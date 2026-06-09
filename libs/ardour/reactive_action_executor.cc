@@ -30,6 +30,8 @@ execute_command (ReactiveCommand const& command, ReactiveActionTarget& target, s
 		return target.state (command.name, command.text, error);
 	case ReactiveCommand::Rhythm:
 		return target.rhythm (command.name, command.value, error);
+	case ReactiveCommand::RhythmInsert:
+		return target.rhythm_insert (command.first, error);
 	}
 
 	error = "unknown reactive command";

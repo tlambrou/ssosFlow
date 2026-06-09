@@ -84,6 +84,11 @@ public:
 		return record (call.str (), error);
 	}
 
+	bool rhythm_insert (int route, std::string& error)
+	{
+		return record (compose_one ("rhythm-insert", route), error);
+	}
+
 	std::vector<std::string> calls;
 
 private:
@@ -138,6 +143,7 @@ ReactiveActionExecutorTest::executeAllCommandTypesInOrder ()
 		"DO macro filter 0.75 ramp 0|2|0\n"
 		"DO state section breakdown\n"
 		"DO rhythm density 0.50\n"
+		"DO rhythm insert 5\n"
 		"END\n");
 	ReactiveActionPlan plan = engine.trigger_action ("full");
 	RecordingTarget target;
@@ -145,8 +151,8 @@ ReactiveActionExecutorTest::executeAllCommandTypesInOrder ()
 	ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
 
 	CPPUNIT_ASSERT_EQUAL (true, result.ok);
-	CPPUNIT_ASSERT_EQUAL (size_t (11), result.commands_executed);
-	CPPUNIT_ASSERT_EQUAL (size_t (11), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (12), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (12), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("cue:2"), target.calls[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("trigger:3:4"), target.calls[1]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("trigger-stop:3"), target.calls[2]);
@@ -158,6 +164,25 @@ ReactiveActionExecutorTest::executeAllCommandTypesInOrder ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.75:0|2|0"), target.calls[8]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("state:section:breakdown"), target.calls[9]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:density:0.5"), target.calls[10]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:5"), target.calls[11]);
+}
+
+void
+ReactiveActionExecutorTest::executeRhythmInsertCommand ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION add.rhythm\n"
+		"DO rhythm insert 2\n"
+		"END\n");
+	ReactiveActionPlan plan = engine.trigger_action ("add.rhythm");
+	RecordingTarget target;
+
+	ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:2"), target.calls[0]);
 }
 
 void

@@ -24,6 +24,7 @@ public:
 	bool macro (std::string const& name, double value, Temporal::BBT_Offset const& ramp, std::string& error) override;
 	bool state (std::string const& name, std::string const& value, std::string& error) override;
 	bool rhythm (std::string const& name, double value, std::string& error) override;
+	bool rhythm_insert (int route, std::string& error) override;
 
 protected:
 	ReactiveSessionTarget ();
@@ -37,6 +38,7 @@ protected:
 	virtual void session_request_stop ();
 	virtual bool session_apply_nth_mixer_scene (int index);
 	virtual void session_store_nth_mixer_scene (int index);
+	virtual bool session_insert_reactive_rhythm (int route, std::string& error);
 
 private:
 	Session* _session;

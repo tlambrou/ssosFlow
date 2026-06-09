@@ -82,6 +82,11 @@ public:
 		return record (call.str (), error);
 	}
 
+	bool rhythm_insert (int route, std::string& error)
+	{
+		return record (compose_one ("rhythm-insert", route), error);
+	}
+
 	std::vector<std::string> calls;
 
 private:

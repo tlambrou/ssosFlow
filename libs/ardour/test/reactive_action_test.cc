@@ -93,6 +93,21 @@ ReactiveActionTest::parseSequentialAndRandomChains ()
 }
 
 void
+ReactiveActionTest::parseRhythmInsertCommand ()
+{
+	const char* src =
+		"ACTION add.rhythm\n"
+		"TRIGGER midi note ch=1 note=60\n"
+		"DO rhythm insert 0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::RhythmInsert, result.document.actions ().front ().commands.front ().type);
+	CPPUNIT_ASSERT_EQUAL (0, result.document.actions ().front ().commands.front ().first);
+}
+
+void
 ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
 {
 	const char* src =
@@ -150,6 +165,20 @@ ReactiveActionTest::rejectInvalidQuantize ()
 	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
 	CPPUNIT_ASSERT_EQUAL (false, result.ok);
 	CPPUNIT_ASSERT (result.error.find ("invalid quantize") != std::string::npos);
+}
+
+void
+ReactiveActionTest::rejectInvalidRhythmInsert ()
+{
+	const char* src =
+		"ACTION broken\n"
+		"DO rhythm insert potatoes\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("invalid rhythm insert") != std::string::npos);
+	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
 }
 
 void
