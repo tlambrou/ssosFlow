@@ -161,7 +161,9 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, and the first eight action slots in a controller-bank-style summary. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, the first eight action slots in a controller-bank-style summary, and the first eight macro slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+
+Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
 The backend runner can now execute a loaded document from a parsed `ReactiveMidiEvent`. It matches MIDI note and CC triggers through `ReactiveActionEngine::match_midi_event(...)`, executes the first matching action in document order, and records the matched action index/name in the same last-execution status used by numbered slots.
 
@@ -393,6 +395,14 @@ Phase 5a adds the reusable read model for that panel:
 - MIDI note/CC triggers are formatted in musician-facing syntax such as `MIDI note ch=10 note=36` and `MIDI cc ch=1 cc=22 value>63`.
 - The existing status dialog displays this action-bank summary as the first panel-oriented UI slice.
 - The later full panel should still move this into the Cue-page performance surface with macro/state values and queued-action preview.
+
+Phase 5b adds the reusable macro-bank read model for that panel:
+
+- `ReactiveActionSlotRunner` can summarize the first controller macro bank as slot index, macro name, and current value.
+- Macro names are discovered from loaded action documents in stable first-seen document order, with duplicate macro commands collapsed to one row.
+- Macro values default to `0.0` before execution and update as `DO macro ...` commands run through the action engine.
+- The existing status dialog displays this compact macro bank below the action bank.
+- State rows, MIDI feedback, and queued-action preview remain follow-up work.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 

@@ -18,6 +18,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (propagateTargetFailure);
 	CPPUNIT_TEST (resetExecutionStatusOnClearAndLoad);
 	CPPUNIT_TEST (summarizeActionBankForPerformancePanel);
+	CPPUNIT_TEST (summarizeMacroBankForPerformancePanel);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -33,4 +34,5 @@ public:
 	void propagateTargetFailure ();
 	void resetExecutionStatusOnClearAndLoad ();
 	void summarizeActionBankForPerformancePanel ();
+	void summarizeMacroBankForPerformancePanel ();
 };
