@@ -97,6 +97,16 @@ Recommended future file:
 
 Why: `LuaProc` can process MIDI events, expose parameters, and receive time/meter fields in DSP context. This is a safer first vertical slice for density, probability, priority filtering, rotation, and quantized parameter changes than changing `MIDITrigger::midi_run`.
 
+Phase 6h source review keeps this recommendation and narrows the insertion path:
+
+- `LuaProc::connect_and_run` already runs through the plugin processor path, maps `midiin` and `midiout` tables, and can expose DSP `time` fields when `dsp_options().time_info` is enabled.
+- `PluginInsert::connect_and_run` already handles processor-chain execution, buffer mapping, automation, in-place/non-in-place processing, latency, and MIDI bypass details.
+- `Route::add_processor` and processor reconfiguration are the eventual route-insertion tools, but live route mutation remains a separate integration task because it touches process locks, graph configuration, and user-visible processor order.
+- `MidiChannelFilter` is a useful in-place MIDI mutation pattern, but it is an established route/track utility rather than a reason to add a bespoke reactive route hook.
+- Control surfaces such as Launchpad Pro can filter controller input and should remain controller-feedback/mapping tools for this MVP, not the rhythm stream insertion point.
+
+The MVP scaffold is therefore `ReactiveRhythmInsertionPlanner`: it chooses LuaProc/plugin insertion only when LuaProc, MIDI input/output, and DSP time info are available; it defers native processors and external plugins; it rejects MIDI route hooks and control surfaces as stream-processing targets; and it keeps live route mutation disabled until a later issue wires insertion safely.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.
