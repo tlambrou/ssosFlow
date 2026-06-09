@@ -26,6 +26,10 @@ execute_command (ReactiveCommand const& command, ReactiveActionTarget& target, s
 		return target.scene_store (command.first, error);
 	case ReactiveCommand::Macro:
 		return target.macro (command.name, command.value, command.ramp, error);
+	case ReactiveCommand::MacroSnapshotStore:
+	case ReactiveCommand::MacroSnapshotRecall:
+		error = "unexpanded macro snapshot command";
+		return false;
 	case ReactiveCommand::State:
 		return target.state (command.name, command.text, error);
 	case ReactiveCommand::Rhythm:

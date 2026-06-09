@@ -92,6 +92,28 @@ ReactiveActionTest::parseMidiValueMacroCommand ()
 }
 
 void
+ReactiveActionTest::parseMacroSnapshotCommands ()
+{
+	const char* src =
+		"ACTION snapshots\n"
+		"DO macro filter 0.40\n"
+		"DO macro snapshot store verse\n"
+		"DO macro snapshot recall chorus ramp 0|2|0\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveAction const& action = result.document.actions ().front ();
+	CPPUNIT_ASSERT_EQUAL (size_t (3), action.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MacroSnapshotStore, action.commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("verse"), action.commands[1].name);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MacroSnapshotRecall, action.commands[2].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chorus"), action.commands[2].name);
+	CPPUNIT_ASSERT_EQUAL (2, action.commands[2].ramp.beats);
+}
+
+void
 ReactiveActionTest::parseSequentialAndRandomChains ()
 {
 	const char* src =

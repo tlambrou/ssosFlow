@@ -121,6 +121,7 @@ ReactiveActionEngine::load_document (ReactiveActionDocument const& document, std
 	_document = document;
 	_sequential_positions.clear ();
 	_macros.clear ();
+	_macro_snapshots.clear ();
 	_states.clear ();
 	_last_action.clear ();
 	error.clear ();
@@ -196,6 +197,12 @@ ReactiveActionEngine::preview_action (std::string const& name) const
 		plan.commands = action->commands;
 	}
 
+	std::vector<ReactiveCommand> raw_commands = plan.commands;
+	if (!preview_plan_commands (raw_commands, 0, plan.commands, plan.error)) {
+		plan.commands.clear ();
+		plan.ok = false;
+	}
+
 	return plan;
 }
 
@@ -230,23 +237,37 @@ ReactiveActionEngine::trigger_action (std::string const& name, ReactiveMidiEvent
 	plan.chain_mode = action->chain_mode;
 	plan.quantize = action->quantize;
 
+	std::vector<ReactiveCommand> raw_commands;
+	bool advance_sequential = false;
+	size_t next_sequential_position = 0;
+
 	if (action->chain_mode == ReactiveChainMode::Sequential) {
 		if (!action->commands.empty ()) {
-			size_t& position = _sequential_positions[action->name];
-			plan.commands.push_back (action->commands[position % action->commands.size ()]);
-			position = (position + 1) % action->commands.size ();
+			size_t position = 0;
+			std::map<std::string, size_t>::const_iterator found = _sequential_positions.find (action->name);
+			if (found != _sequential_positions.end ()) {
+				position = found->second;
+			}
+			raw_commands.push_back (action->commands[position % action->commands.size ()]);
+			next_sequential_position = (position + 1) % action->commands.size ();
+			advance_sequential = true;
 		}
 	} else if (action->chain_mode == ReactiveChainMode::Random) {
 		if (!action->commands.empty ()) {
-			plan.commands.push_back (action->commands[std::rand () % action->commands.size ()]);
+			raw_commands.push_back (action->commands[std::rand () % action->commands.size ()]);
 		}
 	} else {
-		plan.commands = action->commands;
+		raw_commands = action->commands;
 	}
 
-	for (std::vector<ReactiveCommand>::iterator command = plan.commands.begin (); command != plan.commands.end (); ++command) {
-		*command = resolve_command_value (*command, event);
-		apply_command_state (*command);
+	if (!trigger_plan_commands (raw_commands, event, plan.commands, plan.error)) {
+		plan.commands.clear ();
+		plan.ok = false;
+		return plan;
+	}
+
+	if (advance_sequential) {
+		_sequential_positions[action->name] = next_sequential_position;
 	}
 
 	_last_action = action->name;
@@ -275,12 +296,87 @@ ReactiveActionEngine::state_value (std::string const& name) const
 	return found->second;
 }
 
-void
-ReactiveActionEngine::apply_command_state (ReactiveCommand const& command)
+bool
+ReactiveActionEngine::preview_plan_commands (std::vector<ReactiveCommand> const& input, ReactiveMidiEvent const* event, std::vector<ReactiveCommand>& output, std::string& error) const
 {
-	if (command.type == ReactiveCommand::Macro) {
-		_macros[command.name] = command.value;
-	} else if (command.type == ReactiveCommand::State) {
-		_states[command.name] = command.text;
+	output.clear ();
+	error.clear ();
+
+	for (std::vector<ReactiveCommand>::const_iterator command = input.begin (); command != input.end (); ++command) {
+		ReactiveCommand resolved = resolve_command_value (*command, event);
+		if (resolved.type == ReactiveCommand::MacroSnapshotStore) {
+			continue;
+		}
+		if (resolved.type == ReactiveCommand::MacroSnapshotRecall) {
+			std::map<std::string, MacroSnapshot>::const_iterator snapshot = _macro_snapshots.find (resolved.name);
+			if (snapshot == _macro_snapshots.end ()) {
+				error = "unknown macro snapshot '" + resolved.name + "'";
+				output.clear ();
+				return false;
+			}
+			for (MacroSnapshot::const_iterator value = snapshot->second.begin (); value != snapshot->second.end (); ++value) {
+				ReactiveCommand macro;
+				macro.type = ReactiveCommand::Macro;
+				macro.name = value->first;
+				macro.value = value->second;
+				macro.ramp = resolved.ramp;
+				output.push_back (macro);
+			}
+			continue;
+		}
+		output.push_back (resolved);
 	}
+
+	return true;
+}
+
+bool
+ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const& input, ReactiveMidiEvent const* event, std::vector<ReactiveCommand>& output, std::string& error)
+{
+	std::vector<ReactiveCommand> planned;
+	std::map<std::string, double> macros = _macros;
+	std::map<std::string, MacroSnapshot> macro_snapshots = _macro_snapshots;
+	std::map<std::string, std::string> states = _states;
+
+	error.clear ();
+
+	for (std::vector<ReactiveCommand>::const_iterator command = input.begin (); command != input.end (); ++command) {
+		ReactiveCommand resolved = resolve_command_value (*command, event);
+		if (resolved.type == ReactiveCommand::MacroSnapshotStore) {
+			macro_snapshots[resolved.name] = macros;
+			continue;
+		}
+		if (resolved.type == ReactiveCommand::MacroSnapshotRecall) {
+			std::map<std::string, MacroSnapshot>::const_iterator snapshot = macro_snapshots.find (resolved.name);
+			if (snapshot == macro_snapshots.end ()) {
+				error = "unknown macro snapshot '" + resolved.name + "'";
+				output.clear ();
+				return false;
+			}
+			for (MacroSnapshot::const_iterator value = snapshot->second.begin (); value != snapshot->second.end (); ++value) {
+				ReactiveCommand macro;
+				macro.type = ReactiveCommand::Macro;
+				macro.name = value->first;
+				macro.value = value->second;
+				macro.ramp = resolved.ramp;
+				macros[macro.name] = macro.value;
+				planned.push_back (macro);
+			}
+			continue;
+		}
+
+		if (resolved.type == ReactiveCommand::Macro) {
+			macros[resolved.name] = resolved.value;
+		} else if (resolved.type == ReactiveCommand::State) {
+			states[resolved.name] = resolved.text;
+		}
+
+		planned.push_back (resolved);
+	}
+
+	_macros = macros;
+	_macro_snapshots = macro_snapshots;
+	_states = states;
+	output = planned;
+	return true;
 }

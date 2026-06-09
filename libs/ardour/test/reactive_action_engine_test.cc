@@ -315,3 +315,64 @@ ReactiveActionEngineTest::trackMacroAndStateValuesFromSelectedCommands ()
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, engine.macro_value ("filter"), 0.0001);
 	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), engine.state_value ("section"));
 }
+
+void
+ReactiveActionEngineTest::storeAndRecallMacroSnapshotValues ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION store.verse\n"
+		"DO macro filter 0.25\n"
+		"DO macro resonance 0.70\n"
+		"DO macro snapshot store verse\n"
+		"END\n"
+		"ACTION move.away\n"
+		"DO macro filter 0.90\n"
+		"DO macro resonance 0.10\n"
+		"END\n"
+		"ACTION recall.verse\n"
+		"DO macro snapshot recall verse ramp 0|2|0\n"
+		"END\n");
+
+	ReactiveActionPlan stored = engine.trigger_action ("store.verse");
+	ReactiveActionPlan moved = engine.trigger_action ("move.away");
+	ReactiveActionPlan recalled = engine.trigger_action ("recall.verse");
+
+	CPPUNIT_ASSERT_EQUAL (true, stored.ok);
+	CPPUNIT_ASSERT_EQUAL (true, moved.ok);
+	CPPUNIT_ASSERT_EQUAL (true, recalled.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), recalled.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, recalled.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), recalled.commands[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, recalled.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (2, recalled.commands[0].ramp.beats);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, recalled.commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("resonance"), recalled.commands[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.70, recalled.commands[1].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (2, recalled.commands[1].ramp.beats);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.70, engine.macro_value ("resonance"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("recall.verse"), engine.last_action ());
+}
+
+void
+ReactiveActionEngineTest::rejectMissingMacroSnapshotRecallWithoutChangingLastAction ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION set.filter\n"
+		"DO macro filter 0.80\n"
+		"END\n"
+		"ACTION recall.missing\n"
+		"DO macro filter 0.20\n"
+		"DO macro snapshot recall missing\n"
+		"END\n");
+
+	ReactiveActionPlan set = engine.trigger_action ("set.filter");
+	ReactiveActionPlan missing = engine.trigger_action ("recall.missing");
+
+	CPPUNIT_ASSERT_EQUAL (true, set.ok);
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("unknown macro snapshot") != std::string::npos);
+	CPPUNIT_ASSERT (missing.commands.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("set.filter"), engine.last_action ());
+}

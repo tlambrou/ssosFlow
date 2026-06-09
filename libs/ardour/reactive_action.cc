@@ -268,22 +268,49 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 			return false;
 		}
 	} else if (name == "macro") {
-		if (tokens.size () != 4 && tokens.size () != 6) {
+		if (tokens.size () >= 3 && tokens[2] == "snapshot") {
+			if (tokens.size () < 5) {
+				result.error = line_error (line_number, "invalid macro snapshot command");
+				return false;
+			}
+			if (tokens[3] == "store") {
+				if (tokens.size () != 5) {
+					result.error = line_error (line_number, "invalid macro snapshot command");
+					return false;
+				}
+				command.type = ReactiveCommand::MacroSnapshotStore;
+			} else if (tokens[3] == "recall") {
+				if (tokens.size () != 5 && tokens.size () != 7) {
+					result.error = line_error (line_number, "invalid macro snapshot command");
+					return false;
+				}
+				command.type = ReactiveCommand::MacroSnapshotRecall;
+				if (tokens.size () == 7 && (tokens[5] != "ramp" || !parse_bbt_offset (tokens[6], command.ramp))) {
+					result.error = line_error (line_number, "invalid macro snapshot ramp");
+					return false;
+				}
+			} else {
+				result.error = line_error (line_number, "unknown macro snapshot command");
+				return false;
+			}
+			command.name = tokens[4];
+		} else if (tokens.size () != 4 && tokens.size () != 6) {
 			result.error = line_error (line_number, "invalid macro command");
 			return false;
-		}
-		command.type = ReactiveCommand::Macro;
-		command.name = tokens[2];
-		if (tokens[3] == "midi-value") {
-			command.value_source = ReactiveCommand::MidiEventValue;
-			command.value = 0.0;
-		} else if (!parse_double (tokens[3], command.value)) {
-			result.error = line_error (line_number, "invalid macro value");
-			return false;
-		}
-		if (tokens.size () == 6 && (tokens[4] != "ramp" || !parse_bbt_offset (tokens[5], command.ramp))) {
-			result.error = line_error (line_number, "invalid macro ramp");
-			return false;
+		} else {
+			command.type = ReactiveCommand::Macro;
+			command.name = tokens[2];
+			if (tokens[3] == "midi-value") {
+				command.value_source = ReactiveCommand::MidiEventValue;
+				command.value = 0.0;
+			} else if (!parse_double (tokens[3], command.value)) {
+				result.error = line_error (line_number, "invalid macro value");
+				return false;
+			}
+			if (tokens.size () == 6 && (tokens[4] != "ramp" || !parse_bbt_offset (tokens[5], command.ramp))) {
+				result.error = line_error (line_number, "invalid macro ramp");
+				return false;
+			}
 		}
 	} else if (name == "state") {
 		if (tokens.size () != 4) {
