@@ -163,12 +163,15 @@ The existing Generic MIDI action names remain stable:
 - `Reactive/trigger-action-5`
 - `Reactive/trigger-action-6`
 - `Reactive/trigger-action-7`
+- `Reactive/toggle-performance-mode`
 
-The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots, note 44 to `Reactive/show-action-document-status`, and note 45 to `Reactive/reload-action-document`.
+The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots, note 44 to `Reactive/show-action-document-status`, note 45 to `Reactive/reload-action-document`, and note 47 to `Reactive/toggle-performance-mode`.
+
+`Reactive/toggle-performance-mode` arms or disarms Reactive Performance Mode from a controller or key binding. When disabled, manual slots and live MIDI-triggered reactive actions report a visible disabled execution status without dispatching target commands, mutating macro/state values, or advancing sequential chains. Status/reload commands remain available so a performer can inspect or repair the setup before re-enabling the mode.
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows the loaded source type, configured path or fallback label, action count, last load error, latest execution status, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
@@ -442,6 +445,13 @@ Phase 5e adds the first visible reactive-routing read model:
 - The existing status dialog displays this compact routing section below the next-action preview.
 - MIDI feedback, a dedicated Cue-page panel, and true queued-action scheduling remain follow-up work.
 
+Phase 5f adds an explicit mode-arm toggle:
+
+- `ReactiveActionSlotRunner` exposes enabled/disabled state and a compact status string for the status panel.
+- Disabled mode blocks slot, MIDI-event, and MIDI-byte execution before target dispatch or action-engine mutation.
+- `Reactive/toggle-performance-mode` toggles the state from Ardour action bindings, and the MVP MIDI map binds note 47 for controller-first arming/disarming.
+- A dedicated Cue-page panel and controller feedback output remain follow-up work.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.
@@ -457,6 +467,7 @@ Phase 7b makes the MVP map more controller-first:
 - Keep notes 36 through 43 mapped to `Reactive/trigger-action-0` through `Reactive/trigger-action-7`.
 - Bind note 44 to `Reactive/show-action-document-status`.
 - Bind note 45 to `Reactive/reload-action-document`.
+- Bind note 47 to `Reactive/toggle-performance-mode`.
 - Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro examples in session-local action files.
 
 ## Acceptance Tests
@@ -464,5 +475,5 @@ Phase 7b makes the MVP map more controller-first:
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
 - Engine tests cover action lookup, chain state, literal and event-derived macro state, and quantization calculation against a fixed TempoMap.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
-- UI smoke test can enable mode, load a file, show validation errors, and preview a queued action.
+- UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.

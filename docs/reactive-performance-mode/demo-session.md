@@ -64,14 +64,15 @@ Reactive/trigger-action-6
 Reactive/trigger-action-7
 ```
 
-Two utility buttons are also mapped:
+Three utility buttons are also mapped:
 
 ```text
 note 44 -> Reactive/show-action-document-status
 note 45 -> Reactive/reload-action-document
+note 47 -> Reactive/toggle-performance-mode
 ```
 
-Use note 44 to inspect the currently loaded action document, latest slot execution, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. Use note 45 after editing `reactive-actions.txt`.
+Use note 44 to inspect whether Reactive Performance Mode is enabled, the currently loaded action document, latest slot execution, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. Use note 45 after editing `reactive-actions.txt`. Use note 47 to arm or disarm Reactive Performance Mode from the controller; when disabled, performance actions report a disabled status and do not launch cues, mutate rhythm parameters, or update macro/state values.
 
 ## Built-In Fallback Behavior
 
@@ -143,6 +144,9 @@ Run this checklist after loading the session:
 
 - App boots from `gtk2_ardour/ardev`.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
+- Utility note 47 toggles the status between `Reactive Performance Mode: enabled` and `Reactive Performance Mode: disabled`.
+- While disabled, trigger pad 0 and confirm the status panel reports a disabled execution without inserting `Reactive Rhythm State MVP` or launching a cue.
+- Toggle note 47 again to re-enable Reactive Performance Mode.
 - Trigger pad 0, MIDI channel 10 note 36.
 - The status panel reports slot 0, a successful last execution, shows the refreshed next-action preview, shows route 0 with `Reactive Rhythm State MVP`, marks the corresponding action-bank row, and shows macro/state values from the loaded action document.
 - Route 0 contains an active LuaProc processor named `Reactive Rhythm State MVP`.
@@ -154,7 +158,7 @@ Run this checklist after loading the session:
 
 ## Current Limits
 
-- The MVP map binds eight pad notes, two utility notes, and live document-level note/CC trigger examples. MIDI feedback output and native macro-to-plugin parameter routing remain follow-up work.
+- The MVP map binds eight pad notes, three utility notes, and live document-level note/CC trigger examples. MIDI feedback output and native macro-to-plugin parameter routing remain follow-up work.
 - The status panel is a compact diagnostic dialog with the first reusable action-bank, macro-bank, state-bank, next-action preview, and routing read models, not the final Cue-page performance panel.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.

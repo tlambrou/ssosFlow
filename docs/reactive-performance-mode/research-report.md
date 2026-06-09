@@ -143,6 +143,8 @@ Phase 5d adds the first quantized next-action preview read model. `ReactiveActio
 
 Phase 5e adds the first visible routing read model. `ReactiveSessionTarget` now summarizes controller-facing routes in the same `Session::get_remote_nth_route(...)` order used by `DO rhythm route <route-index> ...`, including route index, route name, whether `Reactive Rhythm State MVP` is inserted, and a compact status label. The existing status dialog displays this section below the next-action preview. A later Cue-page panel can reuse the routing rows with action, macro, state, and preview rows before adding controller feedback and true queued-action scheduling.
 
+Phase 5f adds explicit mode arming at the `ReactiveActionSlotRunner` boundary. This keeps disabled-mode behavior independent of GTK, Generic MIDI, and session routing: action documents can still be loaded/reloaded and inspected, but slot/MIDI execution returns a visible disabled result before target dispatch or action-engine mutation. The Generic MIDI MVP map binds note 47 to `Reactive/toggle-performance-mode` so the performer can arm or disarm the system from a controller after setup.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

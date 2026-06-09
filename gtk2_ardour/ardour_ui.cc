@@ -3211,6 +3211,13 @@ ARDOUR_UI::reload_reactive_action_document ()
 }
 
 void
+ARDOUR_UI::toggle_reactive_performance_mode ()
+{
+	_reactive_action_slots.set_performance_enabled (!_reactive_action_slots.performance_enabled ());
+	info << _reactive_action_slots.format_performance_mode_status () << endmsg;
+}
+
+void
 ARDOUR_UI::show_reactive_action_document_status ()
 {
 	if (!_session) {
@@ -3223,6 +3230,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 	ArdourDialog dialog (_("Reactive Performance"), true, false);
 	ReactiveSessionTarget target (*_session);
 	Gtk::Label status (
+		_reactive_action_slots.format_performance_mode_status () +
+		"\n\n" +
 		ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
 		"\n\n" +
 		_reactive_action_slots.format_last_execution_status () +
@@ -3250,6 +3259,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 	while (dialog.run () == RESPONSE_APPLY) {
 		reload_reactive_action_document_from_disk (true);
 		status.set_text (
+			_reactive_action_slots.format_performance_mode_status () +
+			"\n\n" +
 			ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
 			"\n\n" +
 			_reactive_action_slots.format_last_execution_status () +

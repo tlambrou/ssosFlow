@@ -480,6 +480,47 @@ ReactiveActionSlotRunnerTest::resetExecutionStatusOnClearAndLoad ()
 }
 
 void
+ReactiveActionSlotRunnerTest::disabledPerformanceModeBlocksExecutionAndReportsStatus ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.performance_enabled ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Performance Mode: enabled"), runner.format_performance_mode_status ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION build\n"
+		"CHAIN sequential\n"
+		"DO macro filter 0.25\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	runner.set_performance_enabled (false);
+	CPPUNIT_ASSERT_EQUAL (false, runner.performance_enabled ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Performance Mode: disabled"), runner.format_performance_mode_status ());
+
+	ReactiveExecutionResult disabled = runner.execute_slot (0, target);
+	CPPUNIT_ASSERT_EQUAL (false, disabled.ok);
+	CPPUNIT_ASSERT (disabled.error.find ("disabled") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), disabled.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string (), runner.last_action ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, runner.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (true, runner.last_execution_status ().attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.last_execution_status ().slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("build"), runner.last_execution_status ().action_name);
+	CPPUNIT_ASSERT_EQUAL (false, runner.next_action_preview ().available);
+
+	runner.set_performance_enabled (true);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.25:0|0|0"), target.calls[0]);
+}
+
+void
 ReactiveActionSlotRunnerTest::summarizeActionBankForPerformancePanel ()
 {
 	ReactiveActionSlotRunner runner;
