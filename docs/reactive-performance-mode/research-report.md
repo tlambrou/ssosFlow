@@ -139,6 +139,8 @@ Phase 5c adds the matching panel read model for user-defined performance states.
 
 Phase 5d adds the first quantized next-action preview read model. `ReactiveActionEngine::preview_action(...)` reads the current action plan without executing target commands, mutating macro/state values, marking last action, or advancing sequential chains. `ReactiveActionSlotRunner` exposes manual-slot and MIDI-event previews with slot index, action name, primary trigger, chain mode, quantize label, and command count, and refreshes the cached status-dialog preview after slot/MIDI execution. A later Cue-page panel can reuse action, macro, state, and preview rows before adding controller feedback, visible routing, and true queued-action scheduling.
 
+Phase 5e adds the first visible routing read model. `ReactiveSessionTarget` now summarizes controller-facing routes in the same `Session::get_remote_nth_route(...)` order used by `DO rhythm route <route-index> ...`, including route index, route name, whether `Reactive Rhythm State MVP` is inserted, and a compact status label. The existing status dialog displays this section below the next-action preview. A later Cue-page panel can reuse the routing rows with action, macro, state, and preview rows before adding controller feedback and true queued-action scheduling.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

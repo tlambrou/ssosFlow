@@ -145,6 +145,28 @@ set_reactive_rhythm_route_controls (
 	return updated;
 }
 
+static bool
+route_has_reactive_rhythm_insert (std::shared_ptr<Route> const& route)
+{
+	bool found = false;
+	if (!route) {
+		return false;
+	}
+
+	route->foreach_processor ([&found] (std::weak_ptr<Processor> wp) {
+		if (found) {
+			return;
+		}
+
+		std::shared_ptr<Processor> processor = wp.lock ();
+		if (processor && ReactiveRhythmRouteInserter::is_reactive_rhythm_insert (processor)) {
+			found = true;
+		}
+	});
+
+	return found;
+}
+
 } // namespace
 
 ReactiveSessionTarget::ReactiveSessionTarget ()
@@ -342,6 +364,49 @@ bool
 ReactiveSessionTarget::rhythm_insert (int route, std::string& error)
 {
 	return session_insert_reactive_rhythm (route, error);
+}
+
+std::vector<ReactiveRoutingSlotSummary>
+ReactiveSessionTarget::routing_summary (size_t max_routes) const
+{
+	std::vector<ReactiveRoutingSlotSummary> summary;
+	if (!_session || max_routes == 0) {
+		return summary;
+	}
+
+	summary.reserve (max_routes);
+	for (size_t slot = 0; slot < max_routes; ++slot) {
+		std::shared_ptr<Route> route = _session->get_remote_nth_route (static_cast<PresentationInfo::order_t> (slot));
+		if (!route) {
+			break;
+		}
+
+		ReactiveRoutingSlotSummary row;
+		row.slot = slot;
+		row.route_name = route->name ();
+		row.reactive_rhythm_insert_present = route_has_reactive_rhythm_insert (route);
+		row.status = row.reactive_rhythm_insert_present ? ReactiveRhythmRouteInserter::lua_proc_name () : "no reactive rhythm insert";
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
+std::string
+ReactiveSessionTarget::format_routing_summary (size_t max_routes) const
+{
+	std::vector<ReactiveRoutingSlotSummary> const summary = routing_summary (max_routes);
+	if (summary.empty ()) {
+		return "Routing: none";
+	}
+
+	std::ostringstream text;
+	text << "Routing:";
+	for (std::vector<ReactiveRoutingSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->route_name << " - " << i->status;
+	}
+
+	return text.str ();
 }
 
 void

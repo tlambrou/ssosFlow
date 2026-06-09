@@ -214,3 +214,52 @@ ReactiveSessionTargetRhythmInsertTest::rhythmInsertReportsMissingRoute ()
 	CPPUNIT_ASSERT_EQUAL (false, target.rhythm_insert (99, error));
 	CPPUNIT_ASSERT (error.find ("missing route") != std::string::npos);
 }
+
+void
+ReactiveSessionTargetRhythmInsertTest::summarizeReactiveRhythmRoutingStatus ()
+{
+	std::shared_ptr<Route> first_route = new_midi_route (*_session);
+	std::shared_ptr<Route> second_route = new_midi_route (*_session);
+	ReactiveSessionTarget target (*_session);
+	std::string error;
+
+	std::vector<ReactiveRoutingSlotSummary> summary = target.routing_summary (8);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (first_route->name (), summary[0].route_name);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].reactive_rhythm_insert_present);
+	CPPUNIT_ASSERT_EQUAL (std::string ("no reactive rhythm insert"), summary[0].status);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (second_route->name (), summary[1].route_name);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].reactive_rhythm_insert_present);
+
+	CPPUNIT_ASSERT_EQUAL (true, target.rhythm_insert (1, error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	summary = target.routing_summary (8);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].reactive_rhythm_insert_present);
+	CPPUNIT_ASSERT_EQUAL (std::string ("no reactive rhythm insert"), summary[0].status);
+	CPPUNIT_ASSERT_EQUAL (true, summary[1].reactive_rhythm_insert_present);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Rhythm State MVP"), summary[1].status);
+
+	summary = target.routing_summary (1);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+
+	std::string const formatted = target.format_routing_summary (8);
+	CPPUNIT_ASSERT (formatted.find ("Routing:") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("0: " + first_route->name () + " - no reactive rhythm insert") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: " + second_route->name () + " - Reactive Rhythm State MVP") != std::string::npos);
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::formatEmptyReactiveRhythmRoutingStatus ()
+{
+	ReactiveSessionTarget target (*_session);
+
+	CPPUNIT_ASSERT (target.routing_summary (8).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Routing: none"), target.format_routing_summary (8));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Routing: none"), target.format_routing_summary (0));
+}
