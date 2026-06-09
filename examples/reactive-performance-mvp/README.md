@@ -2,22 +2,21 @@
 
 Issue: #109.
 
-This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is a session-local action document plus setup notes for the bundled `Reactive Performance MVP` session-template script.
+This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is the source-controlled action document that the bundled `Reactive Performance MVP` session-template script installs into new demo sessions.
 
 ## Files
 
-- `reactive-actions.txt`: a valid session-local Reactive Performance action document.
-- `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's MIDI route layout.
+- `reactive-actions.txt`: a valid session-local Reactive Performance action document. The template installs matching content into new demo sessions as `reactive-actions.txt`.
+- `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's MIDI route layout and installs the demo action document.
 
 ## Setup
 
-1. Create a new Ardour session from the `Reactive Performance MVP` factory template. The bundled SessionInit script creates three MIDI-only routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`.
-2. Copy `reactive-actions.txt` into the session folder, next to the `.ardour` session file.
-3. Enable the Generic MIDI control surface and select the `Reactive Performance MVP` MIDI map.
-4. Connect a controller or MIDI monitor to Ardour's `Generic MIDI Control Out` port if you want to inspect feedback messages.
-5. Use `Reactive/reload-action-document` or note 45 in the MVP map after copying or editing the file.
+1. Create a new Ardour session from the `Reactive Performance MVP` factory template. The bundled SessionInit script creates three MIDI-only routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, then installs the demo action document next to the `.ardour` session file.
+2. Enable the Generic MIDI control surface and select the `Reactive Performance MVP` MIDI map.
+3. Connect a controller or MIDI monitor to Ardour's `Generic MIDI Control Out` port if you want to inspect feedback messages.
+4. Use `Reactive/reload-action-document` or note 45 in the MVP map after editing the installed file.
 
-You can still use an existing session manually: add at least one MIDI route in controller-facing route slot 0 before running the smoke check.
+You can still use an existing session manually: add at least one MIDI route in controller-facing route slot 0, then copy this folder's `reactive-actions.txt` into that session folder before running the smoke check. Use the same copy step if your Ardour Lua settings disable file I/O for template scripts.
 
 ## Controller Map
 
@@ -43,4 +42,4 @@ The bundled MVP map uses:
 
 ## Current Limit
 
-This asset deliberately avoids a full `.ardour` session file because Ardour session XML contains many generated IDs, ports, and environment-dependent connections. The bundled SessionInit template is the first repeatable demo-session path; packaging a complete session archive remains a later demo-production step once the route/clip layout is stable enough to verify.
+This asset deliberately avoids a full `.ardour` session file because Ardour session XML contains many generated IDs, ports, and environment-dependent connections. The bundled SessionInit template is the first repeatable demo-session path and now installs the demo action document automatically; packaging a complete session archive remains a later demo-production step once the route/clip layout is stable enough to verify.
