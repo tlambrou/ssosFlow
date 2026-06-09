@@ -28,6 +28,7 @@ public:
 
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
+	ReactiveExecutionResult execute_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&);
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	std::string format_last_execution_status () const;
 

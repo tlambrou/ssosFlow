@@ -9,7 +9,9 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeSlotByDocumentOrder);
 	CPPUNIT_TEST (executeMidiNoteTriggerByDocumentOrder);
 	CPPUNIT_TEST (executeMidiCCTriggerMacro);
+	CPPUNIT_TEST (executeMidiBytesThroughRunner);
 	CPPUNIT_TEST (reportMidiEventWithoutLoadedDocumentOrMatch);
+	CPPUNIT_TEST (reportUnsupportedMidiBytes);
 	CPPUNIT_TEST (executeBuiltInMvpFallbackRhythmDemo);
 	CPPUNIT_TEST (reportMissingDocumentAndOutOfRangeSlot);
 	CPPUNIT_TEST (rejectInvalidSource);
@@ -21,7 +23,9 @@ public:
 	void executeSlotByDocumentOrder ();
 	void executeMidiNoteTriggerByDocumentOrder ();
 	void executeMidiCCTriggerMacro ();
+	void executeMidiBytesThroughRunner ();
 	void reportMidiEventWithoutLoadedDocumentOrMatch ();
+	void reportUnsupportedMidiBytes ();
 	void executeBuiltInMvpFallbackRhythmDemo ();
 	void reportMissingDocumentAndOutOfRangeSlot ();
 	void rejectInvalidSource ();
