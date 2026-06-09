@@ -3226,7 +3226,9 @@ ARDOUR_UI::show_reactive_action_document_status ()
 		"\n\n" +
 		_reactive_action_slots.format_last_execution_status () +
 		"\n\n" +
-		_reactive_action_slots.format_action_bank_summary (8));
+		_reactive_action_slots.format_action_bank_summary (8) +
+		"\n\n" +
+		_reactive_action_slots.format_macro_bank_summary (8));
 	status.set_alignment (0.0, 0.0);
 	status.set_line_wrap (true);
 	status.set_selectable (true);
@@ -3245,7 +3247,9 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			_reactive_action_slots.format_last_execution_status () +
 			"\n\n" +
-			_reactive_action_slots.format_action_bank_summary (8));
+			_reactive_action_slots.format_action_bank_summary (8) +
+			"\n\n" +
+			_reactive_action_slots.format_macro_bank_summary (8));
 		dialog.show_all ();
 	}
 }

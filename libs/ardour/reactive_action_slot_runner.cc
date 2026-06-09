@@ -42,6 +42,38 @@ primary_trigger_label (ReactiveAction const& action)
 	return format_trigger_label (action.triggers.front ());
 }
 
+static bool
+contains_name (std::vector<std::string> const& names, std::string const& name)
+{
+	return std::find (names.begin (), names.end (), name) != names.end ();
+}
+
+static std::vector<std::string>
+macro_names_from_actions (std::vector<ReactiveAction> const& actions, size_t max_slots)
+{
+	std::vector<std::string> names;
+	if (max_slots == 0) {
+		return names;
+	}
+
+	names.reserve (max_slots);
+
+	for (std::vector<ReactiveAction>::const_iterator action = actions.begin (); action != actions.end (); ++action) {
+		for (std::vector<ReactiveCommand>::const_iterator command = action->commands.begin (); command != action->commands.end (); ++command) {
+			if (command->type != ReactiveCommand::Macro || command->name.empty () || contains_name (names, command->name)) {
+				continue;
+			}
+
+			names.push_back (command->name);
+			if (names.size () >= max_slots) {
+				return names;
+			}
+		}
+	}
+
+	return names;
+}
+
 } // namespace
 
 bool
@@ -115,6 +147,28 @@ ReactiveActionSlotRunner::action_bank_summary (size_t max_slots) const
 		row.primary_trigger = primary_trigger_label (action);
 		row.command_count = action.commands.size ();
 		row.latest_attempted = _last_execution_status.attempted && _last_execution_status.slot == slot;
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
+std::vector<ReactiveMacroSlotSummary>
+ReactiveActionSlotRunner::macro_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveMacroSlotSummary> summary;
+	if (!_loaded || max_slots == 0) {
+		return summary;
+	}
+
+	std::vector<std::string> const names = macro_names_from_actions (_engine.document ().actions (), max_slots);
+	summary.reserve (names.size ());
+
+	for (size_t slot = 0; slot < names.size (); ++slot) {
+		ReactiveMacroSlotSummary row;
+		row.slot = slot;
+		row.name = names[slot];
+		row.value = _engine.macro_value (row.name);
 		summary.push_back (row);
 	}
 
@@ -242,6 +296,24 @@ ReactiveActionSlotRunner::format_action_bank_summary (size_t max_slots) const
 		if (i->command_count != 1) {
 			text << "s";
 		}
+	}
+
+	return text.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_macro_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveMacroSlotSummary> const summary = macro_bank_summary (max_slots);
+
+	if (summary.empty ()) {
+		return "Macro bank: none";
+	}
+
+	std::ostringstream text;
+	text << "Macro bank:";
+	for (std::vector<ReactiveMacroSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->name << " = " << i->value;
 	}
 
 	return text.str ();

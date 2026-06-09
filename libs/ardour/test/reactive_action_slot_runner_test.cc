@@ -493,3 +493,56 @@ ReactiveActionSlotRunnerTest::summarizeActionBankForPerformancePanel ()
 	CPPUNIT_ASSERT_EQUAL (true, summary[1].latest_attempted);
 	CPPUNIT_ASSERT_EQUAL (false, summary[2].latest_attempted);
 }
+
+void
+ReactiveActionSlotRunnerTest::summarizeMacroBankForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT (runner.macro_bank_summary (8).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Macro bank: none"), runner.format_macro_bank_summary (8));
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION setup\n"
+		"DO macro filter 0.25\n"
+		"DO macro delay_send 0.40\n"
+		"END\n"
+		"ACTION perform\n"
+		"DO macro filter 0.80\n"
+		"DO macro resonance 0.55\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveMacroSlotSummary> summary = runner.macro_bank_summary (8);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), summary[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, summary[0].value, 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("delay_send"), summary[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, summary[1].value, 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("resonance"), summary[2].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, summary[2].value, 0.0001);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+
+	summary = runner.macro_bank_summary (2);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), summary[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, summary[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("delay_send"), summary[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.40, summary[1].value, 0.0001);
+
+	std::string const formatted = runner.format_macro_bank_summary (8);
+	CPPUNIT_ASSERT (formatted.find ("0: filter = 0.8") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: delay_send = 0.4") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("2: resonance = 0.55") != std::string::npos);
+}
