@@ -149,6 +149,8 @@ Phase 5g turns the status dialog from a read-only diagnostic into the first perf
 
 Phase 5h adds that dedicated Cue-page panel as a thin GTK scaffold instead of moving reactive engine ownership. `ReactivePerformancePanel` is hosted above the trigger strip grid, exposes eight large slot buttons, and calls the same `ARDOUR_UI` slot, mode-toggle, reload, and status-dialog methods that already back Generic MIDI and action bindings. This keeps normal Cue behavior unchanged while establishing the eventual panel location. Live read-model rendering and controller feedback remain follow-up work.
 
+Phase 5i binds the Cue-page panel to the existing control summary without moving ownership of the reactive engine. `ARDOUR_UI::reactive_performance_control_summary(...)` is a narrow public accessor over `ReactiveActionSlotRunner::performance_control_summary(...)`, and the panel uses it to refresh slot labels and sensitivity after local panel interactions. Empty slots and disarmed mode are visibly disabled, while Mode, Reload, and Status remain available. Automatic refresh after external controller actions and controller LED feedback remain follow-up work.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

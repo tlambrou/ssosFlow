@@ -72,7 +72,7 @@ note 45 -> Reactive/reload-action-document
 note 47 -> Reactive/toggle-performance-mode
 ```
 
-Use note 44 to inspect whether Reactive Performance Mode is enabled, the currently loaded action document, latest slot execution, first eight performance controls, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. The status panel also includes eight large slot-trigger buttons and an Enable/Disable Mode button for controller-parity checks during setup. The Cue page also shows the first dedicated Reactive Performance panel scaffold above the trigger strip grid, with eight slot buttons plus Mode, Reload, and Status controls. Use note 45 after editing `reactive-actions.txt`. Use note 47 to arm or disarm Reactive Performance Mode from the controller; when disabled, performance actions report a disabled status and do not launch cues, mutate rhythm parameters, or update macro/state values.
+Use note 44 to inspect whether Reactive Performance Mode is enabled, the currently loaded action document, latest slot execution, first eight performance controls, first eight action-bank rows, first eight macro-bank rows, and first eight state-bank rows. The status panel also includes eight large slot-trigger buttons and an Enable/Disable Mode button for controller-parity checks during setup. The Cue page also shows the dedicated Reactive Performance panel above the trigger strip grid; its eight slot buttons reflect loaded action names and disable themselves when a slot is unavailable or Reactive Performance Mode is disarmed. Use note 45 after editing `reactive-actions.txt`. Use note 47 to arm or disarm Reactive Performance Mode from the controller; when disabled, performance actions report a disabled status and do not launch cues, mutate rhythm parameters, or update macro/state values.
 
 ## Built-In Fallback Behavior
 
@@ -143,7 +143,8 @@ Reload with `Reactive/reload-action-document` or the Reload button in `Reactive/
 Run this checklist after loading the session:
 
 - App boots from `gtk2_ardour/ardev`.
-- The Cue page shows a Reactive Performance panel scaffold above the trigger strip grid.
+- The Cue page shows a Reactive Performance panel above the trigger strip grid, with slot labels sourced from the loaded action document.
+- Empty Cue-page panel slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
 - The status panel shows eight slot-trigger buttons, visibly disables empty/unavailable controls, and has an Enable/Disable Mode button.
 - Utility note 47 or the panel mode button toggles the status between `Reactive Performance Mode: enabled` and `Reactive Performance Mode: disabled`.
@@ -161,7 +162,7 @@ Run this checklist after loading the session:
 ## Current Limits
 
 - The MVP map binds eight pad notes, three utility notes, and live document-level note/CC trigger examples. MIDI feedback output and native macro-to-plugin parameter routing remain follow-up work.
-- The Cue-page panel is currently a command scaffold. Live read-model rendering, synchronized labels, controller feedback, and richer layout remain follow-up work.
+- The Cue-page panel refreshes after its own slot, Mode, Reload, and Status interactions. Automatic refresh after external MIDI/controller actions, controller feedback, and richer layout remain follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.

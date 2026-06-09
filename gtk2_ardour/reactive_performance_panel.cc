@@ -19,6 +19,7 @@
 #include "reactive_performance_panel.h"
 
 #include <sstream>
+#include <vector>
 
 #include "ardour_ui.h"
 
@@ -69,28 +70,61 @@ ReactivePerformancePanel::ReactivePerformancePanel ()
 
 	pack_start (_slot_row, false, false);
 	pack_start (_utility_row, false, false);
+
+	refresh ();
+}
+
+void
+ReactivePerformancePanel::refresh ()
+{
+	std::vector<ARDOUR::ReactivePerformanceControlSummary> const controls = ARDOUR_UI::instance ()->reactive_performance_control_summary (_slot_buttons.size ());
+
+	for (size_t slot = 0; slot < _slot_buttons.size (); ++slot) {
+		if (slot < controls.size ()) {
+			_slot_buttons[slot]->set_text (controls[slot].button_label);
+			_slot_buttons[slot]->set_sensitive (controls[slot].enabled);
+		} else {
+			std::ostringstream label;
+			label << slot << " empty";
+			_slot_buttons[slot]->set_text (label.str ());
+			_slot_buttons[slot]->set_sensitive (false);
+		}
+	}
+
+	_mode_button.set_text (ARDOUR_UI::instance ()->reactive_performance_enabled () ? _("Disable") : _("Enable"));
+}
+
+void
+ReactivePerformancePanel::on_map ()
+{
+	Gtk::VBox::on_map ();
+	refresh ();
 }
 
 void
 ReactivePerformancePanel::trigger_slot (size_t slot)
 {
 	ARDOUR_UI::instance ()->trigger_reactive_action (static_cast<int> (slot));
+	refresh ();
 }
 
 void
 ReactivePerformancePanel::toggle_mode ()
 {
 	ARDOUR_UI::instance ()->toggle_reactive_performance_mode ();
+	refresh ();
 }
 
 void
 ReactivePerformancePanel::reload_document ()
 {
 	ARDOUR_UI::instance ()->reload_reactive_action_document ();
+	refresh ();
 }
 
 void
 ReactivePerformancePanel::show_status ()
 {
 	ARDOUR_UI::instance ()->show_reactive_action_document_status ();
+	refresh ();
 }

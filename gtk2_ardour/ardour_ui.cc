@@ -3315,6 +3315,22 @@ ARDOUR_UI::show_reactive_action_document_status ()
 	}
 }
 
+std::vector<ReactivePerformanceControlSummary>
+ARDOUR_UI::reactive_performance_control_summary (size_t max_slots)
+{
+	if (_session) {
+		ensure_reactive_action_document ();
+	}
+
+	return _reactive_action_slots.performance_control_summary (max_slots);
+}
+
+bool
+ARDOUR_UI::reactive_performance_enabled () const
+{
+	return _reactive_action_slots.performance_enabled ();
+}
+
 void
 ARDOUR_UI::trigger_reactive_action (int slot)
 {
