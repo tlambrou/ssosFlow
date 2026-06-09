@@ -3148,6 +3148,13 @@ ARDOUR_UI::trigger_cue_row (int r)
 }
 
 void
+ARDOUR_UI::trigger_reactive_action (int slot)
+{
+	(void) slot;
+	/* Document loading and execution will be wired in the next reactive slice. */
+}
+
+void
 ARDOUR_UI::stop_all_cues (bool immediately)
 {
 	_basic_ui->trigger_stop_all (immediately);

@@ -309,6 +309,7 @@ public:
 
 	void trigger_slot (int c, int r);
 	void trigger_cue_row (int r);
+	void trigger_reactive_action (int slot);
 	void stop_all_cues (bool immediately);
 	void stop_cues (int c, bool immediately);
 
@@ -873,4 +874,3 @@ private:
 
 	PBD::ScopedConnectionList clock_state_connection;
 };
-

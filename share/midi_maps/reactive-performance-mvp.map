@@ -4,19 +4,20 @@
 <!--
   Reactive Performance Mode MVP bridge map.
 
-  This uses existing Cue actions so a controller can launch scene-style cue rows
-  before the dedicated Reactive/trigger-action-* executor is available.
+  This binds an eight-pad performance row to the first static Reactive action
+  slots. The action callbacks are intentionally registered before the document
+  loader/executor slice so controller maps can be discovered and tested early.
 -->
 
 	<DeviceInfo bank-size="8" motorised="no"/>
 
-	<Binding channel="10" note="36" action="Cues/trigger-cue-0"/>
-	<Binding channel="10" note="37" action="Cues/trigger-cue-1"/>
-	<Binding channel="10" note="38" action="Cues/trigger-cue-2"/>
-	<Binding channel="10" note="39" action="Cues/trigger-cue-3"/>
-	<Binding channel="10" note="40" action="Cues/trigger-cue-4"/>
-	<Binding channel="10" note="41" action="Cues/trigger-cue-5"/>
-	<Binding channel="10" note="42" action="Cues/trigger-cue-6"/>
-	<Binding channel="10" note="43" action="Cues/trigger-cue-7"/>
+	<Binding channel="10" note="36" action="Reactive/trigger-action-0" momentary="yes"/>
+	<Binding channel="10" note="37" action="Reactive/trigger-action-1" momentary="yes"/>
+	<Binding channel="10" note="38" action="Reactive/trigger-action-2" momentary="yes"/>
+	<Binding channel="10" note="39" action="Reactive/trigger-action-3" momentary="yes"/>
+	<Binding channel="10" note="40" action="Reactive/trigger-action-4" momentary="yes"/>
+	<Binding channel="10" note="41" action="Reactive/trigger-action-5" momentary="yes"/>
+	<Binding channel="10" note="42" action="Reactive/trigger-action-6" momentary="yes"/>
+	<Binding channel="10" note="43" action="Reactive/trigger-action-7" momentary="yes"/>
 
 </ArdourMIDIBindings>
