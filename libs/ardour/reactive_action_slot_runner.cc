@@ -49,7 +49,7 @@ contains_name (std::vector<std::string> const& names, std::string const& name)
 }
 
 static std::vector<std::string>
-macro_names_from_actions (std::vector<ReactiveAction> const& actions, size_t max_slots)
+command_names_from_actions (std::vector<ReactiveAction> const& actions, ReactiveCommand::Type command_type, size_t max_slots)
 {
 	std::vector<std::string> names;
 	if (max_slots == 0) {
@@ -60,7 +60,7 @@ macro_names_from_actions (std::vector<ReactiveAction> const& actions, size_t max
 
 	for (std::vector<ReactiveAction>::const_iterator action = actions.begin (); action != actions.end (); ++action) {
 		for (std::vector<ReactiveCommand>::const_iterator command = action->commands.begin (); command != action->commands.end (); ++command) {
-			if (command->type != ReactiveCommand::Macro || command->name.empty () || contains_name (names, command->name)) {
+			if (command->type != command_type || command->name.empty () || contains_name (names, command->name)) {
 				continue;
 			}
 
@@ -161,7 +161,7 @@ ReactiveActionSlotRunner::macro_bank_summary (size_t max_slots) const
 		return summary;
 	}
 
-	std::vector<std::string> const names = macro_names_from_actions (_engine.document ().actions (), max_slots);
+	std::vector<std::string> const names = command_names_from_actions (_engine.document ().actions (), ReactiveCommand::Macro, max_slots);
 	summary.reserve (names.size ());
 
 	for (size_t slot = 0; slot < names.size (); ++slot) {
@@ -169,6 +169,28 @@ ReactiveActionSlotRunner::macro_bank_summary (size_t max_slots) const
 		row.slot = slot;
 		row.name = names[slot];
 		row.value = _engine.macro_value (row.name);
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
+std::vector<ReactiveStateSlotSummary>
+ReactiveActionSlotRunner::state_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveStateSlotSummary> summary;
+	if (!_loaded || max_slots == 0) {
+		return summary;
+	}
+
+	std::vector<std::string> const names = command_names_from_actions (_engine.document ().actions (), ReactiveCommand::State, max_slots);
+	summary.reserve (names.size ());
+
+	for (size_t slot = 0; slot < names.size (); ++slot) {
+		ReactiveStateSlotSummary row;
+		row.slot = slot;
+		row.name = names[slot];
+		row.value = _engine.state_value (row.name);
 		summary.push_back (row);
 	}
 
@@ -313,6 +335,24 @@ ReactiveActionSlotRunner::format_macro_bank_summary (size_t max_slots) const
 	std::ostringstream text;
 	text << "Macro bank:";
 	for (std::vector<ReactiveMacroSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->name << " = " << i->value;
+	}
+
+	return text.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_state_bank_summary (size_t max_slots) const
+{
+	std::vector<ReactiveStateSlotSummary> const summary = state_bank_summary (max_slots);
+
+	if (summary.empty ()) {
+		return "State bank: none";
+	}
+
+	std::ostringstream text;
+	text << "State bank:";
+	for (std::vector<ReactiveStateSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
 		text << "\n  " << i->slot << ": " << i->name << " = " << i->value;
 	}
 
