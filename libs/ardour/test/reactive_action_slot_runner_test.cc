@@ -1137,3 +1137,193 @@ ReactiveActionSlotRunnerTest::transportProviderControlsPreviewConditions ()
 	CPPUNIT_ASSERT_EQUAL (true, runner.preview_slot (0).available);
 	CPPUNIT_ASSERT_EQUAL (true, runner.preview_midi_event (ReactiveMidiEvent::note_on (10, 36, 100)).available);
 }
+
+void
+ReactiveActionSlotRunnerTest::queueQuantizedSlotActionUntilDue ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION intro.drop\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult queued = runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (3, 2, 0),
+		Temporal::BBT_Time (4, 1, 0));
+
+	CPPUNIT_ASSERT_EQUAL (true, queued.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), queued.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), runner.last_action ());
+
+	std::vector<ReactiveQueuedActionSummary> summary = runner.queued_action_summary (8, Temporal::BBT_Time (3, 3, 0));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), summary[0].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), summary[0].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1|0|0"), summary[0].quantize);
+	CPPUNIT_ASSERT_EQUAL (std::string ("3|2|0"), summary[0].requested_at);
+	CPPUNIT_ASSERT_EQUAL (std::string ("4|1|0"), summary[0].due_at);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_count);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].due);
+	CPPUNIT_ASSERT (runner.format_queued_action_summary (8, Temporal::BBT_Time (3, 3, 0)).find ("Queued actions:") != std::string::npos);
+
+	ReactiveActionSlotExecutionStatus status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (true, status.result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), status.result.commands_executed);
+
+	ReactiveExecutionResult early = runner.release_due_queued_actions (Temporal::BBT_Time (3, 3, 0), target);
+	CPPUNIT_ASSERT_EQUAL (true, early.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), early.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+
+	ReactiveExecutionResult due = runner.release_due_queued_actions (Temporal::BBT_Time (4, 1, 0), target);
+	CPPUNIT_ASSERT_EQUAL (true, due.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), due.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:2"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.queued_action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("intro.drop"), runner.last_execution_status ().action_name);
+	CPPUNIT_ASSERT_EQUAL (true, runner.last_execution_status ().result.ok);
+}
+
+void
+ReactiveActionSlotRunnerTest::zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION instant\n"
+		"QUANTIZE 0|0|0\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult result = runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (1, 1, 0),
+		Temporal::BBT_Time (2, 1, 0));
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:1"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.queued_action_count ());
+}
+
+void
+ReactiveActionSlotRunnerTest::queueQuantizedMidiActionPreservesControllerValue ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.filter\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"QUANTIZE 0|1|0\n"
+		"DO macro filter midi-value ramp 0|1|0\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult queued = runner.execute_or_queue_midi_event (
+		ReactiveMidiEvent::control_change (1, 22, 64),
+		target,
+		Temporal::BBT_Time (1, 1, 0),
+		Temporal::BBT_Time (1, 2, 0));
+
+	CPPUNIT_ASSERT_EQUAL (true, queued.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), queued.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, runner.macro_value ("filter"), 0.0001);
+
+	ReactiveExecutionResult due = runner.release_due_queued_actions (Temporal::BBT_Time (1, 2, 0), target);
+	CPPUNIT_ASSERT_EQUAL (true, due.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), due.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro:filter:0.503937:0|1|0"), target.calls[0]);
+}
+
+void
+ReactiveActionSlotRunnerTest::clearAndLoadDocumentClearQueuedActions ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION queued\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 1\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (1, 1, 0),
+		Temporal::BBT_Time (2, 1, 0)).ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+
+	runner.clear ();
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.queued_action_count ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION replacement\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.queued_action_count ());
+	CPPUNIT_ASSERT (runner.queued_action_summary (8, Temporal::BBT_Time (2, 1, 0)).empty ());
+}
+
+void
+ReactiveActionSlotRunnerTest::disabledPerformanceModeDoesNotQueueActions ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION disabled.queue\n"
+		"QUANTIZE 1|0|0\n"
+		"DO cue 3\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	runner.set_performance_enabled (false);
+	ReactiveExecutionResult result = runner.execute_or_queue_slot (
+		0,
+		target,
+		Temporal::BBT_Time (1, 1, 0),
+		Temporal::BBT_Time (2, 1, 0));
+
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("disabled") != std::string::npos);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), runner.queued_action_count ());
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().result.ok);
+	CPPUNIT_ASSERT (runner.last_execution_status ().result.error.find ("disabled") != std::string::npos);
+}

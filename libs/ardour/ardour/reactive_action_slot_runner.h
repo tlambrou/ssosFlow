@@ -8,6 +8,7 @@
 #include "ardour/libardour_visibility.h"
 #include "ardour/reactive_action_engine.h"
 #include "ardour/reactive_action_executor.h"
+#include "ardour/reactive_action_scheduler.h"
 
 namespace ARDOUR {
 
@@ -105,15 +106,21 @@ public:
 	ReactiveActionPreviewSummary preview_slot (size_t slot);
 	ReactiveActionPreviewSummary preview_midi_event (ReactiveMidiEvent const&);
 
+	ReactiveExecutionResult execute_or_queue_slot (size_t slot, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
+	ReactiveExecutionResult execute_or_queue_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&);
+	ReactiveExecutionResult release_due_queued_actions (Temporal::BBT_Time const& now, ReactiveActionTarget&);
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	ReactiveActionPreviewSummary const& next_action_preview () const { return _next_action_preview; }
+	size_t queued_action_count () const { return _scheduler.queued_count (); }
+	std::vector<ReactiveQueuedActionSummary> queued_action_summary (size_t max_items, Temporal::BBT_Time const& now) const { return _scheduler.queued_action_summary (max_items, now); }
 	std::string format_last_execution_status () const;
 	std::string format_performance_mode_status () const;
 	std::string format_performance_control_summary (size_t max_slots) const;
 	std::string format_next_action_preview () const;
+	std::string format_queued_action_summary (size_t max_items, Temporal::BBT_Time const& now) const;
 	std::string format_panel_summary (size_t max_items) const;
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;
@@ -128,9 +135,11 @@ private:
 	void clear_last_execution_status ();
 	void clear_next_action_preview ();
 	ReactiveControllerFeedbackSummary controller_feedback_summary_row (size_t slot) const;
+	ReactiveExecutionResult queue_plan (size_t slot, std::string const& primary_trigger, ReactiveActionPlan const&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
 	ReactiveExecutionResult record_execution_status (size_t slot, std::string const& action_name, ReactiveExecutionResult const& result);
 
 	ReactiveActionEngine _engine;
+	ReactiveActionScheduler _scheduler;
 	ReactiveActionSlotExecutionStatus _last_execution_status;
 	ReactiveActionPreviewSummary _next_action_preview;
 	std::function<bool()> _transport_rolling_provider;

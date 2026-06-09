@@ -541,6 +541,16 @@ Phase 5o adds the first backend queued-action scheduler:
 - Zero-quantize plans are treated as due at the request BBT even when a later due BBT is supplied, so immediate actions cannot get stuck in the queue.
 - This slice is deliberately backend-only and non-realtime. The later session-clock bridge should compute due BBT from Ardour's `TempoMap`, enqueue non-immediate actions from the runner, and execute popped actions from a safe UI/session context.
 
+Phase 5p connects the scheduler to the runner without adding realtime session events:
+
+- `ReactiveActionSlotRunner::execute_or_queue_slot(...)` and `execute_or_queue_midi_event(...)` plan actions on the existing control/session-side runner boundary.
+- Nonzero-quantize plans are queued with caller-supplied requested/due BBT values and do not dispatch target commands until `release_due_queued_actions(...)` is called.
+- Zero-quantize plans still execute immediately through the existing executor path.
+- Queued MIDI-triggered plans preserve the matched action slot and event-derived values such as `DO macro <name> midi-value`.
+- The runner exposes bounded queued-action summaries and a compact formatter for future Cue-page/status UI display.
+- Clearing/replacing the action document and disabling Reactive Performance Mode clear pending queued actions, keeping disarm/reload behavior predictable under performance pressure.
+- This remains a non-realtime bridge. The next slice should compute due BBT from Ardour's `TempoMap` and poll/release due actions from a safe GTK/session clock context before any native `SessionEvent` design.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.
@@ -588,6 +598,7 @@ Phase 7g makes the template setup path closer to one-step:
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, and `midi-value` macro ramps.
 - Engine tests cover action lookup, chain state, literal and event-derived macro state, and quantization calculation against a fixed TempoMap.
 - Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
+- Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, and event-derived MIDI macro preservation.
 - Manual smoke test can trigger one cue row and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.
