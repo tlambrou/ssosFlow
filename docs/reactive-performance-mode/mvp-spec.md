@@ -254,6 +254,13 @@ Phase 6k adds runtime-path LuaProc/`PluginInsert` MIDI coverage:
 - Cover density-100 forwarding, density-zero note suppression with non-note pass-through, velocity-zero note-offs, and beat/time-driven latched parameter updates through the actual Ardour buffer mapping path.
 - Keep automated route insertion, script presets, and demo-session routing as follow-up work.
 
+Phase 6l adds a route-level LuaProc insertion helper:
+
+- Add `ReactiveRhythmRouteInserter` to locate the bundled `Reactive Rhythm State MVP` LuaProc script and insert it into a MIDI route through Ardour's normal `PluginInsert` and `Route::add_processor` path.
+- Configure the inserted processor for one MIDI input and one MIDI output, and verify it remains active and discoverable in the route processor list.
+- Make repeated helper calls return the existing insert instead of creating duplicates.
+- Keep UI commands, controller-triggered insertion, script preset installation, live route mutation policy, and demo-session routing as follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
