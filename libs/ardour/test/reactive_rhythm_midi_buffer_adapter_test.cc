@@ -1,0 +1,159 @@
+#include "reactive_rhythm_midi_buffer_adapter_test.h"
+
+#include "ardour/midi_buffer.h"
+#include "ardour/reactive_rhythm_midi_buffer_adapter.h"
+
+#include <vector>
+
+CPPUNIT_TEST_SUITE_REGISTRATION (ReactiveRhythmMidiBufferAdapterTest);
+
+using namespace ARDOUR;
+
+namespace {
+
+static ReactiveRhythmSettings
+settings_with_density (double density)
+{
+	ReactiveRhythmSettings settings;
+	settings.density = density;
+	settings.chance = 1.0;
+	settings.priority_mode = ReactiveRhythmPriorityMode::Velocity;
+	return settings;
+}
+
+static void
+push (MidiBuffer& buffer, samplepos_t frame, unsigned char status, unsigned char data1, unsigned char data2)
+{
+	unsigned char data[3] = { status, data1, data2 };
+	CPPUNIT_ASSERT_EQUAL (true, buffer.push_back (frame, Evoral::MIDI_EVENT, 3, data));
+}
+
+static std::vector<std::vector<unsigned char> >
+buffer_bytes (MidiBuffer const& buffer)
+{
+	std::vector<std::vector<unsigned char> > events;
+
+	for (MidiBuffer::const_iterator i = buffer.begin (); i != buffer.end (); ++i) {
+		Evoral::Event<samplepos_t> event (*i, false);
+		events.push_back (std::vector<unsigned char> (event.buffer (), event.buffer () + event.size ()));
+	}
+
+	return events;
+}
+
+static std::vector<samplepos_t>
+buffer_times (MidiBuffer const& buffer)
+{
+	std::vector<samplepos_t> times;
+
+	for (MidiBuffer::const_iterator i = buffer.begin (); i != buffer.end (); ++i) {
+		Evoral::Event<samplepos_t> event (*i, false);
+		times.push_back (event.time ());
+	}
+
+	return times;
+}
+
+} // namespace
+
+void
+ReactiveRhythmMidiBufferAdapterTest::keepsPassedNoteOnAndMatchingNoteOff ()
+{
+	MidiBuffer buffer (512);
+	push (buffer, 10, 0x91, 60, 100);
+	push (buffer, 90, 0x81, 60, 0);
+
+	ReactiveRhythmMidiBufferAdapter adapter (settings_with_density (1.0));
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions = adapter.process_buffer (buffer, { 0.25, 0.25 });
+	std::vector<std::vector<unsigned char> > events = buffer_bytes (buffer);
+	std::vector<samplepos_t> times = buffer_times (buffer);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), decisions.size ());
+	CPPUNIT_ASSERT_EQUAL (true, decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[0].byte_decision.mapped);
+	CPPUNIT_ASSERT_EQUAL (Evoral::MIDI_EVENT, decisions[0].event_type);
+	CPPUNIT_ASSERT_EQUAL (samplepos_t (10), decisions[0].time);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), events.size ());
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (0x91), events[0][0]);
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (60), events[0][1]);
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (100), events[0][2]);
+	CPPUNIT_ASSERT_EQUAL (samplepos_t (10), times[0]);
+	CPPUNIT_ASSERT_EQUAL (samplepos_t (90), times[1]);
+}
+
+void
+ReactiveRhythmMidiBufferAdapterTest::dropsSuppressedNoteOnAndMatchingNoteOff ()
+{
+	MidiBuffer buffer (512);
+	push (buffer, 10, 0x90, 60, 100);
+	push (buffer, 90, 0x80, 60, 0);
+
+	ReactiveRhythmMidiBufferAdapter adapter (settings_with_density (0.0));
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions = adapter.process_buffer (buffer, { 0.25, 0.25 });
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), decisions.size ());
+	CPPUNIT_ASSERT_EQUAL (false, decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (false, decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (true, buffer.empty ());
+}
+
+void
+ReactiveRhythmMidiBufferAdapterTest::mapsVelocityZeroNoteOnAsNoteOff ()
+{
+	MidiBuffer buffer (512);
+	push (buffer, 10, 0x90, 60, 100);
+	push (buffer, 90, 0x90, 60, 0);
+
+	ReactiveRhythmMidiBufferAdapter adapter (settings_with_density (1.0));
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions = adapter.process_buffer (buffer, { 0.25, 0.25 });
+	std::vector<std::vector<unsigned char> > events = buffer_bytes (buffer);
+
+	CPPUNIT_ASSERT_EQUAL (true, decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (ReactiveRhythmMidiEventType::NoteOff, decisions[1].byte_decision.mapped_event.type);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), events.size ());
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (0x90), events[1][0]);
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (0), events[1][2]);
+}
+
+void
+ReactiveRhythmMidiBufferAdapterTest::chanceZeroDropsNoteOnDeterministically ()
+{
+	MidiBuffer buffer (512);
+	push (buffer, 10, 0x90, 60, 100);
+	push (buffer, 90, 0x80, 60, 0);
+
+	ReactiveRhythmSettings settings = settings_with_density (1.0);
+	settings.chance = 0.0;
+	ReactiveRhythmMidiBufferAdapter adapter (settings);
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions = adapter.process_buffer (buffer, { 0.0, 0.0 });
+
+	CPPUNIT_ASSERT_EQUAL (false, decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (false, decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (true, buffer.empty ());
+}
+
+void
+ReactiveRhythmMidiBufferAdapterTest::forwardsNonNoteEventsUnchanged ()
+{
+	MidiBuffer buffer (512);
+	push (buffer, 5, 0xb0, 1, 64);
+	push (buffer, 12, 0xe0, 0, 64);
+
+	ReactiveRhythmMidiBufferAdapter adapter (settings_with_density (0.0));
+	std::vector<ReactiveRhythmMidiBufferDecision> decisions = adapter.process_buffer (buffer, { 0.25, 0.25 });
+	std::vector<std::vector<unsigned char> > events = buffer_bytes (buffer);
+	std::vector<samplepos_t> times = buffer_times (buffer);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), decisions.size ());
+	CPPUNIT_ASSERT_EQUAL (false, decisions[0].byte_decision.mapped);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[0].forward);
+	CPPUNIT_ASSERT_EQUAL (false, decisions[1].byte_decision.mapped);
+	CPPUNIT_ASSERT_EQUAL (true, decisions[1].forward);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), events.size ());
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (0xb0), events[0][0]);
+	CPPUNIT_ASSERT_EQUAL (static_cast<unsigned char> (0xe0), events[1][0]);
+	CPPUNIT_ASSERT_EQUAL (samplepos_t (5), times[0]);
+	CPPUNIT_ASSERT_EQUAL (samplepos_t (12), times[1]);
+}

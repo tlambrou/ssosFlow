@@ -195,6 +195,15 @@ Phase 6c adds raw MIDI-byte mapping before live buffer mutation:
 - Pass non-note messages through unchanged.
 - Leave direct `MidiBuffer` mutation, live randomness injection, LuaProc wrapping, and demo routing for follow-up work.
 
+Phase 6d adds a backend `MidiBuffer` adapter before live routing integration:
+
+- Read real Ardour `MidiBuffer` events and convert note messages through the raw MIDI-byte adapter.
+- Rebuild the source buffer with only forwarded events while preserving event time, event type, and raw bytes.
+- Treat note-on with velocity 0 as note-off through the shared byte mapper.
+- Forward non-note MIDI events unchanged.
+- Keep chance deterministic through explicit per-event chance values while live randomness remains unconnected.
+- Leave live randomness injection, LuaProc wrapping, processor insertion, and demo routing for follow-up work.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
@@ -226,7 +235,7 @@ Phase 4: expose MIDI-triggerable actions through Generic MIDI and/or a new react
 
 Phase 5: add minimal Reactive Performance UI panel.
 
-Phase 6: add reactive rhythm LuaProc script and demo routing.
+Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.
 
@@ -236,4 +245,4 @@ Phase 7: create demo session, docs, and follow-up roadmap.
 - Engine tests cover action lookup, chain state, macro state, and quantization calculation against a fixed TempoMap.
 - Manual smoke test can trigger one cue row and one macro from a MIDI map.
 - UI smoke test can enable mode, load a file, show validation errors, and preview a queued action.
-- Lua rhythm test/demo confirms density 0 mutes note-ons, density 1 passes them, chance 0 drops them, and note-offs do not hang.
+- Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.
