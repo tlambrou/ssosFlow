@@ -272,6 +272,7 @@ public:
 	   selection, etc) should connect to and handle this.
 	*/
 	PBD::Signal<void()> Escape;
+	PBD::Signal<void()> ReactivePerformanceChanged;
 
 	PublicEditor&	  the_editor() { return *editor;}
 	Mixer_UI* the_mixer() { return mixer; }

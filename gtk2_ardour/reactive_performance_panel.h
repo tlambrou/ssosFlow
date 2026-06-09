@@ -20,6 +20,8 @@
 
 #include <vector>
 
+#include "pbd/signals.h"
+
 #include <ytkmm/box.h>
 
 #include "widgets/ardour_button.h"
@@ -45,4 +47,6 @@ private:
 	ArdourWidgets::ArdourButton _mode_button;
 	ArdourWidgets::ArdourButton _reload_button;
 	ArdourWidgets::ArdourButton _status_button;
+
+	PBD::ScopedConnectionList _reactive_performance_connections;
 };
