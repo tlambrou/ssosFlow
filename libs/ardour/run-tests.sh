@@ -15,17 +15,31 @@ if [ "$1" == "--single" ] || [ "$2" == "--single" ]; then
 	else
                 TESTS='test_*'
         fi
-	for test_program in `find $ARDOUR_LIBS_DIR -name "$TESTS" -type f -perm /u+x`;
-	do
+	status=0
+	ran_any=0
+	while IFS= read -r test_program; do
+		if [ ! -x "$test_program" ]; then
+			continue
+		fi
+
+		ran_any=1
 		echo "Running $test_program..."
-                if [ "$1" == "--debug" ]; then
-	                gdb ./"$test_program"
-                elif [ "$1" == "--valgrind" ]; then
-	                valgrind ./"$test_program"
+		if [ "$1" == "--debug" ]; then
+			gdb "$test_program"
+		elif [ "$1" == "--valgrind" ]; then
+			valgrind "$test_program"
 	        else
-	                ./"$test_program"
+			"$test_program"
 	        fi
-	done
+		if [ "$?" != "0" ]; then
+			status=1
+		fi
+	done < <(find "$ARDOUR_LIBS_DIR" -name "$TESTS" -type f | sort)
+	if [ "$ran_any" == "0" ]; then
+		echo "No executable libardour tests matched '$TESTS'" >&2
+		exit 1
+	fi
+	exit "$status"
 else
         if [ "$1" == "--debug" ]; then
                 gdb $ARDOUR_LIBS_DIR/run-tests
@@ -35,4 +49,3 @@ else
                 $ARDOUR_LIBS_DIR/run-tests $*
         fi
 fi
-
