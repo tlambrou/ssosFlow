@@ -7,6 +7,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE (ReactiveActionSlotRunnerTest);
 	CPPUNIT_TEST (executeSlotByDocumentOrder);
+	CPPUNIT_TEST (executeBuiltInMvpFallbackRhythmDemo);
 	CPPUNIT_TEST (reportMissingDocumentAndOutOfRangeSlot);
 	CPPUNIT_TEST (rejectInvalidSource);
 	CPPUNIT_TEST (propagateTargetFailure);
@@ -14,6 +15,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 
 public:
 	void executeSlotByDocumentOrder ();
+	void executeBuiltInMvpFallbackRhythmDemo ();
 	void reportMissingDocumentAndOutOfRangeSlot ();
 	void rejectInvalidSource ();
 	void propagateTargetFailure ();

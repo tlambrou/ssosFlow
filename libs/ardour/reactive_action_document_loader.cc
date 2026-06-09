@@ -83,6 +83,55 @@ ReactiveActionDocumentLoader::document_filename ()
 	return "reactive-actions.txt";
 }
 
+const char*
+ReactiveActionDocumentLoader::mvp_fallback_source ()
+{
+	return
+		"ACTION mvp.cue.0\n"
+		"DO rhythm insert 0\n"
+		"DO rhythm density 1\n"
+		"DO rhythm chance 1\n"
+		"DO rhythm priority_mode 0\n"
+		"DO rhythm rotation 0\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION mvp.cue.1\n"
+		"DO rhythm density 0.75\n"
+		"DO rhythm chance 1\n"
+		"DO rhythm priority_mode 3\n"
+		"DO cue 1\n"
+		"END\n"
+		"ACTION mvp.cue.2\n"
+		"DO rhythm density 0.5\n"
+		"DO rhythm priority_mode 1\n"
+		"DO cue 2\n"
+		"END\n"
+		"ACTION mvp.cue.3\n"
+		"DO rhythm rotation 4\n"
+		"DO cue 3\n"
+		"END\n"
+		"ACTION mvp.cue.4\n"
+		"DO rhythm chance 0.5\n"
+		"DO cue 4\n"
+		"END\n"
+		"ACTION mvp.cue.5\n"
+		"DO rhythm density 0.25\n"
+		"DO rhythm rotation 8\n"
+		"DO cue 5\n"
+		"END\n"
+		"ACTION mvp.cue.6\n"
+		"DO rhythm chance 0.25\n"
+		"DO rhythm priority_mode 2\n"
+		"DO cue 6\n"
+		"END\n"
+		"ACTION mvp.cue.7\n"
+		"DO rhythm density 1\n"
+		"DO rhythm chance 1\n"
+		"DO rhythm rotation 0\n"
+		"DO cue 7\n"
+		"END\n";
+}
+
 std::string
 ReactiveActionDocumentLoader::session_document_path (std::string const& session_directory)
 {

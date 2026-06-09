@@ -206,40 +206,6 @@ using namespace Gtk;
 using namespace std;
 using namespace Editing;
 
-namespace {
-
-static const char*
-reactive_performance_mvp_seed_source ()
-{
-	return
-		"ACTION mvp.cue.0\n"
-		"DO cue 0\n"
-		"END\n"
-		"ACTION mvp.cue.1\n"
-		"DO cue 1\n"
-		"END\n"
-		"ACTION mvp.cue.2\n"
-		"DO cue 2\n"
-		"END\n"
-		"ACTION mvp.cue.3\n"
-		"DO cue 3\n"
-		"END\n"
-		"ACTION mvp.cue.4\n"
-		"DO cue 4\n"
-		"END\n"
-		"ACTION mvp.cue.5\n"
-		"DO cue 5\n"
-		"END\n"
-		"ACTION mvp.cue.6\n"
-		"DO cue 6\n"
-		"END\n"
-		"ACTION mvp.cue.7\n"
-		"DO cue 7\n"
-		"END\n";
-}
-
-} // namespace
-
 ARDOUR_UI *ARDOUR_UI::theArdourUI = 0;
 
 sigc::signal<void, timepos_t> ARDOUR_UI::Clock;
@@ -3205,7 +3171,7 @@ ARDOUR_UI::load_reactive_action_document (bool report_success)
 		    _reactive_action_slots,
 		    session_path,
 		    user_config_directory (),
-		    reactive_performance_mvp_seed_source (),
+		    ReactiveActionDocumentLoader::mvp_fallback_source (),
 		    load_result)) {
 		_reactive_action_document_load_result = load_result;
 		_reactive_action_document_session_path.clear ();

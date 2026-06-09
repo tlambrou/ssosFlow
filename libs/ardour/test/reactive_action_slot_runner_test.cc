@@ -1,5 +1,6 @@
 #include "reactive_action_slot_runner_test.h"
 
+#include "ardour/reactive_action_document_loader.h"
 #include "ardour/reactive_action_slot_runner.h"
 
 #include <sstream>
@@ -148,6 +149,40 @@ ReactiveActionSlotRunnerTest::executeSlotByDocumentOrder ()
 	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("trigger:1:3"), target.calls[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("state:section:breakdown"), target.calls[1]);
+}
+
+void
+ReactiveActionSlotRunnerTest::executeBuiltInMvpFallbackRhythmDemo ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (ReactiveActionDocumentLoader::mvp_fallback_source (), error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (8), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("mvp.cue.0"), runner.action_name (0));
+	CPPUNIT_ASSERT_EQUAL (std::string ("mvp.cue.7"), runner.action_name (7));
+
+	ReactiveExecutionResult install = runner.execute_slot (0, target);
+	CPPUNIT_ASSERT_EQUAL (true, install.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (6), install.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (6), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-insert:0"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:density:1"), target.calls[1]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:chance:1"), target.calls[2]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:priority_mode:0"), target.calls[3]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:rotation:0"), target.calls[4]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:0"), target.calls[5]);
+
+	target.calls.clear ();
+	ReactiveExecutionResult variation = runner.execute_slot (6, target);
+	CPPUNIT_ASSERT_EQUAL (true, variation.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), variation.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:chance:0.25"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm:priority_mode:2"), target.calls[1]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:6"), target.calls[2]);
 }
 
 void

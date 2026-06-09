@@ -4,9 +4,11 @@
 <!--
   Reactive Performance Mode MVP bridge map.
 
-  This binds an eight-pad performance row to the first static Reactive action
-  slots. The action callbacks are intentionally registered before the document
-  loader/executor slice so controller maps can be discovered and tested early.
+  This binds an eight-pad performance row to the first Reactive action slots.
+  With no session-local or user reactive-actions.txt, the built-in MVP fallback
+  uses pad 0 to insert/reset the rhythm prototype on controller route 0 and
+  uses later pads to launch cue rows while mutating rhythm density, chance,
+  priority mode, or rotation.
 -->
 
 	<DeviceInfo bank-size="8" motorised="no"/>
