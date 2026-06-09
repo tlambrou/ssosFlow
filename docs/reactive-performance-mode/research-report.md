@@ -157,6 +157,8 @@ Phase 5k adds the first controller-feedback read model. `ReactiveActionSlotRunne
 
 Phase 5l maps those controller-feedback rows to raw MIDI output messages without yet changing the Generic MIDI realtime feedback loop. `ReactiveControllerFeedbackBinding` describes note or CC output bindings using musician-facing channels `1` through `16`, and `ReactiveActionSlotRunner::controller_feedback_midi_messages(...)` emits deterministic three-byte note/CC messages, including zero-valued messages for mapped empty slots so controller LEDs can be cleared. Actual Generic MIDI output-port wiring remains follow-up work.
 
+Phase 5m declares those feedback output bindings in the bundled Generic MIDI map. `reactive-performance-mvp.map` now has separate `reactive="feedback"` rows for slots `0` through `7` on the same channel-10 pad notes as the trigger actions, and `GenericMidiControlProtocol` validates and stores those rows as `ReactiveControllerFeedbackBinding` values. Actual output-port writes remain follow-up work so the realtime feedback loop is not changed until the cached-message path is designed.
+
 ### 5. Use SessionEvent carefully
 
 `SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.

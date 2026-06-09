@@ -122,3 +122,40 @@ ReactiveMidiMapTest::mapContainsLiveReactiveMidiTriggerBindings ()
 	CPPUNIT_ASSERT_MESSAGE ("missing live reactive MIDI note trigger binding", has_note_trigger);
 	CPPUNIT_ASSERT_MESSAGE ("missing live reactive MIDI CC trigger binding", has_cc_trigger);
 }
+
+void
+ReactiveMidiMapTest::mapContainsReactiveFeedbackBindings ()
+{
+	XMLTree tree;
+	CPPUNIT_ASSERT_MESSAGE ("could not parse Reactive Performance MIDI map", tree.read (reactive_midi_map_path ().c_str ()));
+
+	XMLNode* root = tree.root ();
+	CPPUNIT_ASSERT (root != 0);
+
+	std::map<std::string, BindingKey> feedback_by_slot;
+	XMLNodeList const& children = root->children ();
+	for (XMLNodeConstIterator i = children.begin (); i != children.end (); ++i) {
+		XMLNode const* child = *i;
+		if (child->name () != "Binding" || !child->property ("reactive")) {
+			continue;
+		}
+
+		if (required_property (*child, "reactive") != "feedback") {
+			continue;
+		}
+
+		CPPUNIT_ASSERT_MESSAGE ("feedback binding should not also declare an action", !child->property ("action"));
+		CPPUNIT_ASSERT_MESSAGE ("feedback binding must declare a slot", child->property ("slot") != 0);
+		CPPUNIT_ASSERT_MESSAGE ("feedback binding must use a note output for the MVP pad row", child->property ("note") != 0);
+		feedback_by_slot[required_property (*child, "slot")] = BindingKey (
+			required_property (*child, "channel"),
+			required_property (*child, "note"));
+	}
+
+	for (int slot = 0; slot < 8; ++slot) {
+		std::string const slot_text = std::to_string (slot);
+		CPPUNIT_ASSERT (feedback_by_slot.find (slot_text) != feedback_by_slot.end ());
+		CPPUNIT_ASSERT_EQUAL (std::string ("10"), feedback_by_slot[slot_text].first);
+		CPPUNIT_ASSERT_EQUAL (std::to_string (36 + slot), feedback_by_slot[slot_text].second);
+	}
+}

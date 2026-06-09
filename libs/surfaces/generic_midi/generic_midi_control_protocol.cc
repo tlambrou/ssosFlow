@@ -266,6 +266,7 @@ GenericMidiControlProtocol::drop_all ()
 		delete *i;
 	}
 	reactive_actions.clear ();
+	reactive_feedback_bindings.clear ();
 }
 
 void
@@ -937,10 +938,18 @@ GenericMidiControlProtocol::load_bindings (const string& xmlpath)
 				}
 
 			} else if (child->property ("reactive")) {
-				MIDIReactiveAction* mra;
+				const XMLProperty* reactive = child->property (X_("reactive"));
+				if (reactive && reactive->value () == X_("feedback")) {
+					ReactiveControllerFeedbackBinding binding;
+					if (create_reactive_feedback_binding (*child, binding)) {
+						reactive_feedback_bindings.push_back (binding);
+					}
+				} else {
+					MIDIReactiveAction* mra;
 
-				if ((mra = create_reactive_action (*child)) != 0) {
-					reactive_actions.push_back (mra);
+					if ((mra = create_reactive_action (*child)) != 0) {
+						reactive_actions.push_back (mra);
+					}
 				}
 
 			} else if (child->property ("action")) {
@@ -1749,6 +1758,52 @@ GenericMidiControlProtocol::create_action (const XMLNode& node)
 	ma->bind_midi (channel, ev, detail);
 
 	return ma;
+}
+
+bool
+GenericMidiControlProtocol::create_reactive_feedback_binding (const XMLNode& node, ReactiveControllerFeedbackBinding& binding)
+{
+	const XMLProperty* prop;
+	int intval;
+
+	if ((prop = node.property (X_("slot"))) == 0) {
+		warning << "Reactive MIDI feedback binding ignored - missing slot" << endmsg;
+		return false;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1 || intval < 0) {
+		warning << "Reactive MIDI feedback binding ignored - invalid slot" << endmsg;
+		return false;
+	}
+	binding.slot = static_cast<size_t> (intval);
+
+	if ((prop = node.property (X_("ctl"))) != 0) {
+		binding.type = ReactiveControllerFeedbackBinding::ControlChange;
+	} else if ((prop = node.property (X_("note"))) != 0) {
+		binding.type = ReactiveControllerFeedbackBinding::Note;
+	} else {
+		warning << "Reactive MIDI feedback binding ignored - unknown type" << endmsg;
+		return false;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1 || intval < 0 || intval > 127) {
+		warning << "Reactive MIDI feedback binding ignored - invalid note/CC number" << endmsg;
+		return false;
+	}
+	binding.number = intval;
+
+	if ((prop = node.property (X_("channel"))) == 0) {
+		warning << "Reactive MIDI feedback binding ignored - missing channel" << endmsg;
+		return false;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1 || intval < 1 || intval > 16) {
+		warning << "Reactive MIDI feedback binding ignored - invalid channel" << endmsg;
+		return false;
+	}
+	binding.channel = intval;
+
+	return true;
 }
 
 MIDIReactiveAction*

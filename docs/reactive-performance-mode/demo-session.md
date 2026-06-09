@@ -161,7 +161,7 @@ Run this checklist after loading the session:
 
 ## Current Limits
 
-- The MVP map binds eight pad notes, three utility notes, and live document-level note/CC trigger examples. libardour can now turn Reactive slot feedback into note/CC feedback bytes, but Generic MIDI output-port wiring and native macro-to-plugin parameter routing remain follow-up work.
+- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can now turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI can parse/store those feedback declarations, but output-port writes and native macro-to-plugin parameter routing remain follow-up work.
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED output wiring and richer layout remain follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, next-action preview, and routing read models.
 - The session must be created manually; this repo does not yet package an Ardour demo session archive.
