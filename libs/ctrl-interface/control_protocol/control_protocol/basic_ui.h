@@ -23,8 +23,10 @@
 #ifndef __ardour_basic_ui_h__
 #define __ardour_basic_ui_h__
 
-#include <string>
 #include <stdint.h>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 #include "pbd/signals.h"
 
@@ -64,6 +66,8 @@ class LIBCONTROLCP_API BasicUI {
 	void loop_location (Temporal::timepos_t const & start, Temporal::timepos_t const & end);
 	void access_action ( std::string action_path );
 	static PBD::Signal<void(std::string,std::string)> AccessAction;
+	void reactive_midi_bytes (unsigned char const* bytes, size_t size);
+	static PBD::Signal<void(std::vector<unsigned char>)> ReactiveMidiBytes;
 	void goto_zero ();
 	void goto_start (bool and_roll = false);
 	void goto_end ();

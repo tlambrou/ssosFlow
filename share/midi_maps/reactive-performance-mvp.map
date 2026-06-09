@@ -26,4 +26,8 @@
 	<Binding channel="10" note="44" action="Reactive/show-action-document-status" momentary="yes"/>
 	<Binding channel="10" note="45" action="Reactive/reload-action-document" momentary="yes"/>
 
+	<!-- Live document-level TRIGGER midi examples. -->
+	<Binding channel="10" note="46" reactive="trigger" momentary="yes"/>
+	<Binding channel="1" ctl="22" reactive="trigger"/>
+
 </ArdourMIDIBindings>
