@@ -163,13 +163,15 @@ Phase 5m declares those feedback output bindings in the bundled Generic MIDI map
 
 Phase 5n implements that cached-message path. Generic MIDI emits parsed feedback bindings through `BasicUI`, `ARDOUR_UI` computes feedback bytes with the GTK-owned `ReactiveActionSlotRunner` whenever Reactive Performance state changes, and Generic MIDI stores those bytes in `ReactiveControllerFeedbackMidiCache`. The existing feedback tick writes only cached byte vectors with a try-lock, so the realtime feedback path does not parse documents, plan actions, allocate runner data, or touch filesystem-backed state.
 
+Phase 5o adds the first backend queued-action scheduler without yet touching Ardour's realtime event system. `ReactiveActionScheduler` stores already-planned action commands with slot, action, trigger, quantize, requested BBT, and due BBT metadata; exposes bounded queued-action summary rows for UI/status surfaces; and releases due actions deterministically by due BBT and queue id. The scheduler accepts explicit due BBT values instead of calculating them itself, because correct BBT arithmetic depends on the session `TempoMap`. The later integration should let the GTK/session bridge compute due times and pop actions from a safe non-realtime context before considering native `SessionEvent` work.
+
 Phase 7e chooses a repeatable demo-session template script before committing generated session XML. `share/scripts/reactive_performance_mvp_session.lua` is a bundled `SessionInit` script named `Reactive Performance MVP`; Ardour lists it as a factory template in the new-session flow and runs it after creating the empty session. The script creates three MIDI-only controller-facing routes for rhythm, harmony, and macro lanes, then saves the session. This advances the demo-session deliverable without hand-authoring brittle `.ardour` XML IDs, ports, and environment-dependent connections. A complete session archive with clip/cue content remains a later packaging step once the route and cue layout is stable enough to verify.
 
 Phase 7g extends that template to install the demo action document automatically. The SessionInit script writes `reactive-actions.txt` into the new session folder only when file I/O is available and the file is absent, preserving user-edited or pre-existing session-local documents. The script embeds the same action content as `examples/reactive-performance-mvp/reactive-actions.txt`; `LuaScriptTest::reactive_performance_session_init_installs_demo_action_document_test` executes the actual Lua template against a fake session and compares the generated file to the packaged example so future drift is caught in automation. `LuaScriptTest::reactive_performance_session_init_tolerates_unavailable_file_io_test` covers hardened Lua settings that remove file I/O, where the template still creates the route layout and users can copy the packaged action file manually. This keeps the setup path musician-friendly without committing a full generated session archive yet.
 
 ### 5. Use SessionEvent carefully
 
-`SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. For Phase 3, prefer existing trigger quantization and non-RT action dispatch.
+`SessionEvent` can schedule transport and realtime operations. It should be considered for later native quantized action execution, but the MVP should avoid adding a new realtime event type until tests prove the engine's allocation and locking behavior. Phase 5o keeps queued actions in a non-realtime scheduler with explicit due BBTs; the next bridge should compute due times from `TempoMap` and release due actions from a safe UI/session context before any realtime `SessionEvent` design.
 
 ## C++ vs Lua vs Plugin Boundary
 
@@ -242,4 +244,4 @@ Build the MVP as three small vertical slices:
 - Which controller should be the first physical target: Launchpad, Push, KeyLab, or generic note/CC?
 - Should macro snapshots map to mixer scenes, a new reactive snapshot type, or both?
 - How much of TriggerBox's custom MIDI binding should be reused for reactive action bindings?
-- Should queued-action preview be visible only in the new panel or also on controller feedback LEDs?
+- Should queued-action preview from the backend scheduler be visible only in the new panel or also on controller feedback LEDs?
