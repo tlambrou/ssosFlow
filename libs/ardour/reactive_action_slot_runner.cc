@@ -9,6 +9,7 @@ ReactiveActionSlotRunner::load_source (std::string const& source, std::string& e
 {
 	ReactiveActionParseResult parsed = ReactiveActionDocument::parse (source);
 	if (!parsed.ok) {
+		clear ();
 		error = parsed.error.empty () ? "failed to parse reactive action source" : parsed.error;
 		return false;
 	}
@@ -20,13 +21,20 @@ bool
 ReactiveActionSlotRunner::load_document (ReactiveActionDocument const& document, std::string& error)
 {
 	if (!_engine.load_document (document, error)) {
-		_loaded = false;
+		clear ();
 		return false;
 	}
 
 	_loaded = true;
 	error.clear ();
 	return true;
+}
+
+void
+ReactiveActionSlotRunner::clear ()
+{
+	_engine = ReactiveActionEngine ();
+	_loaded = false;
 }
 
 size_t

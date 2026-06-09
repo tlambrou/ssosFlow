@@ -13,6 +13,7 @@ class LIBARDOUR_API ReactiveActionSlotRunner {
 public:
 	bool load_source (std::string const&, std::string& error);
 	bool load_document (ReactiveActionDocument const&, std::string& error);
+	void clear ();
 
 	bool loaded () const { return _loaded; }
 	size_t action_count () const;

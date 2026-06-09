@@ -97,6 +97,7 @@
 #include "ardour/plugin_manager.h"
 #include "ardour/process_thread.h"
 #include "ardour/profile.h"
+#include "ardour/reactive_action_document_loader.h"
 #include "ardour/reactive_session_target.h"
 #include "ardour/revision.h"
 #include "ardour/session_directory.h"
@@ -3185,16 +3186,25 @@ ARDOUR_UI::trigger_cue_row (int r)
 bool
 ARDOUR_UI::ensure_reactive_action_document ()
 {
-	if (_reactive_action_slots.loaded ()) {
+	std::string session_path = _session ? _session->path () : std::string ();
+
+	if (_reactive_action_slots.loaded () && _reactive_action_document_session_path == session_path) {
 		return true;
 	}
 
-	std::string error;
-	if (!_reactive_action_slots.load_source (reactive_performance_mvp_seed_source (), error)) {
-		warning << string_compose (_("Could not load Reactive Performance MVP seed actions: %1"), error) << endmsg;
+	ReactiveActionDocumentLoadResult load_result;
+	if (!ReactiveActionDocumentLoader::load_from_paths (
+		    _reactive_action_slots,
+		    session_path,
+		    user_config_directory (),
+		    reactive_performance_mvp_seed_source (),
+		    load_result)) {
+		_reactive_action_document_session_path.clear ();
+		warning << string_compose (_("Could not load Reactive Performance action document: %1"), load_result.error) << endmsg;
 		return false;
 	}
 
+	_reactive_action_document_session_path = session_path;
 	return true;
 }
 

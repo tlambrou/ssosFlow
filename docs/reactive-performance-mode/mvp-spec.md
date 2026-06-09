@@ -121,6 +121,33 @@ After setup, the demo should be playable with:
 - CCs/faders/knobs to control macros.
 - Optional feedback where existing MIDI output support is already available.
 
+## Action Document Loading
+
+Reactive Performance Mode looks for a line-oriented action document named `reactive-actions.txt`.
+
+Lookup order:
+
+1. Session-local document: `<session-folder>/reactive-actions.txt`.
+2. User default document: `<ardour-user-config-folder>/reactive-actions.txt`.
+3. Built-in MVP fallback: eight demo actions named `mvp.cue.0` through `mvp.cue.7`, mapped to cue rows 0 through 7.
+
+The session-local document is the preferred performance path because it travels with the set. The user default document is useful for a controller-wide setup shared across sessions. The built-in fallback is only a demo preset; it is used when neither configured file exists.
+
+If a configured file exists but cannot be read or parsed, Reactive Performance Mode reports that file path and error and does not fall back silently. This keeps a broken set-specific document visible during setup instead of triggering the wrong demo actions during performance.
+
+The existing Generic MIDI action names remain stable:
+
+- `Reactive/trigger-action-0`
+- `Reactive/trigger-action-1`
+- `Reactive/trigger-action-2`
+- `Reactive/trigger-action-3`
+- `Reactive/trigger-action-4`
+- `Reactive/trigger-action-5`
+- `Reactive/trigger-action-6`
+- `Reactive/trigger-action-7`
+
+The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 through 43 to those action slots.
+
 ## Performance UI
 
 Add the smallest useful UI surface, preferably integrated with the existing Cue page:
