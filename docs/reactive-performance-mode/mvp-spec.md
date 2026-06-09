@@ -480,6 +480,14 @@ Phase 5j adds controller-driven panel refresh feedback:
 - `ReactivePerformancePanel` observes that signal on the GUI context, so controller-triggered Reactive actions refresh the Cue-page controls without a mouse interaction.
 - Controller LED/output feedback remains follow-up work.
 
+Phase 5k adds the first controller-feedback read model:
+
+- `ReactiveActionSlotRunner::controller_feedback_summary(...)` returns bounded slot feedback rows with slot index, action name, primary trigger label, availability, enabled state, latest-attempted state, and a controller-output value.
+- Feedback values are deterministic for the MVP: unavailable or disabled rows report `0`, enabled idle rows report `32`, and the latest attempted enabled row reports `127`.
+- Manual slot execution and MIDI-triggered execution both move the latest-attempted feedback row.
+- Disabled Reactive Performance Mode keeps feedback rows available but disabled and reports zero output values.
+- Actual MIDI/LED output remains follow-up work; this slice only creates the tested data source that an output adapter can consume.
+
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
 Phase 7: create demo session, docs, and follow-up roadmap.

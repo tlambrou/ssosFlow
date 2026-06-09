@@ -657,6 +657,64 @@ ReactiveActionSlotRunnerTest::performanceControlsMarkLatestAttemptForPanelRefres
 }
 
 void
+ReactiveActionSlotRunnerTest::controllerFeedbackSummarizesLatestAttempt ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION manual.two\n"
+		"DO cue 2\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	std::vector<ReactiveControllerFeedbackSummary> feedback = runner.controller_feedback_summary (3);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), feedback.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), feedback[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), feedback[0].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI note ch=10 note=36"), feedback[0].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].available);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].enabled);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (32, feedback[0].value);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[2].available);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[2].enabled);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[2].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (0, feedback[2].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target).ok);
+	feedback = runner.controller_feedback_summary (3);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (127, feedback[0].value);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[1].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (32, feedback[1].value);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+	feedback = runner.controller_feedback_summary (3);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (32, feedback[0].value);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[1].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (127, feedback[1].value);
+
+	runner.set_performance_enabled (false);
+	feedback = runner.controller_feedback_summary (2);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[0].available);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].enabled);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[0].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (0, feedback[0].value);
+	CPPUNIT_ASSERT_EQUAL (true, feedback[1].available);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[1].enabled);
+	CPPUNIT_ASSERT_EQUAL (false, feedback[1].latest_attempted);
+	CPPUNIT_ASSERT_EQUAL (0, feedback[1].value);
+}
+
+void
 ReactiveActionSlotRunnerTest::summarizeMacroBankForPerformancePanel ()
 {
 	ReactiveActionSlotRunner runner;

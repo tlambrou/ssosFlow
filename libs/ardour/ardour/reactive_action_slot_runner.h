@@ -34,6 +34,16 @@ struct LIBARDOUR_API ReactivePerformanceControlSummary {
 	bool enabled = false;
 };
 
+struct LIBARDOUR_API ReactiveControllerFeedbackSummary {
+	size_t slot = 0;
+	std::string action_name;
+	std::string primary_trigger;
+	bool available = false;
+	bool enabled = false;
+	bool latest_attempted = false;
+	int value = 0;
+};
+
 struct LIBARDOUR_API ReactiveMacroSlotSummary {
 	size_t slot = 0;
 	std::string name;
@@ -69,6 +79,7 @@ public:
 	std::string action_name (size_t slot) const;
 	std::vector<ReactiveActionSlotSummary> action_bank_summary (size_t max_slots) const;
 	std::vector<ReactivePerformanceControlSummary> performance_control_summary (size_t max_slots) const;
+	std::vector<ReactiveControllerFeedbackSummary> controller_feedback_summary (size_t max_slots) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
 	ReactiveActionPreviewSummary preview_slot (size_t slot) const;
