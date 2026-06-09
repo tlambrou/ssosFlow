@@ -172,6 +172,13 @@ Do not redesign all of Ardour. Do not replace TriggerPage.
 
 First implementation target: LuaProc MIDI script.
 
+Phase 6a adds the backend rhythm-state semantics first, independent of MIDI I/O:
+
+- Evaluate step events against density, chance, priority, and rotation settings.
+- Use explicit chance values for deterministic tests before live randomness is introduced.
+- Latch pending parameter changes until a configured step boundary.
+- Leave MIDI note-on/note-off handling, LuaProc wrapping, and demo routing for the next Phase 6 slice.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
