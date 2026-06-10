@@ -13,6 +13,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeMidiCCTriggerRhythmRouteValueFromController);
 	CPPUNIT_TEST (executeMidiCCTriggerProbabilityValueFromController);
 	CPPUNIT_TEST (executeMidiBytesThroughRunner);
+	CPPUNIT_TEST (summarizeLastMidiInputForPanelAndStatus);
 	CPPUNIT_TEST (executeMarkerTriggerByDocumentOrder);
 	CPPUNIT_TEST (executeSceneTriggerByDocumentOrder);
 	CPPUNIT_TEST (executeRegionTriggerByDocumentOrder);
@@ -69,6 +70,7 @@ public:
 	void executeMidiCCTriggerRhythmRouteValueFromController ();
 	void executeMidiCCTriggerProbabilityValueFromController ();
 	void executeMidiBytesThroughRunner ();
+	void summarizeLastMidiInputForPanelAndStatus ();
 	void executeMarkerTriggerByDocumentOrder ();
 	void executeSceneTriggerByDocumentOrder ();
 	void executeRegionTriggerByDocumentOrder ();

@@ -393,6 +393,81 @@ ReactiveActionSlotRunnerTest::executeMidiBytesThroughRunner ()
 }
 
 void
+ReactiveActionSlotRunnerTest::summarizeLastMidiInputForPanelAndStatus ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+	unsigned char const cc_bytes[] = { 0xb0, 22, 64 };
+	unsigned char const note_off[] = { 0x89, 36, 64 };
+
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_midi_input_summary ().available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("MIDI Input: none"), runner.format_midi_input_summary ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION knob.live\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro filter midi-value\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult note = runner.execute_midi_event (ReactiveMidiEvent::note_on (10, 36, 100), target);
+	CPPUNIT_ASSERT_EQUAL (true, note.ok);
+
+	ReactiveMidiInputSummary summary = runner.last_midi_input_summary ();
+	CPPUNIT_ASSERT_EQUAL (true, summary.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("note"), summary.event_type);
+	CPPUNIT_ASSERT_EQUAL (int (10), summary.channel);
+	CPPUNIT_ASSERT_EQUAL (int (36), summary.number);
+	CPPUNIT_ASSERT_EQUAL (int (100), summary.value);
+	CPPUNIT_ASSERT_EQUAL (false, summary.from_bytes);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.matched_action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary.matched_slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("pad.one"), summary.matched_action_name);
+	CPPUNIT_ASSERT (runner.format_midi_input_summary ().find ("MIDI Input: note ch=10 note=36 velocity=100 source=event matches=1 action=pad.one") != std::string::npos);
+	CPPUNIT_ASSERT (runner.format_panel_summary (2).find ("MIDI Input: note ch=10 note=36 velocity=100 source=event matches=1 action=pad.one") != std::string::npos);
+
+	ReactiveExecutionResult cc = runner.execute_midi_bytes (cc_bytes, 3, target);
+	CPPUNIT_ASSERT_EQUAL (true, cc.ok);
+
+	summary = runner.last_midi_input_summary ();
+	CPPUNIT_ASSERT_EQUAL (true, summary.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("cc"), summary.event_type);
+	CPPUNIT_ASSERT_EQUAL (int (1), summary.channel);
+	CPPUNIT_ASSERT_EQUAL (int (22), summary.number);
+	CPPUNIT_ASSERT_EQUAL (int (64), summary.value);
+	CPPUNIT_ASSERT_EQUAL (true, summary.from_bytes);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.matched_action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.matched_slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live"), summary.matched_action_name);
+	CPPUNIT_ASSERT (runner.format_midi_input_summary ().find ("MIDI Input: cc ch=1 cc=22 value=64 source=bytes matches=1 action=knob.live") != std::string::npos);
+
+	ReactiveExecutionResult no_match = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 23, 64), target);
+	CPPUNIT_ASSERT_EQUAL (false, no_match.ok);
+
+	summary = runner.last_midi_input_summary ();
+	CPPUNIT_ASSERT_EQUAL (true, summary.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("cc"), summary.event_type);
+	CPPUNIT_ASSERT_EQUAL (int (23), summary.number);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary.matched_action_count);
+	CPPUNIT_ASSERT_EQUAL (std::string (), summary.matched_action_name);
+	CPPUNIT_ASSERT (runner.format_midi_input_summary ().find ("MIDI Input: cc ch=1 cc=23 value=64 source=event matches=0") != std::string::npos);
+
+	ReactiveExecutionResult unsupported = runner.execute_midi_bytes (note_off, 3, target);
+	CPPUNIT_ASSERT_EQUAL (false, unsupported.ok);
+	ReactiveMidiInputSummary const after_unsupported = runner.last_midi_input_summary ();
+	CPPUNIT_ASSERT_EQUAL (summary.event_type, after_unsupported.event_type);
+	CPPUNIT_ASSERT_EQUAL (summary.number, after_unsupported.number);
+	CPPUNIT_ASSERT_EQUAL (summary.value, after_unsupported.value);
+	CPPUNIT_ASSERT_EQUAL (summary.matched_action_count, after_unsupported.matched_action_count);
+}
+
+void
 ReactiveActionSlotRunnerTest::executeMarkerTriggerByDocumentOrder ()
 {
 	ReactiveActionSlotRunner runner;
@@ -1632,7 +1707,7 @@ ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
 	RecordingTarget target;
 	std::string error;
 
-	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMacros: none\nStates: none\nHarmony: none"), runner.format_panel_summary (2));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMIDI Input: none\nMacros: none\nStates: none\nHarmony: none"), runner.format_panel_summary (2));
 
 	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
 		"ACTION setup\n"

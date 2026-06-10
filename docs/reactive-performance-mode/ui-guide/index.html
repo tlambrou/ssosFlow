@@ -234,7 +234,7 @@
             <ul class="checks">
               <li><label><input type="checkbox"> <span class="check-copy">Status shows session-local action document</span></label></li>
               <li><label><input type="checkbox"> <span class="check-copy">Packaged demo actions load without parse errors</span></label></li>
-              <li><label><input type="checkbox"> <span class="check-copy">Session State lists <code>speed=0.00 record=off loop=off locate=idle</code>, with Track State route id, selected/unselected state, Scene State, and trigger previews</span></label></li>
+              <li><label><input type="checkbox"> <span class="check-copy">Session State lists <code>speed=0.00 record=off loop=off locate=idle</code>, with MIDI Input, Track State route id, selected/unselected state, Scene State, and trigger previews</span></label></li>
             </ul>
           </div>
           <figure class="screenshot-card">
@@ -251,12 +251,12 @@
           <div class="step-copy">
             <span class="step-number">7</span>
             <h2>Use The Cue-Page Reactive Panel</h2>
-            <p>Open the Cues window and use the Reactive Performance panel above the trigger grid. The panel is the fast surface for mode state, reloads, slot launch, macro values, queued actions, track state with route id and selected state, and route feedback.</p>
+            <p>Open the Cues window and use the Reactive Performance panel above the trigger grid. The panel is the fast surface for mode state, reloads, slot launch, latest MIDI Input, macro values, queued actions, track state with route id and selected state, and route feedback.</p>
             <ul class="checks">
               <li><label><input type="checkbox"> <span class="check-copy">Cues window is visible</span></label></li>
               <li><label><input type="checkbox"> <span class="check-copy">Reactive Performance panel shows Enabled</span></label></li>
               <li><label><input type="checkbox"> <span class="check-copy">Slot buttons have readable action names</span></label></li>
-              <li><label><input type="checkbox"> <span class="check-copy">Macro, state, harmony, track route id/selected state, and routing summaries refresh after triggers</span></label></li>
+              <li><label><input type="checkbox"> <span class="check-copy">MIDI Input, macro, state, harmony, track route id/selected state, and routing summaries refresh after triggers</span></label></li>
             </ul>
           </div>
           <figure class="screenshot-card">
@@ -264,7 +264,7 @@
               <span class="screenshot-label">Cue-Page Reactive Panel</span>
               <button type="button" data-screenshot-src="./assets/reactive-performance-panel.svg" data-screenshot-title="Cue-Page Reactive Panel">View full size</button>
             </div>
-            <img class="ui-screenshot" src="./assets/reactive-performance-panel.svg" data-screenshot-title="Cue-Page Reactive Panel" alt="Reactive Performance panel screenshot showing the Cue page panel with mode, reload, slot, macro, state, track, routing, and queued-action summaries">
+            <img class="ui-screenshot" src="./assets/reactive-performance-panel.svg" data-screenshot-title="Cue-Page Reactive Panel" alt="Reactive Performance panel screenshot showing the Cue page panel with mode, reload, slot, MIDI Input, macro, state, track, routing, and queued-action summaries">
             <figcaption>This is the performer-facing surface; the status dialog stays useful as the deeper debug view.</figcaption>
           </figure>
         </article>
@@ -273,11 +273,11 @@
           <div class="step-copy">
             <span class="step-number">8</span>
             <h2>Run The Controller Smoke Check</h2>
-            <p>Use the first eight pads to trigger the packaged actions. Confirm the panel or status dialog reports the expected action, command details, macro state, harmony state, and rhythm-route feedback.</p>
+            <p>Use the first eight pads to trigger the packaged actions. Confirm the panel or status dialog reports the expected action, command details, MIDI Input source and match count, macro state, harmony state, and rhythm-route feedback.</p>
             <ul class="checks">
               <li><label><input type="checkbox"> <span class="check-copy">Note 36 resets the rhythm lane and sets C minor state</span></label></li>
               <li><label><input type="checkbox"> <span class="check-copy">Notes 37-39 mutate density, chance, priority, or rotation</span></label></li>
-              <li><label><input type="checkbox"> <span class="check-copy">CC 22 changes route 0 density, clip probability, and macro values</span></label></li>
+              <li><label><input type="checkbox"> <span class="check-copy">CC 22 changes route 0 density, clip probability, and macro values while MIDI Input reports <code>source=bytes</code> and <code>matches=1</code></span></label></li>
               <li><label><input type="checkbox"> <span class="check-copy">Queued actions show a preview before release</span></label></li>
             </ul>
           </div>

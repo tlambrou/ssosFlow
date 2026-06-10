@@ -261,6 +261,12 @@ valid_controller_feedback_binding (ReactiveControllerFeedbackBinding const& bind
 		binding.type == ReactiveControllerFeedbackBinding::ControlChange;
 }
 
+static std::string
+midi_input_event_type (ReactiveMidiEvent const& event)
+{
+	return event.type == ReactiveMidiEvent::ControlChange ? "cc" : "note";
+}
+
 static unsigned char
 controller_feedback_status_byte (ReactiveControllerFeedbackBinding const& binding)
 {
@@ -328,6 +334,7 @@ ReactiveActionSlotRunner::load_document (ReactiveActionDocument const& document,
 	_scheduler.clear ();
 	clear_last_execution_status ();
 	clear_next_action_preview ();
+	clear_midi_input_summary ();
 	error.clear ();
 	return true;
 }
@@ -339,6 +346,7 @@ ReactiveActionSlotRunner::clear ()
 	_scheduler.clear ();
 	clear_last_execution_status ();
 	clear_next_action_preview ();
+	clear_midi_input_summary ();
 	_loaded = false;
 }
 
@@ -754,14 +762,17 @@ ReactiveActionSlotRunner::execute_or_queue_midi_event (
 	Temporal::BBT_Time const& due_at)
 {
 	ReactiveExecutionResult result;
+	std::vector<ReactiveActionMatch> matches;
 
 	if (!_loaded) {
+		record_midi_input_event (event, false, matches);
 		result.error = "no reactive action document loaded";
 		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
-	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
+	matches = _engine.match_midi_event (event);
+	record_midi_input_event (event, false, matches);
 	if (matches.empty ()) {
 		result.error = "no reactive action matched MIDI event";
 		clear_next_action_preview ();
@@ -807,14 +818,17 @@ ReactiveActionSlotRunner::execute_or_queue_midi_event (
 	Temporal::BBT_Time const& requested_at)
 {
 	ReactiveExecutionResult result;
+	std::vector<ReactiveActionMatch> matches;
 
 	if (!_loaded) {
+		record_midi_input_event (event, false, matches);
 		result.error = "no reactive action document loaded";
 		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
-	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
+	matches = _engine.match_midi_event (event);
+	record_midi_input_event (event, false, matches);
 	if (matches.empty ()) {
 		result.error = "no reactive action matched MIDI event";
 		clear_next_action_preview ();
@@ -876,7 +890,11 @@ ReactiveActionSlotRunner::execute_or_queue_midi_bytes (
 		return record_execution_status (0, std::string (), result);
 	}
 
-	return execute_or_queue_midi_event (event, target, tempo_map, requested_at);
+	result = execute_or_queue_midi_event (event, target, tempo_map, requested_at);
+	if (_last_midi_input_summary.available) {
+		_last_midi_input_summary.from_bytes = true;
+	}
+	return result;
 }
 
 ReactiveExecutionResult
@@ -1236,14 +1254,17 @@ ReactiveExecutionResult
 ReactiveActionSlotRunner::execute_midi_event (ReactiveMidiEvent const& event, ReactiveActionTarget& target)
 {
 	ReactiveExecutionResult result;
+	std::vector<ReactiveActionMatch> matches;
 
 	if (!_loaded) {
+		record_midi_input_event (event, false, matches);
 		result.error = "no reactive action document loaded";
 		clear_next_action_preview ();
 		return record_execution_status (0, std::string (), result);
 	}
 
-	std::vector<ReactiveActionMatch> matches = _engine.match_midi_event (event);
+	matches = _engine.match_midi_event (event);
+	record_midi_input_event (event, false, matches);
 	if (matches.empty ()) {
 		result.error = "no reactive action matched MIDI event";
 		clear_next_action_preview ();
@@ -1402,7 +1423,11 @@ ReactiveActionSlotRunner::execute_midi_bytes (unsigned char const* bytes, size_t
 		return record_execution_status (0, std::string (), result);
 	}
 
-	return execute_midi_event (event, target);
+	result = execute_midi_event (event, target);
+	if (_last_midi_input_summary.available) {
+		_last_midi_input_summary.from_bytes = true;
+	}
+	return result;
 }
 
 ReactiveExecutionResult
@@ -1528,6 +1553,30 @@ ReactiveActionSlotRunner::format_next_action_preview () const
 }
 
 std::string
+ReactiveActionSlotRunner::format_midi_input_summary () const
+{
+	if (!_last_midi_input_summary.available) {
+		return "MIDI Input: none";
+	}
+
+	std::ostringstream status;
+	status << "MIDI Input: " << _last_midi_input_summary.event_type
+	       << " ch=" << _last_midi_input_summary.channel
+	       << " " << (_last_midi_input_summary.event_type == "cc" ? "cc" : "note")
+	       << "=" << _last_midi_input_summary.number
+	       << " " << (_last_midi_input_summary.event_type == "cc" ? "value" : "velocity")
+	       << "=" << _last_midi_input_summary.value
+	       << " source=" << (_last_midi_input_summary.from_bytes ? "bytes" : "event")
+	       << " matches=" << _last_midi_input_summary.matched_action_count;
+
+	if (!_last_midi_input_summary.matched_action_name.empty ()) {
+		status << " action=" << _last_midi_input_summary.matched_action_name;
+	}
+
+	return status.str ();
+}
+
+std::string
 ReactiveActionSlotRunner::format_queued_action_summary (size_t max_items, Temporal::BBT_Time const& now) const
 {
 	std::vector<ReactiveQueuedActionSummary> const summary = queued_action_summary (max_items, now);
@@ -1586,6 +1635,8 @@ ReactiveActionSlotRunner::format_panel_summary (size_t max_items) const
 			text << ", ...";
 		}
 	}
+
+	text << "\n" << format_midi_input_summary ();
 
 	std::vector<ReactiveMacroSlotSummary> const macros = macro_bank_summary (max_items);
 	text << "\nMacros:";
@@ -1711,6 +1762,36 @@ void
 ReactiveActionSlotRunner::clear_next_action_preview ()
 {
 	_next_action_preview = ReactiveActionPreviewSummary ();
+}
+
+void
+ReactiveActionSlotRunner::clear_midi_input_summary ()
+{
+	_last_midi_input_summary = ReactiveMidiInputSummary ();
+}
+
+void
+ReactiveActionSlotRunner::record_midi_input_event (
+	ReactiveMidiEvent const& event,
+	bool from_bytes,
+	std::vector<ReactiveActionMatch> const& matches)
+{
+	_last_midi_input_summary = ReactiveMidiInputSummary ();
+	_last_midi_input_summary.available = true;
+	_last_midi_input_summary.event_type = midi_input_event_type (event);
+	_last_midi_input_summary.channel = event.channel;
+	_last_midi_input_summary.number = event.number;
+	_last_midi_input_summary.value = event.value;
+	_last_midi_input_summary.from_bytes = from_bytes;
+	_last_midi_input_summary.matched_action_count = matches.size ();
+
+	if (!matches.empty ()) {
+		ReactiveActionMatch const& match = matches.front ();
+		_last_midi_input_summary.matched_slot = match.action_index;
+		if (match.action) {
+			_last_midi_input_summary.matched_action_name = match.action->name;
+		}
+	}
 }
 
 ReactiveControllerFeedbackSummary
