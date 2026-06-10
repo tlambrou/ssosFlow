@@ -34,6 +34,25 @@
         </article>
       </section>
 
+      <section class="command-panel" id="local-run" aria-labelledby="local-run-title">
+        <div>
+          <h2 id="local-run-title">Open Locally</h2>
+          <p>This is a static HTML guide. Open it directly in a browser; no server or Ardour process is required to read the walkthrough.</p>
+        </div>
+        <div class="commands">
+          <div class="command">
+            <span>Local static guide</span>
+            <button type="button" data-copy="open /Users/Tassos/Documents/ssosFlow/docs/reactive-performance-mode/ui-guide/index.html">Copy</button>
+            <code>open /Users/Tassos/Documents/ssosFlow/docs/reactive-performance-mode/ui-guide/index.html</code>
+          </div>
+          <div class="command">
+            <span>Browser file URL</span>
+            <button type="button" data-copy="file:///Users/Tassos/Documents/ssosFlow/docs/reactive-performance-mode/ui-guide/index.html">Copy</button>
+            <code>file:///Users/Tassos/Documents/ssosFlow/docs/reactive-performance-mode/ui-guide/index.html</code>
+          </div>
+        </div>
+      </section>
+
       <section class="command-panel" aria-labelledby="launch-title">
         <div>
           <h2 id="launch-title">Launch The Demo</h2>
@@ -62,7 +81,7 @@
         <div class="progress-panel">
           <div>
             <span class="label">Walkthrough</span>
-            <h2 id="guide-tools-title">Follow The UI Steps</h2>
+            <h2 id="guide-tools-title">Screenshot Walkthrough</h2>
           </div>
           <div class="progress-readout">
             <span id="progress-text">0 of 0 checks complete</span>
@@ -91,8 +110,9 @@
               <li><label><input type="checkbox"> Start button has been clicked</label></li>
             </ul>
           </div>
-          <figure>
-            <img src="./assets/audio-midi-setup.svg" alt="Ardour Audio/MIDI Setup dialog with None Dummy selected and Start button highlighted">
+          <figure class="screenshot-card">
+            <span class="screenshot-label">Audio/MIDI Setup</span>
+            <img class="ui-screenshot" src="./assets/audio-midi-setup.svg" alt="Ardour Audio/MIDI Setup dialog screenshot with None Dummy selected and Start button highlighted">
             <figcaption>Expected setup dialog before opening the demo session.</figcaption>
           </figure>
         </article>
@@ -108,8 +128,9 @@
               <li><label><input type="checkbox"> Session opens without plugin safe-mode prompts</label></li>
             </ul>
           </div>
-          <figure>
-            <img src="./assets/new-session-template.svg" alt="Ardour New Session dialog with Reactive Performance MVP selected">
+          <figure class="screenshot-card">
+            <span class="screenshot-label">New Session Template</span>
+            <img class="ui-screenshot" src="./assets/new-session-template.svg" alt="Ardour New Session dialog screenshot with Reactive Performance MVP selected">
             <figcaption>The template is a SessionInit script, not a static .ardour template file.</figcaption>
           </figure>
         </article>
@@ -126,8 +147,9 @@
               <li><label><input type="checkbox"> Breakdown marker is visible</label></li>
             </ul>
           </div>
-          <figure>
-            <img src="./assets/reactive-session-open.svg" alt="Ardour session showing Reactive Rhythm Lane, Reactive Harmony Lane, Reactive Macro Lane, and Breakdown marker">
+          <figure class="screenshot-card">
+            <span class="screenshot-label">Reactive Session Landmarks</span>
+            <img class="ui-screenshot" src="./assets/reactive-session-open.svg" alt="Reactive session screenshot showing Reactive Rhythm Lane, Reactive Harmony Lane, Reactive Macro Lane, and Breakdown marker">
             <figcaption>The lanes give the demo action document stable route targets.</figcaption>
           </figure>
         </article>
@@ -143,8 +165,9 @@
               <li><label><input type="checkbox"> Controller sends channel 10 note triggers</label></li>
             </ul>
           </div>
-          <figure>
-            <img src="./assets/midi-map.svg" alt="Generic MIDI settings with Reactive Performance MVP map selected">
+          <figure class="screenshot-card">
+            <span class="screenshot-label">Generic MIDI Map</span>
+            <img class="ui-screenshot" src="./assets/midi-map.svg" alt="Generic MIDI settings screenshot with Reactive Performance MVP map selected">
             <figcaption>Everything important in the MVP is designed to become MIDI-controllable.</figcaption>
           </figure>
         </article>
@@ -160,8 +183,9 @@
               <li><label><input type="checkbox"> Marker and region trigger previews are listed</label></li>
             </ul>
           </div>
-          <figure>
-            <img src="./assets/action-status.svg" alt="Reactive action document status window showing loaded action file and trigger previews">
+          <figure class="screenshot-card">
+            <span class="screenshot-label">Action Document Status</span>
+            <img class="ui-screenshot" src="./assets/action-status.svg" alt="Action document status screenshot showing loaded action file and trigger previews">
             <figcaption>Use this as the first debugging surface when a controller action does not fire.</figcaption>
           </figure>
         </article>
