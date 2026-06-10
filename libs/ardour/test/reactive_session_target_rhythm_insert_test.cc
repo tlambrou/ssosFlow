@@ -7,6 +7,7 @@
 #include "ardour/automation_control.h"
 #include "ardour/chan_count.h"
 #include "ardour/lua_api.h"
+#include "ardour/mixer_scene.h"
 #include "ardour/midi_track.h"
 #include "ardour/plugin.h"
 #include "ardour/plugin_insert.h"
@@ -426,6 +427,57 @@ ReactiveSessionTargetRhythmInsertTest::sessionClockStateCountsTriggerVisibleRout
 	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.trigger_route_count);
 	CPPUNIT_ASSERT (summary.status.find ("routes=2 trigger-routes=1") != std::string::npos);
 	CPPUNIT_ASSERT (target.format_session_state_summary ().find ("routes=2 trigger-routes=1") != std::string::npos);
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::formatEmptyReactiveMixerSceneState ()
+{
+	ReactiveSessionTarget target (*_session);
+
+	CPPUNIT_ASSERT (target.mixer_scene_summary (8).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Scene State: none"), target.format_mixer_scene_summary (8));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Scene State: none"), target.format_mixer_scene_summary (0));
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::summarizeReactiveMixerSceneState ()
+{
+	std::shared_ptr<Route> route = new_midi_route (*_session);
+	ReactiveSessionTarget target (*_session);
+
+	CPPUNIT_ASSERT (route);
+
+	_session->store_nth_mixer_scene (2);
+	std::shared_ptr<MixerScene> scene = _session->nth_mixer_scene (2, false);
+	CPPUNIT_ASSERT (scene);
+	scene->set_name ("Reactive Drop Snapshot");
+
+	std::vector<ReactiveMixerSceneSummary> const summary = target.mixer_scene_summary (4);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Scene 1"), summary[0].display_name);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].valid);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].last_touched);
+	CPPUNIT_ASSERT_EQUAL (std::string ("empty"), summary[0].status);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Scene 2"), summary[1].display_name);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].valid);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].last_touched);
+	CPPUNIT_ASSERT_EQUAL (std::string ("empty"), summary[1].status);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Drop Snapshot"), summary[2].display_name);
+	CPPUNIT_ASSERT_EQUAL (true, summary[2].valid);
+	CPPUNIT_ASSERT_EQUAL (true, summary[2].last_touched);
+	CPPUNIT_ASSERT_EQUAL (std::string ("stored last-touched"), summary[2].status);
+
+	std::string const formatted = target.format_mixer_scene_summary (4);
+	CPPUNIT_ASSERT (formatted.find ("Scene State:") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("0: Scene 1 - empty") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: Scene 2 - empty") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("2: Reactive Drop Snapshot - stored last-touched") != std::string::npos);
 }
 
 void

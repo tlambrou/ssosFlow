@@ -3368,6 +3368,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			target.format_track_state_summary (8) +
 			"\n\n" +
+			target.format_mixer_scene_summary (8) +
+			"\n\n" +
 			target.format_routing_summary (8) +
 			"\n\n" +
 			target.format_trigger_slot_summary (8, 4) +
@@ -3460,6 +3462,8 @@ ARDOUR_UI::reactive_performance_panel_summary (size_t max_items)
 		summary += target.format_session_state_summary ();
 		summary += "\n";
 		summary += target.format_track_state_summary (max_items);
+		summary += "\n";
+		summary += target.format_mixer_scene_summary (max_items);
 		summary += "\n";
 		summary += target.format_routing_summary (max_items);
 		summary += "\n";

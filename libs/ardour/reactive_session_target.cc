@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "ardour/automation_control.h"
+#include "ardour/mixer_scene.h"
 #include "ardour/plugin.h"
 #include "ardour/plugin_insert.h"
 #include "ardour/reactive_rhythm_route_inserter.h"
@@ -411,6 +412,25 @@ track_state_status (ReactiveTrackStateSummary const& row)
 	}
 
 	status << " gain=" << format_decimal_value (row.gain);
+	return status.str ();
+}
+
+static std::string
+mixer_scene_label (size_t slot)
+{
+	std::ostringstream label;
+	label << "Scene " << (slot + 1);
+	return label.str ();
+}
+
+static std::string
+mixer_scene_status (ReactiveMixerSceneSummary const& row)
+{
+	std::ostringstream status;
+	status << (row.valid ? "stored" : "empty");
+	if (row.last_touched) {
+		status << " last-touched";
+	}
 	return status.str ();
 }
 
@@ -856,6 +876,57 @@ ReactiveSessionTarget::format_track_state_summary (size_t max_routes) const
 	text << "Track State:";
 	for (std::vector<ReactiveTrackStateSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
 		text << "\n  " << i->slot << ": " << i->route_name << " - " << i->status;
+	}
+
+	return text.str ();
+}
+
+std::vector<ReactiveMixerSceneSummary>
+ReactiveSessionTarget::mixer_scene_summary (size_t max_scenes) const
+{
+	std::vector<ReactiveMixerSceneSummary> summary;
+	if (!_session || max_scenes == 0) {
+		return summary;
+	}
+
+	std::vector<std::shared_ptr<MixerScene> > const scenes = _session->mixer_scenes ();
+	size_t const n_scenes = std::min (max_scenes, scenes.size ());
+	if (n_scenes == 0) {
+		return summary;
+	}
+
+	summary.reserve (n_scenes);
+	size_t const last_touched = _session->last_touched_mixer_scene_idx ();
+	for (size_t slot = 0; slot < n_scenes; ++slot) {
+		std::shared_ptr<MixerScene> scene = scenes[slot];
+
+		ReactiveMixerSceneSummary row;
+		row.slot = slot;
+		row.display_name = mixer_scene_label (slot);
+		row.valid = scene && !scene->empty ();
+		row.last_touched = slot == last_touched;
+		if (scene && !scene->name ().empty ()) {
+			row.display_name = scene->name ();
+		}
+		row.status = mixer_scene_status (row);
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
+std::string
+ReactiveSessionTarget::format_mixer_scene_summary (size_t max_scenes) const
+{
+	std::vector<ReactiveMixerSceneSummary> const summary = mixer_scene_summary (max_scenes);
+	if (summary.empty ()) {
+		return "Scene State: none";
+	}
+
+	std::ostringstream text;
+	text << "Scene State:";
+	for (std::vector<ReactiveMixerSceneSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->display_name << " - " << i->status;
 	}
 
 	return text.str ();

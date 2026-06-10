@@ -19,6 +19,8 @@ class ReactiveSessionTargetRhythmInsertTest : public TestNeedingSession
 	CPPUNIT_TEST (formatEmptyReactiveTriggerSlotStatus);
 	CPPUNIT_TEST (summarizeReactiveSessionClockState);
 	CPPUNIT_TEST (sessionClockStateCountsTriggerVisibleRoutes);
+	CPPUNIT_TEST (formatEmptyReactiveMixerSceneState);
+	CPPUNIT_TEST (summarizeReactiveMixerSceneState);
 	CPPUNIT_TEST (formatEmptyReactiveTrackState);
 	CPPUNIT_TEST (summarizeReactiveTrackStateForRoutes);
 	CPPUNIT_TEST_SUITE_END ();
@@ -36,6 +38,8 @@ public:
 	void formatEmptyReactiveTriggerSlotStatus ();
 	void summarizeReactiveSessionClockState ();
 	void sessionClockStateCountsTriggerVisibleRoutes ();
+	void formatEmptyReactiveMixerSceneState ();
+	void summarizeReactiveMixerSceneState ();
 	void formatEmptyReactiveTrackState ();
 	void summarizeReactiveTrackStateForRoutes ();
 };
