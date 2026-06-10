@@ -18,6 +18,8 @@
 
 #include "pbd/controllable.h"
 
+#include "temporal/tempo.h"
+
 using namespace ARDOUR;
 
 namespace {
@@ -239,6 +241,14 @@ format_integer_value (double value)
 	return text.str ();
 }
 
+static std::string
+format_bbt_time (Temporal::BBT_Time const& bbt)
+{
+	std::ostringstream text;
+	text << bbt.bars << "|" << bbt.beats << "|" << bbt.ticks;
+	return text.str ();
+}
+
 static bool
 populate_reactive_rhythm_route_values (std::shared_ptr<Route> const& route, ReactiveRoutingSlotSummary& row)
 {
@@ -316,6 +326,31 @@ trigger_visible_routes (Session const& session, size_t max_routes)
 	return routes;
 }
 
+static size_t
+trigger_visible_route_count (Session const& session)
+{
+	size_t count = 0;
+
+	StripableList stripables;
+	session.get_stripables (stripables);
+	stripables.sort (Stripable::Sorter ());
+
+	for (StripableList::const_iterator i = stripables.begin (); i != stripables.end (); ++i) {
+		std::shared_ptr<Route> route = std::dynamic_pointer_cast<Route> (*i);
+		if (!route || !route->triggerbox ()) {
+			continue;
+		}
+
+		if (!route->presentation_info ().trigger_track ()) {
+			continue;
+		}
+
+		++count;
+	}
+
+	return count;
+}
+
 static std::string
 trigger_slot_status (ReactiveTriggerSlotSummary const& row)
 {
@@ -332,6 +367,24 @@ trigger_slot_status (ReactiveTriggerSlotSummary const& row)
 
 	status << (row.playable ? " playable" : " loaded")
 	       << " follow=" << row.follow_probability << "%";
+	return status.str ();
+}
+
+static std::string
+session_state_status (ReactiveSessionStateSummary const& row)
+{
+	if (!row.session_loaded) {
+		return "no session";
+	}
+
+	std::ostringstream status;
+	status << (row.transport_rolling ? "rolling" : "stopped")
+	       << " @ " << format_bbt_time (row.bbt)
+	       << " tempo=" << format_decimal_value (row.tempo_quarter_notes_per_minute)
+	       << " meter=" << row.meter_divisions_per_bar << "/" << row.meter_note_value
+	       << " sample=" << row.transport_sample
+	       << " routes=" << row.route_count
+	       << " trigger-routes=" << row.trigger_route_count;
 	return status.str ();
 }
 
@@ -683,6 +736,44 @@ ReactiveSessionTarget::format_trigger_slot_summary (size_t max_routes, size_t ma
 	}
 
 	return text.str ();
+}
+
+ReactiveSessionStateSummary
+ReactiveSessionTarget::session_state_summary () const
+{
+	ReactiveSessionStateSummary row;
+	if (!_session) {
+		row.status = session_state_status (row);
+		return row;
+	}
+
+	row.session_loaded = true;
+	row.transport_rolling = _session->transport_state_rolling ();
+	row.transport_sample = _session->transport_sample ();
+	row.route_count = _session->nroutes ();
+	row.trigger_route_count = trigger_visible_route_count (*_session);
+
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	Temporal::timepos_t const position (row.transport_sample);
+	row.bbt = Temporal::BBT_Time (tmap->bbt_at (position));
+	row.tempo_quarter_notes_per_minute = tmap->quarters_per_minute_at (position);
+	Temporal::TempoMetric metric (tmap->metric_at (position));
+	row.meter_divisions_per_bar = metric.meter ().divisions_per_bar ();
+	row.meter_note_value = metric.meter ().note_value ();
+
+	row.status = session_state_status (row);
+	return row;
+}
+
+std::string
+ReactiveSessionTarget::format_session_state_summary () const
+{
+	ReactiveSessionStateSummary const summary = session_state_summary ();
+	if (!summary.session_loaded) {
+		return "Session State: none";
+	}
+
+	return "Session State: " + summary.status;
 }
 
 void
