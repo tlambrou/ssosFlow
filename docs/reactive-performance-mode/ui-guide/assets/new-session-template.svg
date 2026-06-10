@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1054" height="706" viewBox="0 0 1054 706" role="img" aria-labelledby="title desc">
+  <title id="title">New session template selection</title>
+  <desc id="desc">Screenshot-style panel showing the Reactive Performance MVP factory template selected.</desc>
+  <rect width="1054" height="706" rx="18" fill="#101416"/>
+  <rect x="2" y="2" width="1050" height="702" rx="18" fill="#2b2f31" stroke="#4b5257" stroke-width="2"/>
+  <circle cx="34" cy="34" r="12" fill="#ff6257"/>
+  <circle cx="66" cy="34" r="12" fill="#ffbd2e"/>
+  <circle cx="98" cy="34" r="12" fill="#28c840"/>
+  <text x="128" y="42" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">New Session</text>
+  <rect x="42" y="82" width="210" height="560" rx="4" fill="#23282b"/>
+  <rect x="58" y="116" width="178" height="70" rx="6" fill="#4a4f52"/>
+  <text x="108" y="159" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">NEW</text>
+  <rect x="58" y="204" width="178" height="70" rx="6" fill="#34393c"/>
+  <text x="96" y="247" fill="#cfd6d4" font-family="Arial, sans-serif" font-size="22">RECENT</text>
+  <rect x="58" y="292" width="178" height="70" rx="6" fill="#34393c"/>
+  <text x="104" y="335" fill="#cfd6d4" font-family="Arial, sans-serif" font-size="22">OPEN</text>
+  <text x="296" y="126" fill="#eef3f2" font-family="Arial, sans-serif" font-size="22">Session Name</text>
+  <rect x="296" y="144" width="680" height="50" rx="5" fill="#191d1f" stroke="#4a5155"/>
+  <text x="314" y="177" fill="#ffffff" font-family="Arial, sans-serif" font-size="22">reactive-mvp-demo</text>
+  <text x="296" y="238" fill="#eef3f2" font-family="Arial, sans-serif" font-size="22">Factory Templates</text>
+  <rect x="296" y="256" width="680" height="270" rx="5" fill="#111517" stroke="#4a5155"/>
+  <rect x="312" y="288" width="648" height="54" rx="3" fill="#50bfd5"/>
+  <text x="334" y="323" fill="#071015" font-family="Arial, sans-serif" font-size="24" font-weight="700">Reactive Performance MVP</text>
+  <text x="334" y="382" fill="#cbd3d1" font-family="Arial, sans-serif" font-size="22">Empty Session</text>
+  <text x="334" y="436" fill="#cbd3d1" font-family="Arial, sans-serif" font-size="22">Recording Session</text>
+  <text x="334" y="490" fill="#cbd3d1" font-family="Arial, sans-serif" font-size="22">Mixing Session</text>
+  <rect x="296" y="552" width="680" height="72" rx="6" fill="#20272a" stroke="#394247"/>
+  <text x="318" y="581" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19" font-weight="700">Runs SessionInit script</text>
+  <text x="318" y="609" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">Creates Reactive Rhythm, Harmony, and Macro lanes; installs reactive-actions.txt.</text>
+  <rect x="800" y="642" width="176" height="44" rx="8" fill="#3b3f41" stroke="#50bfd5" stroke-width="4"/>
+  <text x="840" y="672" fill="#ffffff" font-family="Arial, sans-serif" font-size="21" font-weight="700">Create</text>
+</svg>

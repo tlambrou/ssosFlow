@@ -4,6 +4,8 @@ Issue: #63, #123, #154, #162, #166.
 
 This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, a seeded marker-trigger demo, region-trigger and scene-trigger demo actions, action/macro/state/harmony status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
 
+For a browser-based walkthrough of the setup screens and expected demo landmarks, open `docs/reactive-performance-mode/ui-guide/index.html`.
+
 ## Build And Run
 
 Build the app and the focused reactive test targets:

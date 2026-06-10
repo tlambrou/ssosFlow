@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reactive Performance MVP UI Guide</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">ssosFlow Ardour build</p>
+        <h1>Reactive Performance MVP UI Guide</h1>
+      </div>
+      <a class="doc-link" href="../demo-session.md">Demo docs</a>
+    </header>
+
+    <main>
+      <section class="status-grid" aria-label="Build status and demo target">
+        <article>
+          <span class="label">Verified build</span>
+          <strong>9.7-201-gba69c181cc</strong>
+          <p>Current Reactive MVP build, launched through the normal development wrapper or a local app wrapper for UI inspection.</p>
+        </article>
+        <article>
+          <span class="label">Demo session</span>
+          <strong>Reactive Performance MVP</strong>
+          <p>Creates the rhythm, harmony, and macro lanes; installs the action document; seeds the Breakdown marker.</p>
+        </article>
+        <article>
+          <span class="label">Safe audio mode</span>
+          <strong>None (Dummy)</strong>
+          <p>Recommended for walkthroughs and screenshots when no audio hardware interaction is needed.</p>
+        </article>
+      </section>
+
+      <section class="command-panel" aria-labelledby="launch-title">
+        <div>
+          <h2 id="launch-title">Launch The Demo</h2>
+          <p>Use the normal development launcher for day-to-day testing. The local CUA wrapper is only for this visual guide.</p>
+        </div>
+        <div class="commands">
+          <div class="command">
+            <span>Normal dev launch</span>
+            <button type="button" data-copy="cd /Users/Tassos/Documents/ssosFlow&#10;./gtk2_ardour/ardev">Copy</button>
+            <code>cd /Users/Tassos/Documents/ssosFlow<br>./gtk2_ardour/ardev</code>
+          </div>
+          <div class="command">
+            <span>Direct Reactive MVP session</span>
+            <button type="button" data-copy="cd /Users/Tassos/Documents/ssosFlow&#10;./gtk2_ardour/ardev --new /tmp/ssosflow-demo/reactive-mvp-cua --template &quot;Reactive Performance MVP&quot;">Copy</button>
+            <code>cd /Users/Tassos/Documents/ssosFlow<br>./gtk2_ardour/ardev --new /tmp/ssosflow-demo/reactive-mvp-cua --template "Reactive Performance MVP"</code>
+          </div>
+        </div>
+      </section>
+
+      <section class="notice">
+        <strong>Screenshot note</strong>
+        <p>The panels below are screenshot-style reconstructions from observed Ardour UI states and checked source files. They are meant to guide the exact UI flow, not replace a fresh screen capture from your machine.</p>
+      </section>
+
+      <section class="guide-tools" aria-labelledby="guide-tools-title">
+        <div class="progress-panel">
+          <div>
+            <span class="label">Walkthrough</span>
+            <h2 id="guide-tools-title">Follow The UI Steps</h2>
+          </div>
+          <div class="progress-readout">
+            <span id="progress-text">0 of 0 checks complete</span>
+            <progress id="guide-progress" max="1" value="0">0%</progress>
+          </div>
+        </div>
+        <nav class="step-nav" aria-label="Reactive Performance MVP UI steps">
+          <button type="button" data-step-target="audio-midi">Audio/MIDI</button>
+          <button type="button" data-step-target="template">Template</button>
+          <button type="button" data-step-target="session">Landmarks</button>
+          <button type="button" data-step-target="midi">MIDI Map</button>
+          <button type="button" data-step-target="status">Status</button>
+          <button id="reset-checklist" class="secondary-action" type="button">Reset</button>
+        </nav>
+      </section>
+
+      <section class="steps" aria-label="Walkthrough steps">
+        <article class="step" id="audio-midi">
+          <div class="step-copy">
+            <span class="step-number">1</span>
+            <h2>Start The Audio/MIDI Engine</h2>
+            <p>When Ardour opens the setup dialog, choose <strong>None (Dummy)</strong> for a safe non-hardware demo, then press <strong>Start</strong>. CoreAudio also works if your devices are available.</p>
+            <ul class="checks">
+              <li><label><input type="checkbox"> Audio System is set to None (Dummy)</label></li>
+              <li><label><input type="checkbox"> Buffer Size reads 1024 samples</label></li>
+              <li><label><input type="checkbox"> Start button has been clicked</label></li>
+            </ul>
+          </div>
+          <figure>
+            <img src="./assets/audio-midi-setup.svg" alt="Ardour Audio/MIDI Setup dialog with None Dummy selected and Start button highlighted">
+            <figcaption>Expected setup dialog before opening the demo session.</figcaption>
+          </figure>
+        </article>
+
+        <article class="step" id="template">
+          <div class="step-copy">
+            <span class="step-number">2</span>
+            <h2>Create The Reactive Session</h2>
+            <p>In the New Session flow, select the <strong>Reactive Performance MVP</strong> factory template. If you launched with <code>--new</code> and <code>--template</code>, Ardour will use this selection automatically after the engine starts.</p>
+            <ul class="checks">
+              <li><label><input type="checkbox"> Session name is set</label></li>
+              <li><label><input type="checkbox"> Template is Reactive Performance MVP</label></li>
+              <li><label><input type="checkbox"> Session opens without plugin safe-mode prompts</label></li>
+            </ul>
+          </div>
+          <figure>
+            <img src="./assets/new-session-template.svg" alt="Ardour New Session dialog with Reactive Performance MVP selected">
+            <figcaption>The template is a SessionInit script, not a static .ardour template file.</figcaption>
+          </figure>
+        </article>
+
+        <article class="step" id="session">
+          <div class="step-copy">
+            <span class="step-number">3</span>
+            <h2>Confirm The Demo Landmarks</h2>
+            <p>The opened session should contain three MIDI lanes and a visible <strong>Breakdown</strong> marker. The template also installs <code>reactive-actions.txt</code> next to the session file.</p>
+            <ul class="checks">
+              <li><label><input type="checkbox"> Reactive Rhythm Lane exists</label></li>
+              <li><label><input type="checkbox"> Reactive Harmony Lane exists</label></li>
+              <li><label><input type="checkbox"> Reactive Macro Lane exists</label></li>
+              <li><label><input type="checkbox"> Breakdown marker is visible</label></li>
+            </ul>
+          </div>
+          <figure>
+            <img src="./assets/reactive-session-open.svg" alt="Ardour session showing Reactive Rhythm Lane, Reactive Harmony Lane, Reactive Macro Lane, and Breakdown marker">
+            <figcaption>The lanes give the demo action document stable route targets.</figcaption>
+          </figure>
+        </article>
+
+        <article class="step" id="midi">
+          <div class="step-copy">
+            <span class="step-number">4</span>
+            <h2>Enable The Controller Map</h2>
+            <p>Enable the <strong>Generic MIDI</strong> control surface and load the <strong>Reactive Performance MVP</strong> map. Pads on channel 10 notes 36-43 trigger slots; note 44 shows status, 45 reloads the document, and 47 toggles Reactive Performance Mode.</p>
+            <ul class="checks">
+              <li><label><input type="checkbox"> Generic MIDI is active</label></li>
+              <li><label><input type="checkbox"> Reactive Performance MVP map is selected</label></li>
+              <li><label><input type="checkbox"> Controller sends channel 10 note triggers</label></li>
+            </ul>
+          </div>
+          <figure>
+            <img src="./assets/midi-map.svg" alt="Generic MIDI settings with Reactive Performance MVP map selected">
+            <figcaption>Everything important in the MVP is designed to become MIDI-controllable.</figcaption>
+          </figure>
+        </article>
+
+        <article class="step" id="status">
+          <div class="step-copy">
+            <span class="step-number">5</span>
+            <h2>Show Action Document Status</h2>
+            <p>Trigger <strong>Reactive/show-action-document-status</strong> from the menu/action list or MIDI note 44. Then use note 45 to reload after edits to <code>reactive-actions.txt</code>.</p>
+            <ul class="checks">
+              <li><label><input type="checkbox"> Status shows session-local action document</label></li>
+              <li><label><input type="checkbox"> Packaged demo actions load without parse errors</label></li>
+              <li><label><input type="checkbox"> Marker and region trigger previews are listed</label></li>
+            </ul>
+          </div>
+          <figure>
+            <img src="./assets/action-status.svg" alt="Reactive action document status window showing loaded action file and trigger previews">
+            <figcaption>Use this as the first debugging surface when a controller action does not fire.</figcaption>
+          </figure>
+        </article>
+      </section>
+
+      <section class="reference" aria-label="Testing reference">
+        <h2>Quick Test Commands</h2>
+        <div class="test-grid">
+          <div>
+            <span>Lua/session template</span>
+            <code>libs/ardour/run-tests.sh --single lua_script</code>
+          </div>
+          <div>
+            <span>Action document loader</span>
+            <code>libs/ardour/run-tests.sh --single reactive_action_document_loader</code>
+          </div>
+          <div>
+            <span>App build</span>
+            <code>python3 ./waf build --target=ardour-9.7.37</code>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

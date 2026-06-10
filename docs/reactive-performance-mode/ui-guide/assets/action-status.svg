@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1054" height="706" viewBox="0 0 1054 706" role="img" aria-labelledby="title desc">
+  <title id="title">Reactive action document status</title>
+  <desc id="desc">Screenshot-style panel showing a loaded reactive action document and trigger previews.</desc>
+  <rect width="1054" height="706" rx="18" fill="#111416"/>
+  <rect x="2" y="2" width="1050" height="702" rx="18" fill="#2a2e31" stroke="#4b5257" stroke-width="2"/>
+  <circle cx="34" cy="34" r="12" fill="#ff6257"/>
+  <circle cx="66" cy="34" r="12" fill="#ffbd2e"/>
+  <circle cx="98" cy="34" r="12" fill="#28c840"/>
+  <text x="128" y="42" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Reactive Action Document Status</text>
+  <rect x="48" y="86" width="958" height="560" rx="6" fill="#171d20" stroke="#39444a"/>
+  <text x="84" y="140" fill="#7cc36f" font-family="Arial, sans-serif" font-size="30" font-weight="700">Loaded</text>
+  <text x="84" y="184" fill="#aab4b0" font-family="Arial, sans-serif" font-size="20">Session document</text>
+  <rect x="84" y="204" width="886" height="48" rx="5" fill="#0d1113" stroke="#39444a"/>
+  <text x="104" y="235" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">/tmp/ssosflow-demo/reactive-mvp-cua/reactive-actions.txt</text>
+  <g>
+    <rect x="84" y="292" width="270" height="104" rx="6" fill="#20282c" stroke="#39444a"/>
+    <text x="108" y="328" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Slot actions</text>
+    <text x="108" y="362" fill="#eef3f2" font-family="Arial, sans-serif" font-size="30" font-weight="700">8</text>
+  </g>
+  <g>
+    <rect x="392" y="292" width="270" height="104" rx="6" fill="#20282c" stroke="#39444a"/>
+    <text x="416" y="328" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Parse errors</text>
+    <text x="416" y="362" fill="#eef3f2" font-family="Arial, sans-serif" font-size="30" font-weight="700">0</text>
+  </g>
+  <g>
+    <rect x="700" y="292" width="270" height="104" rx="6" fill="#20282c" stroke="#39444a"/>
+    <text x="724" y="328" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Fallback used</text>
+    <text x="724" y="362" fill="#eef3f2" font-family="Arial, sans-serif" font-size="30" font-weight="700">No</text>
+  </g>
+  <text x="84" y="454" fill="#eef3f2" font-family="Arial, sans-serif" font-size="22" font-weight="700">Trigger previews</text>
+  <rect x="84" y="478" width="886" height="42" rx="4" fill="#101416"/>
+  <text x="106" y="505" fill="#ff6c5f" font-family="Arial, sans-serif" font-size="18" font-weight="700">marker Breakdown</text>
+  <text x="356" y="505" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">demo.marker.breakdown</text>
+  <text x="720" y="505" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">section = breakdown</text>
+  <rect x="84" y="530" width="886" height="42" rx="4" fill="#101416"/>
+  <text x="106" y="557" fill="#ff6c5f" font-family="Arial, sans-serif" font-size="18" font-weight="700">region Breakdown Loop</text>
+  <text x="356" y="557" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">demo.region.breakdown.loop</text>
+  <text x="720" y="557" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">chord = i7</text>
+  <rect x="84" y="582" width="886" height="42" rx="4" fill="#101416"/>
+  <text x="106" y="609" fill="#ff6c5f" font-family="Arial, sans-serif" font-size="18" font-weight="700">scene 3</text>
+  <text x="356" y="609" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">demo.scene.row.3</text>
+  <text x="720" y="609" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">macro snapshot</text>
+</svg>
