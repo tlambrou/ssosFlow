@@ -1,18 +1,18 @@
 # Reactive Performance MVP Example
 
-Issue: #109, #154, #162, #166, #170, #184, #185.
+Issue: #109, #154, #162, #166, #170, #184, #185, #188.
 
-This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is the source-controlled action document that the bundled `Reactive Performance MVP` session-template script installs into new demo sessions alongside seeded `Breakdown` marker, `Breakdown Loop` region, and first Cue-page trigger clip landmarks.
+This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is the source-controlled action document that the bundled `Reactive Performance MVP` session-template script installs into new demo sessions alongside seeded `Breakdown` marker, `Breakdown Loop` region, and first Cue-page trigger clips with simple MIDI note content.
 
 ## Files
 
 - `reactive-actions.txt`: a valid session-local Reactive Performance action document. The template installs matching content into new demo sessions as `reactive-actions.txt`.
-- `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's Cue-page visible MIDI route layout, seeds the `Breakdown` marker, `Breakdown Loop` timeline region, and first six named MIDI trigger clip placeholders, then installs the demo action document.
+- `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's Cue-page visible MIDI route layout, seeds the `Breakdown` marker, `Breakdown Loop` timeline region, and first six named single-note MIDI trigger clips, then installs the demo action document.
 - `docs/reactive-performance-mode/ui-guide/index.html`: a local static UI walkthrough with screenshot-style panels for running and smoke-testing the demo.
 
 ## Setup
 
-1. Create a new Ardour session from the `Reactive Performance MVP` factory template. The bundled SessionInit script creates three Cue-page visible MIDI-only routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, seeds visible `Breakdown` marker and `Breakdown Loop` region landmarks, fills the first six empty Cue-page trigger slots with named MIDI placeholders, then installs the demo action document next to the `.ardour` session file.
+1. Create a new Ardour session from the `Reactive Performance MVP` factory template. The bundled SessionInit script creates three Cue-page visible MIDI-only routes named `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`, seeds visible `Breakdown` marker and `Breakdown Loop` region landmarks, fills the first six empty Cue-page trigger slots with named single-note MIDI clips, then installs the demo action document next to the `.ardour` session file.
 2. Enable the Generic MIDI control surface and select the `Reactive Performance MVP` MIDI map.
 3. Connect a controller or MIDI monitor to Ardour's `Generic MIDI Control Out` port if you want to inspect feedback messages.
 4. Use `Reactive/reload-action-document` or note 45 in the MVP map after editing the installed file.
@@ -28,7 +28,7 @@ The bundled MVP map uses:
 - Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`, driving route 0 rhythm density, the `filter` macro read model, and a macro morph between stored `texture`/`space` snapshots.
 - A visible session marker named `Breakdown` as a live document-level trigger for `demo.marker.breakdown`; template-created sessions seed this marker automatically.
 - A named timeline region `Breakdown Loop` as a live document-level trigger for `demo.region.breakdown.loop`; template-created sessions seed this region landmark automatically on `Reactive Rhythm Lane`.
-- Seeded MIDI trigger clip placeholders named `Reactive Cue 0 Reset`, `Reactive Cue 1 Tighten`, `Reactive Cue 2 Sparse`, `Reactive Harmony i`, `Reactive Macro Filter`, and `Reactive Macro Texture`.
+- Seeded MIDI trigger clips named `Reactive Cue 0 Reset` note 36, `Reactive Cue 1 Tighten` note 38, `Reactive Cue 2 Sparse` note 41, `Reactive Harmony i` note 48, `Reactive Macro Filter` note 60, and `Reactive Macro Texture` note 67.
 - Cue row 3 as a live scene trigger for `demo.scene.drop` when launched from the Cue page or registered Trigger Page action.
 - Pads 36-39 also update harmony read-model values such as `key`, `scale`, and `chord`.
 - Channel 10 note 44 for status.
@@ -52,4 +52,4 @@ The bundled MVP map uses:
 
 ## Current Limit
 
-This asset deliberately avoids a full `.ardour` session file because Ardour session XML contains many generated IDs, ports, and environment-dependent connections. The bundled SessionInit template is the repeatable demo-session path, creates Cue-page visible MIDI lanes, seeds the `Breakdown` marker, `Breakdown Loop` timeline region, and first six named trigger clip placeholders, and installs the demo action document automatically; packaging generated musical note content remains a later demo-production step once the route/clip layout is stable enough to verify.
+This asset deliberately avoids a full `.ardour` session file because Ardour session XML contains many generated IDs, ports, and environment-dependent connections. The bundled SessionInit template is the repeatable demo-session path, creates Cue-page visible MIDI lanes, seeds the `Breakdown` marker, `Breakdown Loop` timeline region, and first six named single-note trigger clips, and installs the demo action document automatically; packaging a polished generated arrangement remains a later demo-production step once the route/clip layout is stable enough to verify.

@@ -729,7 +729,7 @@ Phase 7h makes the template-created lanes Cue-page visible:
 - `share/scripts/reactive_performance_mvp_session.lua` passes Ardour's `trigger_visibility=true` flag for `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`.
 - The template still creates the same three named MIDI lanes and installs the same session-local demo action document, but the lanes now appear as trigger-visible Cue-page routes instead of ordinary hidden-from-Cues MIDI tracks.
 - `LuaScriptTest` records the `new_midi_track(...)` trigger-visibility argument in the SessionInit harness and verifies all three demo lanes request it.
-- Full generated musical note content remains a later demo-production step; this slice only makes the route layout ready for Cue-page interaction.
+- At this phase, generated musical note content remained a later demo-production step; Phase 7o now adds the first simple note content to the Cue-page trigger clips.
 
 Phase 7i adds marker-trigger demo coverage:
 
@@ -774,7 +774,15 @@ Phase 7n seeds the first Cue-page trigger clip placeholders in the repeatable te
 - The helper returns false for invalid inputs, missing routes, non-MIDI routes, missing TriggerBoxes, invalid slots, or non-positive lengths; leaves an already-populated slot untouched; and uses a setup-only TriggerBox region path that updates active-slot bookkeeping immediately.
 - `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed `Reactive Cue 0 Reset`, `Reactive Cue 1 Tighten`, and `Reactive Cue 2 Sparse` on `Reactive Rhythm Lane`; `Reactive Harmony i` on `Reactive Harmony Lane`; and `Reactive Macro Filter` plus `Reactive Macro Texture` on `Reactive Macro Lane`.
 - `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's six trigger-region requests in the fake-session harness.
-- These are named Cue-page placeholders, not a full generated musical arrangement. A full `.ardour` session archive and richer generated note content remain later demo-production work.
+- These are named Cue-page placeholders at this phase; Phase 7o adds first-note content while leaving a full `.ardour` session archive and richer generated arrangement as later demo-production work.
+
+Phase 7o seeds first-note content into the demo trigger clips:
+
+- `ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note(...)` provides a non-realtime setup helper that creates a named MIDI TriggerBox region and inserts one MIDI note while the slot is empty.
+- The helper returns false for invalid route, slot, length, note timing, channel, note number, or velocity inputs; if the slot already has any region, it returns true without overwriting or adding notes to existing performer content.
+- `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed notes 36, 38, 41, 48, 60, and 67 into the six named demo trigger clips.
+- `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's six trigger-note requests in the fake-session harness.
+- This is deliberately simple monophonic note content, not a polished generated arrangement or full `.ardour` session archive.
 
 ## Acceptance Tests
 

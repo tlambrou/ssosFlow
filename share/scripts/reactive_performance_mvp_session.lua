@@ -187,13 +187,15 @@ local function seed_demo_trigger_clips ()
 	end
 
 	local clip_length = Temporal.timecnt_t (sample_rate * 4)
+	local note_start = Temporal.Beats.from_double (0)
+	local note_length = Temporal.Beats.from_double (1)
 
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Rhythm Lane", 0, "Reactive Cue 0 Reset", clip_length)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Rhythm Lane", 1, "Reactive Cue 1 Tighten", clip_length)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Rhythm Lane", 2, "Reactive Cue 2 Sparse", clip_length)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Harmony Lane", 0, "Reactive Harmony i", clip_length)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Macro Lane", 0, "Reactive Macro Filter", clip_length)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Macro Lane", 1, "Reactive Macro Texture", clip_length)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Rhythm Lane", 0, "Reactive Cue 0 Reset", clip_length, note_start, note_length, 0, 36, 100)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Rhythm Lane", 1, "Reactive Cue 1 Tighten", clip_length, note_start, note_length, 0, 38, 100)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Rhythm Lane", 2, "Reactive Cue 2 Sparse", clip_length, note_start, note_length, 0, 41, 100)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Harmony Lane", 0, "Reactive Harmony i", clip_length, note_start, note_length, 0, 48, 96)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Macro Lane", 0, "Reactive Macro Filter", clip_length, note_start, note_length, 0, 60, 88)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Macro Lane", 1, "Reactive Macro Texture", clip_length, note_start, note_length, 0, 67, 88)
 end
 
 function factory () return function ()
