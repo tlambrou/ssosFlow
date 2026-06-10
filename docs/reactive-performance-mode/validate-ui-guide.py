@@ -35,6 +35,10 @@ REQUIRED_SECTIONS = {
 REQUIRED_CONTROLS = {
     "guide-progress",
     "reset-checklist",
+    "screenshot-viewer",
+    "screenshot-viewer-image",
+    "screenshot-viewer-title",
+    "close-screenshot-viewer",
 }
 
 REQUIRED_SCREENSHOT_ALTS = {
@@ -49,10 +53,14 @@ REQUIRED_SCREENSHOT_ALTS = {
 }
 
 REQUIRED_COPY = {
+    "Guided Demo Path",
     "Open Locally",
     "docs/reactive-performance-mode/ui-guide/index.html",
     "python3 docs/reactive-performance-mode/validate-ui-guide.py",
     "Screenshot Walkthrough",
+    "Keyboard Walkthrough",
+    "Use the arrow keys to move between steps",
+    "View full size",
     "Scene State",
     "speed=0.00 record=off loop=off locate=idle",
     "Track State",
@@ -66,8 +74,10 @@ class GuideParser(HTMLParser):
         self.ids = set()
         self.image_alts = {}
         self.image_classes = {}
+        self.screenshot_titles = {}
         self.figure_classes = []
         self.step_targets = set()
+        self.screenshot_buttons = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -80,10 +90,14 @@ class GuideParser(HTMLParser):
             if value and value.startswith("./"):
                 self.local_refs.append(value[2:])
         if tag == "img" and attrs.get("src"):
-            self.image_alts[attrs["src"].removeprefix("./")] = attrs.get("alt", "")
-            self.image_classes[attrs["src"].removeprefix("./")] = set(attrs.get("class", "").split())
+            src = attrs["src"].removeprefix("./")
+            self.image_alts[src] = attrs.get("alt", "")
+            self.image_classes[src] = set(attrs.get("class", "").split())
+            self.screenshot_titles[src] = attrs.get("data-screenshot-title", "")
         if tag == "figure":
             self.figure_classes.append(set(attrs.get("class", "").split()))
+        if tag == "button" and "data-screenshot-src" in attrs:
+            self.screenshot_buttons.append(attrs["data-screenshot-src"].removeprefix("./"))
 
 
 def fail(message):
@@ -127,6 +141,14 @@ def main():
     )
     if missing_screenshot_class:
         return fail(f"missing ui-screenshot class: {', '.join(missing_screenshot_class)}")
+
+    missing_screenshot_titles = sorted(asset for asset in REQUIRED_ASSETS if not parser.screenshot_titles.get(asset))
+    if missing_screenshot_titles:
+        return fail(f"missing screenshot viewer titles: {', '.join(missing_screenshot_titles)}")
+
+    missing_screenshot_buttons = sorted(asset for asset in REQUIRED_ASSETS if asset not in parser.screenshot_buttons)
+    if missing_screenshot_buttons:
+        return fail(f"missing screenshot viewer buttons: {', '.join(missing_screenshot_buttons)}")
 
     screenshot_cards = sum(1 for classes in parser.figure_classes if "screenshot-card" in classes)
     if screenshot_cards < len(REQUIRED_ASSETS):
