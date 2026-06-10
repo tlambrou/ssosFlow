@@ -110,6 +110,18 @@ DO harmony chord i7
 DO state section region-breakdown
 DO cue 3
 END
+
+ACTION demo.scene.drop
+TRIGGER scene 3
+QUANTIZE 1|0|0
+DO rhythm insert 0
+DO rhythm route 0 density 0.80
+DO rhythm route 0 chance 0.90
+DO rhythm route 0 rotation 2
+DO macro filter 0.70 ramp 0|1|0
+DO harmony chord V7
+DO state section scene-drop
+END
 ]]
 
 local function install_demo_action_document ()

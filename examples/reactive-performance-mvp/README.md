@@ -27,6 +27,7 @@ The bundled MVP map uses:
 - Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`, driving route 0 rhythm density and the `filter` macro read model.
 - A visible session marker named `Breakdown` as a live document-level trigger for `demo.marker.breakdown`.
 - A named timeline region `Breakdown Loop` as a live document-level trigger for `demo.region.breakdown.loop`.
+- Cue row 3 as a live scene trigger for `demo.scene.drop` when launched from the Cue page or registered Trigger Page action.
 - Pads 36-39 also update harmony read-model values such as `key`, `scale`, and `chord`.
 - Channel 10 note 44 for status.
 - Channel 10 note 45 for reload.
@@ -35,7 +36,7 @@ The bundled MVP map uses:
 ## Smoke Check
 
 1. Open `Reactive/show-action-document-status`.
-2. Confirm the action document source is `session` and that eleven actions are loaded.
+2. Confirm the action document source is `session` and that twelve actions are loaded.
 3. Trigger note 36 and confirm route 0 receives `Reactive Rhythm State MVP`, resets rhythm parameters, updates the harmony bank to `key = C_minor`, `scale = aeolian`, `chord = i`, and launches cue row 0 if it exists.
 4. Trigger notes 37, 38, and 39 to change route 0 rhythm density, chance, priority, or rotation, and confirm the harmony bank moves through `iv`, `VI`, and `V`.
 5. While transport is stopped, trigger note 40 and confirm transport starts; while transport is rolling, trigger note 41 or live trigger note 46 and confirm cue row 4 launches if it exists.
@@ -43,7 +44,8 @@ The bundled MVP map uses:
 7. Move CC 22 on channel 1 and confirm route 0 rhythm density follows the controller value while the macro bank shows `filter` changing between `0.0` and `1.0`.
 8. Add a visible session marker named `Breakdown`, locate before it, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
 9. Create, record, draw, or import a non-hidden timeline region named `Breakdown Loop` on a visible track, locate before its start, roll transport across it, and confirm the panel or status dialog reports `demo.region.breakdown.loop`, `section = region-breakdown`, `chord = i7`, `filter = 0.55`, and route 0 rhythm density/chance changes.
-10. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
+10. Launch Cue row 3 from the Cue page and confirm the panel or status dialog reports `demo.scene.drop`, `section = scene-drop`, `chord = V7`, `filter = 0.70`, and route 0 rhythm density/chance/rotation changes while the normal cue launch still happens.
+11. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
 
 ## Current Limit
 

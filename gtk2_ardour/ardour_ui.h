@@ -317,6 +317,7 @@ public:
 	void trigger_cue_row (int r);
 	void trigger_reactive_action (int slot);
 	void trigger_reactive_midi_bytes (std::vector<unsigned char> message);
+	bool trigger_reactive_scene_event (int scene);
 	bool poll_reactive_performance_queue ();
 	void toggle_reactive_performance_mode ();
 	void reload_reactive_action_document ();

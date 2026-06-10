@@ -124,6 +124,8 @@ The packaged file also includes `demo.marker.breakdown`, a live marker-trigger a
 
 It also includes `demo.region.breakdown.loop`, a live region-trigger action bound to a non-hidden timeline region named `Breakdown Loop`. Create, record, draw, or import a region with that exact name on a visible track, locate before the region start, roll transport across it, and Reactive Performance Mode will queue or execute the action through the same region bridge used by ordinary active track playlists.
 
+It also includes `demo.scene.drop`, a live scene-trigger action bound to Cue row 3. Launch Cue row 3 from the Cue page or a registered Trigger Page row action, and Reactive Performance Mode will queue or execute the action through the same scene bridge while preserving the normal cue launch. Lower-level BasicUI/control-surface/session observation remains follow-up work.
+
 ## Smoke Test
 
 Run this checklist after creating the session and loading the Generic MIDI map. If you use the manual existing-session fallback, copy `reactive-actions.txt` into that session first.
@@ -146,6 +148,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the routing summary shows the density value and the macro bank shows `filter` tracking from `0.0` to `1.0`.
 - Add a visible session marker named `Breakdown`, locate before it, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
 - Add or rename a non-hidden timeline region to `Breakdown Loop`, locate before its start, roll transport across it, and confirm the panel or status dialog reports `demo.region.breakdown.loop`, `section = region-breakdown`, `chord = i7`, `filter = 0.55`, and route 0 rhythm density/chance changes.
+- Launch Cue row 3 from the Cue page and confirm the panel or status dialog reports `demo.scene.drop`, `section = scene-drop`, `chord = V7`, `filter = 0.70`, and route 0 rhythm density/chance/rotation changes while the normal cue launch still happens.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 
@@ -155,5 +158,6 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration; richer layout remains follow-up work.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, harmony-bank, next-action preview, and routing read models.
 - The repo packages a repeatable `Reactive Performance MVP` SessionInit template plus a session-local action document under `examples/reactive-performance-mvp/`. The template installs the demo action document into new sessions without overwriting an existing `reactive-actions.txt` when Lua file I/O is available, but this repo does not yet package a full `.ardour` demo session archive.
+- Live scene triggers currently cover Cue-page row launches and the registered Trigger Page row actions. Generic MIDI fixed slot actions, lower-level BasicUI/control-surface cue calls, and native session observation remain follow-up work.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.
 - Harmony commands are currently a reactive read model only. They expose key/chord/scale state to the panel and conditions, but they do not yet generate chords, alter clips, or route MIDI notes.
