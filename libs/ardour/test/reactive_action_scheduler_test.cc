@@ -28,6 +28,17 @@ macro_command (std::string const& name, double value, Temporal::BBT_Offset const
 	return command;
 }
 
+static ReactiveCommand
+trigger_probability_command (int route, int row, double value)
+{
+	ReactiveCommand command;
+	command.type = ReactiveCommand::TriggerProbability;
+	command.first = route;
+	command.second = row;
+	command.value = value;
+	return command;
+}
+
 static ReactiveActionPlan
 plan (std::string const& name, Temporal::BBT_Offset const& quantize, int cue_row)
 {
@@ -98,6 +109,31 @@ ReactiveActionSchedulerTest::queueActionSummaryPreservesResolvedCommandDetails (
 	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].command_summaries.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("macro space = 0.522835 ramp 0|1|0"), summary[0].command_summaries[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("macro texture = 0.502362 ramp 0|1|0"), summary[0].command_summaries[1]);
+}
+
+void
+ReactiveActionSchedulerTest::queueActionSummaryReportsTriggerProbabilityDetails ()
+{
+	ReactiveActionScheduler scheduler;
+	ReactiveActionPlan p;
+	p.ok = true;
+	p.action_name = "queued.clip.chance";
+	p.quantize = Temporal::BBT_Offset (0, 1, 0);
+	p.commands.push_back (trigger_probability_command (2, 3, 0.503937));
+
+	scheduler.queue_action (
+		4,
+		"MIDI cc ch=1 cc=22",
+		p,
+		Temporal::BBT_Time (1, 1, 120),
+		Temporal::BBT_Time (1, 2, 0));
+
+	std::vector<ReactiveQueuedActionSummary> const summary = scheduler.queued_action_summary (8, Temporal::BBT_Time (1, 1, 120));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("trigger route 2 row 3 probability = 0.503937"), summary[0].command_summaries[0]);
 }
 
 void

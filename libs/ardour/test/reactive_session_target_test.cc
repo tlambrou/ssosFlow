@@ -20,6 +20,7 @@ public:
 	}
 
 	bool fail_trigger = false;
+	bool fail_trigger_probability = false;
 	bool fail_trigger_stop = false;
 	bool fail_scene_apply = false;
 	bool fail_rhythm_insert = false;
@@ -37,6 +38,18 @@ protected:
 		call << "trigger:" << route << ":" << row << ":" << velocity;
 		calls.push_back (call.str ());
 		return !fail_trigger;
+	}
+
+	bool session_set_trigger_follow_probability (int route, int row, int probability, std::string& error)
+	{
+		std::ostringstream call;
+		call << "trigger-probability:" << route << ":" << row << ":" << probability;
+		calls.push_back (call.str ());
+		if (fail_trigger_probability) {
+			error = "missing trigger slot";
+			return false;
+		}
+		return true;
 	}
 
 	bool session_stop_triggers_at (int route, std::string& error)
@@ -185,6 +198,26 @@ ReactiveSessionTargetTest::acceptNonSessionStateCommands ()
 	CPPUNIT_ASSERT_EQUAL (false, target.rhythm ("density", 0.50, error));
 	CPPUNIT_ASSERT (error.find ("no session") != std::string::npos);
 	CPPUNIT_ASSERT (target.calls.empty ());
+}
+
+void
+ReactiveSessionTargetTest::mapTriggerProbability ()
+{
+	RecordingSessionTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, target.trigger_probability (2, 3, 0.65, error));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("trigger-probability:2:3:65"), target.calls[0]);
+	CPPUNIT_ASSERT (error.empty ());
+
+	target.fail_trigger_probability = true;
+	CPPUNIT_ASSERT_EQUAL (false, target.trigger_probability (2, 4, 0.50, error));
+	CPPUNIT_ASSERT (error.find ("missing trigger slot") != std::string::npos);
+
+	error.clear ();
+	CPPUNIT_ASSERT_EQUAL (false, target.trigger_probability (2, 4, 1.01, error));
+	CPPUNIT_ASSERT (error.find ("must be between 0 and 1") != std::string::npos);
 }
 
 void

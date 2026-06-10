@@ -28,6 +28,7 @@ public:
 
 	bool cue (int row, std::string& error) override;
 	bool trigger (int route, int row, std::string& error) override;
+	bool trigger_probability (int route, int row, double value, std::string& error) override;
 	bool trigger_stop (int route, std::string& error) override;
 	bool stop_all (std::string& error) override;
 	bool transport_play (std::string& error) override;
@@ -48,6 +49,7 @@ protected:
 
 	virtual void session_trigger_cue_row (int row);
 	virtual bool session_bang_trigger_at (int route, int row, float velocity);
+	virtual bool session_set_trigger_follow_probability (int route, int row, int probability, std::string& error);
 	virtual bool session_stop_triggers_at (int route, std::string& error);
 	virtual void session_trigger_stop_all (bool now);
 	virtual void session_request_transport_speed (double speed);

@@ -11,6 +11,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeMidiCCTriggerMacro);
 	CPPUNIT_TEST (executeMidiCCTriggerMacroValueFromController);
 	CPPUNIT_TEST (executeMidiCCTriggerRhythmRouteValueFromController);
+	CPPUNIT_TEST (executeMidiCCTriggerProbabilityValueFromController);
 	CPPUNIT_TEST (executeMidiBytesThroughRunner);
 	CPPUNIT_TEST (executeMarkerTriggerByDocumentOrder);
 	CPPUNIT_TEST (executeSceneTriggerByDocumentOrder);
@@ -40,6 +41,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (previewSlotForPerformancePanelWithoutMutatingState);
 	CPPUNIT_TEST (previewMidiEventForPerformancePanel);
 	CPPUNIT_TEST (previewMidiEventUsesControllerValueForCommandDetails);
+	CPPUNIT_TEST (previewMidiEventShowsTriggerProbabilityCommandDetails);
 	CPPUNIT_TEST (previewMarkerEventForPerformancePanel);
 	CPPUNIT_TEST (previewSceneEventForPerformancePanel);
 	CPPUNIT_TEST (previewRegionEventForPerformancePanel);
@@ -65,6 +67,7 @@ public:
 	void executeMidiCCTriggerMacro ();
 	void executeMidiCCTriggerMacroValueFromController ();
 	void executeMidiCCTriggerRhythmRouteValueFromController ();
+	void executeMidiCCTriggerProbabilityValueFromController ();
 	void executeMidiBytesThroughRunner ();
 	void executeMarkerTriggerByDocumentOrder ();
 	void executeSceneTriggerByDocumentOrder ();
@@ -94,6 +97,7 @@ public:
 	void previewSlotForPerformancePanelWithoutMutatingState ();
 	void previewMidiEventForPerformancePanel ();
 	void previewMidiEventUsesControllerValueForCommandDetails ();
+	void previewMidiEventShowsTriggerProbabilityCommandDetails ();
 	void previewMarkerEventForPerformancePanel ();
 	void previewSceneEventForPerformancePanel ();
 	void previewRegionEventForPerformancePanel ();

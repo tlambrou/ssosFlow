@@ -1,6 +1,6 @@
 # Reactive Performance MVP Demo Guide
 
-Issue: #63, #123, #154, #162, #166, #170, #184, #188.
+Issue: #63, #123, #154, #162, #166, #170, #184, #188, #190.
 
 This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, seeded marker-trigger and region-trigger demo landmarks, first Cue-page trigger clips with simple MIDI note content, scene-trigger demo actions, action/macro/state/harmony status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
 
@@ -61,6 +61,7 @@ Route numbers use Ardour's controller-facing remote route order. The current act
 DO rhythm insert 0
 DO rhythm route 0 density 0.5
 DO rhythm route 0 density midi-value
+DO trigger probability 0 0 midi-value
 ```
 
 ## Controller Map
@@ -163,7 +164,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - Cue row 0 launches if the row exists in the session.
 - Trigger pad 1 or 2, or press the matching Cue-page/status-panel slot button, and confirm the status panel reports the matching slot/action.
 - If Generic MIDI Control Out is connected to a controller or MIDI monitor, confirm the matching pad feedback changes after trigger, reload, and mode-toggle actions.
-- Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the routing summary shows the density value. The macro bank should show `filter` tracking from `0.0` to `1.0` plus a macro morph between stored texture snapshots: `texture` moves from `0.20` to `0.80`, and `space` moves from `0.80` to `0.25`. The preview command details should reflect the current CC-derived macro morph values.
+- Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the routing summary shows the density value. The same CC also sets route 0 slot 0 trigger follow probability through `DO trigger probability 0 0 midi-value`. The macro bank should show `filter` tracking from `0.0` to `1.0` plus a macro morph between stored texture snapshots: `texture` moves from `0.20` to `0.80`, and `space` moves from `0.80` to `0.25`. The preview command details should reflect the current CC-derived trigger-probability and macro morph values.
 - Locate before the template-created `Breakdown` marker, or add a visible marker named `Breakdown` in a manual session, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
 - Locate before the template-created `Breakdown Loop` region, or add/rename a non-hidden timeline region to `Breakdown Loop` in a manual session, roll transport across it, and confirm the panel or status dialog reports `demo.region.breakdown.loop`, `section = region-breakdown`, `chord = i7`, `filter = 0.55`, and route 0 rhythm density/chance changes.
 - Launch Cue row 3 from the Cue page and confirm the panel or status dialog reports `demo.scene.drop`, `section = scene-drop`, `chord = V7`, `filter = 0.70`, and route 0 rhythm density/chance/rotation changes while the normal cue launch still happens.
@@ -172,7 +173,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 
 ## Current Limits
 
-- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. CC-derived values can drive route-scoped rhythm parameters and macro morph amounts; general macro-to-plugin parameter routing remains follow-up work.
+- The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. CC-derived values can drive route-scoped rhythm parameters, TriggerBox follow probabilities, and macro morph amounts; general macro-to-plugin parameter routing remains follow-up work.
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. It shows a compact next-command preview and queued command details, but richer layout remains follow-up work. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, harmony-bank, next-action command preview, queued-action command details, and routing read models.
 - The repo packages a repeatable `Reactive Performance MVP` SessionInit template plus a session-local action document under `examples/reactive-performance-mvp/`. The template installs the demo action document into new sessions without overwriting an existing `reactive-actions.txt` when Lua file I/O is available, seeds the `Breakdown` marker plus `Breakdown Loop` timeline region without duplicating existing visible landmarks, and fills the first six empty Cue-page trigger slots with named single-note MIDI clips. This repo does not yet package a full `.ardour` demo session archive or polished generated arrangement.

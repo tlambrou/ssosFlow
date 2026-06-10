@@ -14,6 +14,7 @@ public:
 
 	virtual bool cue (int row, std::string& error) = 0;
 	virtual bool trigger (int route, int row, std::string& error) = 0;
+	virtual bool trigger_probability (int route, int row, double value, std::string& error) = 0;
 	virtual bool trigger_stop (int route, std::string& error) = 0;
 	virtual bool stop_all (std::string& error) = 0;
 	virtual bool transport_play (std::string& error) = 0;

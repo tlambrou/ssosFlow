@@ -93,6 +93,9 @@ format_preview_command (ReactiveCommand const& command)
 	case ReactiveCommand::Trigger:
 		text << "trigger route " << command.first << " row " << command.second;
 		return text.str ();
+	case ReactiveCommand::TriggerProbability:
+		text << "trigger route " << command.first << " row " << command.second << " probability = " << format_preview_value (command.value);
+		return text.str ();
 	case ReactiveCommand::TriggerStop:
 		text << "stop triggers on route " << command.first;
 		return text.str ();

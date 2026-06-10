@@ -71,6 +71,7 @@ TRIGGER midi cc ch=1 cc=23
 QUANTIZE 0|1|0
 DO rhythm insert 0
 DO rhythm route 0 density midi-value
+DO trigger probability 0 0 midi-value
 DO macro filter midi-value ramp 0|1|0
 DO harmony key C_minor
 DO harmony chord i
@@ -105,6 +106,7 @@ Required MVP commands:
 
 - `cue <row>`
 - `trigger <route-index> <row-index>`
+- `trigger probability <route-index> <row-index> <value|midi-value>`
 - `trigger-stop <route-index>`
 - `stop-all`
 - `transport play`
@@ -400,6 +402,13 @@ Phase 6r allows route-scoped rhythm commands to use controller-derived values:
 - The MVP demo's CC 22 action inserts the route 0 rhythm module if needed, drives route 0 density from the controller value, updates the `filter` macro read model for UI feedback, and morphs `texture`/`space` between stored macro snapshots; the routing summary shows the resulting route 0 density.
 - General macro-to-plugin or macro-to-Ardour-parameter routing remains a follow-up; this slice only connects controller values to existing route-scoped rhythm parameters.
 
+Phase 6s exposes TriggerBox follow probability as a declarative action:
+
+- `DO trigger probability <route-index> <row-index> <value|midi-value>` sets one trigger slot's Ardour follow-action probability without launching or stopping the slot.
+- Literal values are normalized `0.0..1.0`; `midi-value` uses the same controller value resolution as macro and route-scoped rhythm commands.
+- `ReactiveSessionTarget` resolves the controller-facing triggerbox route via `Session::triggerbox_at(...)`, resolves the slot with `TriggerBox::trigger(...)`, converts the normalized value to Ardour's `0..100` follow-probability value, and reports missing route/slot/value errors visibly.
+- The MVP demo's CC 22 action also drives `DO trigger probability 0 0 midi-value`, so the same knob can mutate route 0 rhythm density, route 0 slot 0 clip follow probability, macro state, and macro morph preview details.
+
 Parameters:
 
 - `density`: 0.0 to 1.0.
@@ -555,7 +564,7 @@ Phase 5d adds the reusable next-action preview read model for that panel:
 
 - `ReactiveActionEngine::preview_action(...)` builds the same action-plan metadata as execution without running target commands, updating macro/state/harmony values, marking last action, or advancing sequential action chains.
 - `ReactiveActionSlotRunner` can preview a manual slot or the first matching MIDI event as slot index, action name, primary trigger label, chain mode, quantize label, next command count, and a bounded set of musician-readable command details.
-- MIDI-event previews pass the matched note/CC event into planning, so `midi-value` commands and macro morph amounts preview the current controller value instead of a stale literal default.
+- MIDI-event previews pass the matched note/CC event into planning, so `midi-value` commands, trigger follow probabilities, and macro morph amounts preview the current controller value instead of a stale literal default.
 - Preview planning refreshes the live transport-state provider first, so transport-gated actions appear unavailable while their `WHEN transport ...` condition is unmet.
 - After a slot or MIDI event is executed, the runner refreshes a cached next-action preview for the same control so repeated sequential actions show the next planned command count and command detail without consuming it.
 - The existing status dialog displays this next-action preview below the latest execution status, while the Cue-page panel shows a compact single-line command preview.
@@ -653,7 +662,7 @@ Phase 5p connects the scheduler to the runner without adding realtime session ev
 - `ReactiveActionSlotRunner::execute_or_queue_slot(...)` and `execute_or_queue_midi_event(...)` plan actions on the existing control/session-side runner boundary.
 - Nonzero-quantize plans are queued with caller-supplied requested/due BBT values and do not dispatch target commands until `release_due_queued_actions(...)` is called.
 - Zero-quantize plans still execute immediately through the existing executor path.
-- Queued MIDI-triggered plans preserve the matched action slot and event-derived values such as `DO macro <name> midi-value` and `DO macro morph <from> <to> amount midi-value`.
+- Queued MIDI-triggered plans preserve the matched action slot and event-derived values such as `DO macro <name> midi-value`, `DO trigger probability <route> <row> midi-value`, and `DO macro morph <from> <to> amount midi-value`.
 - The runner exposes bounded queued-action summaries and a compact formatter for Cue-page/status UI display, including resolved command details from the frozen queued plan.
 - Clearing/replacing the action document and disabling Reactive Performance Mode clear pending queued actions, keeping disarm/reload behavior predictable under performance pressure.
 - This remains a non-realtime bridge. The next slice should compute due BBT from Ardour's `TempoMap` and poll/release due actions from a safe GTK/session clock context before any native `SessionEvent` design.
@@ -678,7 +687,7 @@ Phase 5s makes queued quantized actions visible in that controller-feedback mode
 Phase 5t makes queued-action previews more useful under performance pressure:
 
 - `ReactiveQueuedActionSummary` now carries a bounded list of musician-readable command summaries copied from the queued plan.
-- The summaries are generated after action planning, so queued MIDI-triggered actions preserve already-resolved controller values such as CC-derived macro values and macro morph amounts.
+- The summaries are generated after action planning, so queued MIDI-triggered actions preserve already-resolved controller values such as CC-derived macro values, TriggerBox follow probabilities, and macro morph amounts.
 - `ReactiveActionSlotRunner::format_queued_action_summary(...)` prints those command details under each pending action for the status dialog and Cue-page panel read model.
 - The output remains bounded and read-only; queued execution, release ordering, and realtime boundaries are unchanged.
 
@@ -698,11 +707,11 @@ Phase 7b makes the MVP map more controller-first:
 - Bind note 44 to `Reactive/show-action-document-status`.
 - Bind note 45 to `Reactive/reload-action-document`.
 - Bind note 47 to `Reactive/toggle-performance-mode`.
-- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro, macro morph, and route-scoped rhythm examples in session-local action files.
+- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro, macro morph, TriggerBox follow-probability, and route-scoped rhythm examples in session-local action files.
 
 Phase 7c packages a small demo asset:
 
-- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, harmony-state updates, transport-gated actions, state changes, a CC-derived macro action, and a CC-derived macro morph between stored texture snapshots.
+- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, TriggerBox follow-probability updates, harmony-state updates, transport-gated actions, state changes, a CC-derived macro action, and a CC-derived macro morph between stored texture snapshots.
 - `examples/reactive-performance-mvp/README.md` documents the manual session layout, controller map, feedback routing, and smoke checks.
 - `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads` loads the packaged action file as a session document so parser drift breaks automated tests.
 - A full `.ardour` session archive remains a follow-up because current session XML is generated, ID-heavy, and environment-dependent.
@@ -786,12 +795,12 @@ Phase 7o seeds first-note content into the demo trigger clips:
 
 ## Acceptance Tests
 
-- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, macro snapshot/morph syntax, route-scoped rhythm `midi-value`, and harmony commands/conditions.
-- Engine tests cover action lookup, chain state, literal and event-derived macro state, macro snapshot recall, literal and MIDI-derived macro morphs, harmony state and conditions, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
-- Scheduler tests cover queued-action summaries with bounded command details, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
-- Runner queue tests cover quantized slot/MIDI action queuing, formatted queued command details, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
+- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, macro snapshot/morph syntax, route-scoped rhythm `midi-value`, TriggerBox follow-probability commands, and harmony commands/conditions.
+- Engine tests cover action lookup, chain state, literal and event-derived macro state, macro snapshot recall, literal and MIDI-derived macro morphs, harmony state and conditions, route-scoped rhythm event values, TriggerBox follow-probability event values, and quantization calculation against a fixed TempoMap.
+- Scheduler tests cover queued-action summaries with bounded command details, including TriggerBox follow-probability details, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
+- Runner queue tests cover quantized slot/MIDI action queuing, formatted queued command details, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, route-scoped rhythm value dispatch, and TriggerBox follow-probability dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
-- Session-target tests cover route-scoped rhythm insertion, parameter writes, missing-target errors, and routing summaries with live rhythm parameter values.
+- Session-target tests cover route-scoped rhythm insertion, parameter writes, TriggerBox follow-probability dispatch, missing-target errors, and routing summaries with live rhythm parameter values.
 - Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
 - Manual smoke test can trigger one cue row, one harmony-state update, and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.

@@ -83,6 +83,7 @@ ACTION demo.filter.sweep
 TRIGGER midi cc ch=1 cc=22
 DO rhythm insert 0
 DO rhythm route 0 density midi-value
+DO trigger probability 0 0 midi-value
 DO macro filter midi-value ramp 0|1|0
 DO macro texture 0.20
 DO macro space 0.80

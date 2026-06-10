@@ -11,6 +11,7 @@ class ReactiveSessionTargetTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (propagateSessionFailures);
 	CPPUNIT_TEST (rejectDelayedTransportStopUntilSchedulerExists);
 	CPPUNIT_TEST (acceptNonSessionStateCommands);
+	CPPUNIT_TEST (mapTriggerProbability);
 	CPPUNIT_TEST (mapRhythmInsert);
 	CPPUNIT_TEST_SUITE_END ();
 
@@ -20,5 +21,6 @@ public:
 	void propagateSessionFailures ();
 	void rejectDelayedTransportStopUntilSchedulerExists ();
 	void acceptNonSessionStateCommands ();
+	void mapTriggerProbability ();
 	void mapRhythmInsert ();
 };

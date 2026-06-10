@@ -245,6 +245,37 @@ ReactiveActionTest::parseRouteScopedRhythmCommandWithMidiValue ()
 }
 
 void
+ReactiveActionTest::parseTriggerProbabilityCommand ()
+{
+	const char* src =
+		"ACTION clip.chance\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO trigger probability 2 3 0.65\n"
+		"DO trigger probability 2 4 midi-value\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveAction const& action = result.document.actions ().front ();
+	CPPUNIT_ASSERT_EQUAL (size_t (2), action.commands.size ());
+
+	ReactiveCommand const& literal = action.commands[0];
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::TriggerProbability, literal.type);
+	CPPUNIT_ASSERT_EQUAL (2, literal.first);
+	CPPUNIT_ASSERT_EQUAL (3, literal.second);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::LiteralValue, literal.value_source);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.65, literal.value, 0.0001);
+
+	ReactiveCommand const& live = action.commands[1];
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::TriggerProbability, live.type);
+	CPPUNIT_ASSERT_EQUAL (2, live.first);
+	CPPUNIT_ASSERT_EQUAL (4, live.second);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MidiEventValue, live.value_source);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, live.value, 0.0001);
+}
+
+void
 ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
 {
 	const char* src =
@@ -423,6 +454,20 @@ ReactiveActionTest::rejectInvalidRhythmCommand ()
 	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
 	CPPUNIT_ASSERT_EQUAL (false, result.ok);
 	CPPUNIT_ASSERT (result.error.find ("invalid rhythm command") != std::string::npos);
+	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
+}
+
+void
+ReactiveActionTest::rejectInvalidTriggerProbabilityCommand ()
+{
+	const char* src =
+		"ACTION clip.chance\n"
+		"DO trigger probability 0 1 1.50\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (false, result.ok);
+	CPPUNIT_ASSERT (result.error.find ("invalid trigger probability value") != std::string::npos);
 	CPPUNIT_ASSERT (result.error.find ("line 2") != std::string::npos);
 }
 

@@ -34,6 +34,13 @@ public:
 		return record (call.str (), error);
 	}
 
+	bool trigger_probability (int route, int row, double value, std::string& error)
+	{
+		std::ostringstream call;
+		call << "trigger-probability:" << route << ":" << row << ":" << value;
+		return record (call.str (), error);
+	}
+
 	bool trigger_stop (int route, std::string& error)
 	{
 		return record (compose_one ("trigger-stop", route), error);
@@ -322,6 +329,30 @@ ReactiveActionSlotRunnerTest::executeMidiCCTriggerRhythmRouteValueFromController
 	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-route:0:density:0.503937"), target.calls[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live.rhythm"), runner.last_execution_status ().action_name);
+}
+
+void
+ReactiveActionSlotRunnerTest::executeMidiCCTriggerProbabilityValueFromController ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.live.clip\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO trigger probability 0 1 midi-value\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult result = runner.execute_midi_event (ReactiveMidiEvent::control_change (1, 22, 64), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("trigger-probability:0:1:0.503937"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live.clip"), runner.last_execution_status ().action_name);
 }
 
 void
@@ -1443,6 +1474,29 @@ ReactiveActionSlotRunnerTest::previewMidiEventUsesControllerValueForCommandDetai
 	CPPUNIT_ASSERT_EQUAL (std::string ("macro texture = 0.502362 ramp 0|1|0"), preview.command_summaries[1]);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, runner.macro_value ("texture"), 0.0001);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, runner.macro_value ("space"), 0.0001);
+}
+
+void
+ReactiveActionSlotRunnerTest::previewMidiEventShowsTriggerProbabilityCommandDetails ()
+{
+	ReactiveActionSlotRunner runner;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION knob.live.clip\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO trigger probability 0 1 midi-value\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveActionPreviewSummary preview = runner.preview_midi_event (ReactiveMidiEvent::control_change (1, 22, 64));
+
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("knob.live.clip"), preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("trigger route 0 row 1 probability = 0.503937"), preview.command_summaries[0]);
 }
 
 void

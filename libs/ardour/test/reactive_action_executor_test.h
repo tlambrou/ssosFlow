@@ -9,6 +9,7 @@ class ReactiveActionExecutorTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeAllCommandTypesInOrder);
 	CPPUNIT_TEST (executeRhythmInsertCommand);
 	CPPUNIT_TEST (executeRouteScopedRhythmCommand);
+	CPPUNIT_TEST (executeTriggerProbabilityCommand);
 	CPPUNIT_TEST (refuseFailedPlan);
 	CPPUNIT_TEST (rejectUnexpandedMacroSnapshotCommand);
 	CPPUNIT_TEST (rejectUnexpandedMacroMorphCommand);
@@ -19,6 +20,7 @@ public:
 	void executeAllCommandTypesInOrder ();
 	void executeRhythmInsertCommand ();
 	void executeRouteScopedRhythmCommand ();
+	void executeTriggerProbabilityCommand ();
 	void refuseFailedPlan ();
 	void rejectUnexpandedMacroSnapshotCommand ();
 	void rejectUnexpandedMacroMorphCommand ();
