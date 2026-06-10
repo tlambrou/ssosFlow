@@ -387,6 +387,10 @@ ReactiveSessionTargetRhythmInsertTest::summarizeReactiveSessionClockState ()
 
 	CPPUNIT_ASSERT_EQUAL (true, summary.session_loaded);
 	CPPUNIT_ASSERT_EQUAL (false, summary.transport_rolling);
+	CPPUNIT_ASSERT_EQUAL (0.0, summary.transport_speed);
+	CPPUNIT_ASSERT_EQUAL (false, summary.record_enabled);
+	CPPUNIT_ASSERT_EQUAL (false, summary.loop_enabled);
+	CPPUNIT_ASSERT_EQUAL (false, summary.locate_pending);
 	CPPUNIT_ASSERT_EQUAL (Temporal::samplepos_t (0), summary.transport_sample);
 	CPPUNIT_ASSERT_EQUAL (1, summary.bbt.bars);
 	CPPUNIT_ASSERT_EQUAL (1, summary.bbt.beats);
@@ -397,8 +401,13 @@ ReactiveSessionTargetRhythmInsertTest::summarizeReactiveSessionClockState ()
 	CPPUNIT_ASSERT_EQUAL (size_t (0), summary.route_count);
 	CPPUNIT_ASSERT_EQUAL (size_t (0), summary.trigger_route_count);
 	CPPUNIT_ASSERT (summary.status.find ("stopped @ 1|1|0") != std::string::npos);
+	CPPUNIT_ASSERT (summary.status.find ("speed=0.00") != std::string::npos);
+	CPPUNIT_ASSERT (summary.status.find ("record=off") != std::string::npos);
+	CPPUNIT_ASSERT (summary.status.find ("loop=off") != std::string::npos);
+	CPPUNIT_ASSERT (summary.status.find ("locate=idle") != std::string::npos);
 	CPPUNIT_ASSERT (summary.status.find ("routes=0 trigger-routes=0") != std::string::npos);
 	CPPUNIT_ASSERT (target.format_session_state_summary ().find ("Session State: stopped @ 1|1|0") != std::string::npos);
+	CPPUNIT_ASSERT (target.format_session_state_summary ().find ("speed=0.00 record=off loop=off locate=idle") != std::string::npos);
 }
 
 void

@@ -39,6 +39,10 @@ struct LIBARDOUR_API ReactiveTriggerSlotSummary {
 struct LIBARDOUR_API ReactiveSessionStateSummary {
 	bool session_loaded = false;
 	bool transport_rolling = false;
+	double transport_speed = 0.0;
+	bool record_enabled = false;
+	bool loop_enabled = false;
+	bool locate_pending = false;
 	Temporal::samplepos_t transport_sample = 0;
 	Temporal::BBT_Time bbt;
 	double tempo_quarter_notes_per_minute = 0.0;

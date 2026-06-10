@@ -381,6 +381,10 @@ session_state_status (ReactiveSessionStateSummary const& row)
 	std::ostringstream status;
 	status << (row.transport_rolling ? "rolling" : "stopped")
 	       << " @ " << format_bbt_time (row.bbt)
+	       << " speed=" << format_decimal_value (row.transport_speed)
+	       << " record=" << (row.record_enabled ? "on" : "off")
+	       << " loop=" << (row.loop_enabled ? "on" : "off")
+	       << " locate=" << (row.locate_pending ? "pending" : "idle")
 	       << " tempo=" << format_decimal_value (row.tempo_quarter_notes_per_minute)
 	       << " meter=" << row.meter_divisions_per_bar << "/" << row.meter_note_value
 	       << " sample=" << row.transport_sample
@@ -771,6 +775,10 @@ ReactiveSessionTarget::session_state_summary () const
 
 	row.session_loaded = true;
 	row.transport_rolling = _session->transport_state_rolling ();
+	row.transport_speed = _session->transport_speed ();
+	row.record_enabled = _session->get_record_enabled ();
+	row.loop_enabled = _session->get_play_loop ();
+	row.locate_pending = _session->locate_pending ();
 	row.transport_sample = _session->transport_sample ();
 	row.route_count = _session->nroutes ();
 	row.trigger_route_count = trigger_visible_route_count (*_session);

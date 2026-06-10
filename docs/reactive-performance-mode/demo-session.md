@@ -153,7 +153,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - The Cue page shows a Reactive Performance panel above the trigger strip grid, with slot labels sourced from the loaded action document.
 - Empty Cue-page panel slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
-- The status panel shows eight slot-trigger buttons, visibly disables empty/unavailable controls, has an Enable/Disable Mode button, lists Session State with stopped/rolling transport, BBT, tempo, meter, sample position, route counts, lists Track State with active/mute/solo/record/gain values for controller-facing routes, and lists Trigger Slots with populated seeded clips such as `Reactive Cue 0 Reset` plus empty slots.
+- The status panel shows eight slot-trigger buttons, visibly disables empty/unavailable controls, has an Enable/Disable Mode button, lists Session State with stopped/rolling transport plus speed, record, loop, locate, BBT, tempo, meter, sample position, route counts, lists Track State with active/mute/solo/record/gain values for controller-facing routes, and lists Trigger Slots with populated seeded clips such as `Reactive Cue 0 Reset` plus empty slots.
 - Utility note 47 or the panel mode button toggles the status between `Reactive Performance Mode: enabled` and `Reactive Performance Mode: disabled`.
 - While disabled, trigger pad 0 and confirm the status panel reports a disabled execution without inserting `Reactive Rhythm State MVP` or launching a cue.
 - Toggle note 47 again to re-enable Reactive Performance Mode.
