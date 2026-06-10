@@ -719,6 +719,13 @@ Phase 7i adds marker-trigger demo coverage:
 - The `Reactive Performance MVP` SessionInit template embeds matching content, and automated tests require the packaged document to expose a `marker Breakdown` preview.
 - The example README and demo guide include a smoke check for adding/crossing the marker and confirming panel/status read-model changes.
 
+Phase 7j adds region-trigger demo coverage:
+
+- `examples/reactive-performance-mvp/reactive-actions.txt` includes `demo.region.breakdown.loop`, triggered by a non-hidden timeline region named `Breakdown Loop`.
+- The action uses existing safe commands to insert the rhythm processor if needed, adjust route 0 density/chance, set the `filter` macro, update harmony/state read models, and launch cue row 3.
+- The `Reactive Performance MVP` SessionInit template embeds matching content, and automated tests require the packaged document to expose a `region Breakdown Loop` preview.
+- The example README and demo guide include a smoke check for creating or crossing the named region and confirming panel/status read-model changes.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, route-scoped rhythm `midi-value`, and harmony commands/conditions.

@@ -202,8 +202,8 @@ ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
 	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (demo_dir), result.path);
 	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
-	CPPUNIT_ASSERT_EQUAL (size_t (10), result.action_count);
-	CPPUNIT_ASSERT_EQUAL (size_t (10), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (size_t (11), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (11), runner.action_count ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.reset"), runner.action_name (0));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.tighten"), runner.action_name (1));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.sparse"), runner.action_name (2));
@@ -214,11 +214,17 @@ ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.mark.stopped"), runner.action_name (7));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.filter.sweep"), runner.action_name (8));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.marker.breakdown"), runner.action_name (9));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.region.breakdown.loop"), runner.action_name (10));
 
 	ReactiveActionPreviewSummary const preview = runner.preview_marker_event (ReactiveMarkerEvent::named ("Breakdown"));
 	CPPUNIT_ASSERT_EQUAL (true, preview.available);
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.marker.breakdown"), preview.action_name);
 	CPPUNIT_ASSERT_EQUAL (std::string ("marker Breakdown"), preview.primary_trigger);
+
+	ReactiveActionPreviewSummary const region_preview = runner.preview_region_event (ReactiveRegionEvent::named ("Breakdown Loop"));
+	CPPUNIT_ASSERT_EQUAL (true, region_preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.region.breakdown.loop"), region_preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("region Breakdown Loop"), region_preview.primary_trigger);
 }
 
 void

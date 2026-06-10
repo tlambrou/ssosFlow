@@ -98,6 +98,18 @@ DO harmony chord bVII
 DO state section breakdown
 DO cue 2
 END
+
+ACTION demo.region.breakdown.loop
+TRIGGER region Breakdown Loop
+QUANTIZE 0|1|0
+DO rhythm insert 0
+DO rhythm route 0 density 0.55
+DO rhythm route 0 chance 0.75
+DO macro filter 0.55 ramp 0|1|0
+DO harmony chord i7
+DO state section region-breakdown
+DO cue 3
+END
 ]]
 
 local function install_demo_action_document ()
