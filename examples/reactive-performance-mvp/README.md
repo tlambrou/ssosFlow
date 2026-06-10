@@ -1,6 +1,6 @@
 # Reactive Performance MVP Example
 
-Issue: #109, #154, #162, #166, #170, #184, #185, #188.
+Issue: #109, #154, #162, #166, #170, #184, #185, #188, #190.
 
 This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is the source-controlled action document that the bundled `Reactive Performance MVP` session-template script installs into new demo sessions alongside seeded `Breakdown` marker, `Breakdown Loop` region, and first Cue-page trigger clips with simple MIDI note content.
 
@@ -25,7 +25,7 @@ The bundled MVP map uses:
 
 - Channel 10 notes 36-43 for the first eight action slots in this file.
 - Channel 10 note 46 as a live document-level trigger for `demo.cue.when.rolling`.
-- Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`, driving route 0 rhythm density, the `filter` macro read model, and a macro morph between stored `texture`/`space` snapshots.
+- Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`, driving route 0 rhythm density, route 0 slot 0 trigger follow probability, the `filter` macro read model, and a macro morph between stored `texture`/`space` snapshots.
 - A visible session marker named `Breakdown` as a live document-level trigger for `demo.marker.breakdown`; template-created sessions seed this marker automatically.
 - A named timeline region `Breakdown Loop` as a live document-level trigger for `demo.region.breakdown.loop`; template-created sessions seed this region landmark automatically on `Reactive Rhythm Lane`.
 - Seeded MIDI trigger clips named `Reactive Cue 0 Reset` note 36, `Reactive Cue 1 Tighten` note 38, `Reactive Cue 2 Sparse` note 41, `Reactive Harmony i` note 48, `Reactive Macro Filter` note 60, and `Reactive Macro Texture` note 67.
@@ -43,7 +43,7 @@ The bundled MVP map uses:
 4. Trigger notes 37, 38, and 39 to change route 0 rhythm density, chance, priority, or rotation, and confirm the harmony bank moves through `iv`, `VI`, and `V`.
 5. While transport is stopped, trigger note 40 and confirm transport starts; while transport is rolling, trigger note 41 or live trigger note 46 and confirm cue row 4 launches if it exists.
 6. While transport is rolling, trigger note 42 and confirm transport stops; while stopped, trigger note 43 and confirm the state bank reports `transport = stopped-ready`.
-7. Move CC 22 on channel 1 and confirm route 0 rhythm density follows the controller value while the macro bank shows `filter` changing between `0.0` and `1.0`, `texture` morphing from `0.20` to `0.80`, and `space` morphing from `0.80` to `0.25`; the status or Cue-page preview should show the resolved CC-derived macro command details.
+7. Move CC 22 on channel 1 and confirm route 0 rhythm density and route 0 slot 0 trigger follow probability follow the controller value while the macro bank shows `filter` changing between `0.0` and `1.0`, `texture` morphing from `0.20` to `0.80`, and `space` morphing from `0.80` to `0.25`; the status or Cue-page preview should show the resolved CC-derived trigger-probability and macro command details.
 8. Locate before the template-created `Breakdown` marker, or add a visible `Breakdown` marker in a manual existing-session setup, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
 9. Locate before the template-created `Breakdown Loop` region, or create, record, draw, or import a non-hidden region with that exact name in a manual existing-session setup, roll transport across it, and confirm the panel or status dialog reports `demo.region.breakdown.loop`, `section = region-breakdown`, `chord = i7`, `filter = 0.55`, and route 0 rhythm density/chance changes.
 10. Launch Cue row 3 from the Cue page and confirm the panel or status dialog reports `demo.scene.drop`, `section = scene-drop`, `chord = V7`, `filter = 0.70`, and route 0 rhythm density/chance/rotation changes while the normal cue launch still happens.

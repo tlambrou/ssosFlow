@@ -1,5 +1,6 @@
 #include "ardour/reactive_session_target.h"
 
+#include <cmath>
 #include <iomanip>
 #include <memory>
 #include <sstream>
@@ -316,6 +317,38 @@ ReactiveSessionTarget::trigger (int route, int row, std::string& error)
 }
 
 bool
+ReactiveSessionTarget::trigger_probability (int route, int row, double value, std::string& error)
+{
+	if (route < 0) {
+		error = "trigger probability route index must be non-negative";
+		return false;
+	}
+
+	if (row < 0) {
+		error = "trigger probability row index must be non-negative";
+		return false;
+	}
+
+	if (value < 0.0 || value > 1.0) {
+		error = "trigger probability value must be between 0 and 1";
+		return false;
+	}
+
+	int const probability = static_cast<int> (std::lround (value * 100.0));
+	if (!session_set_trigger_follow_probability (route, row, probability, error)) {
+		if (error.empty ()) {
+			std::ostringstream msg;
+			msg << "trigger probability route " << route << " row " << row << " failed";
+			error = msg.str ();
+		}
+		return false;
+	}
+
+	error.clear ();
+	return true;
+}
+
+bool
 ReactiveSessionTarget::trigger_stop (int route, std::string& error)
 {
 	if (!session_stop_triggers_at (route, error)) {
@@ -550,6 +583,35 @@ bool
 ReactiveSessionTarget::session_bang_trigger_at (int route, int row, float velocity)
 {
 	return _session && _session->bang_trigger_at (route, row, velocity);
+}
+
+bool
+ReactiveSessionTarget::session_set_trigger_follow_probability (int route, int row, int probability, std::string& error)
+{
+	if (!_session) {
+		error = "reactive session target has no session";
+		return false;
+	}
+
+	std::shared_ptr<TriggerBox> triggerbox = _session->triggerbox_at (route);
+	if (!triggerbox) {
+		std::ostringstream msg;
+		msg << "missing triggerbox for route " << route;
+		error = msg.str ();
+		return false;
+	}
+
+	TriggerPtr trigger = triggerbox->trigger (static_cast<TriggerBox::Triggers::size_type> (row));
+	if (!trigger) {
+		std::ostringstream msg;
+		msg << "missing trigger at route " << route << " row " << row;
+		error = msg.str ();
+		return false;
+	}
+
+	trigger->set_follow_action_probability (probability);
+	error.clear ();
+	return true;
 }
 
 bool

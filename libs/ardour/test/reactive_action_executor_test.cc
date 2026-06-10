@@ -33,6 +33,13 @@ public:
 		return record (call.str (), error);
 	}
 
+	bool trigger_probability (int route, int row, double value, std::string& error)
+	{
+		std::ostringstream call;
+		call << "trigger-probability:" << route << ":" << row << ":" << value;
+		return record (call.str (), error);
+	}
+
 	bool trigger_stop (int route, std::string& error)
 	{
 		return record (compose_one ("trigger-stop", route), error);
@@ -215,6 +222,24 @@ ReactiveActionExecutorTest::executeRouteScopedRhythmCommand ()
 	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("rhythm-route:2:density:0.35"), target.calls[0]);
+}
+
+void
+ReactiveActionExecutorTest::executeTriggerProbabilityCommand ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION clip.chance\n"
+		"DO trigger probability 2 3 0.65\n"
+		"END\n");
+	ReactiveActionPlan plan = engine.trigger_action ("clip.chance");
+	RecordingTarget target;
+
+	ReactiveExecutionResult result = ReactiveActionExecutor::execute (plan, target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("trigger-probability:2:3:0.65"), target.calls[0]);
 }
 
 void

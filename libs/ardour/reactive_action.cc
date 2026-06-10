@@ -312,11 +312,24 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 		}
 		command.type = ReactiveCommand::Cue;
 	} else if (name == "trigger") {
-		if (tokens.size () != 4 || !parse_nonnegative_int (tokens[2], command.first) || !parse_nonnegative_int (tokens[3], command.second)) {
+		if (tokens.size () == 6 && tokens[2] == "probability") {
+			if (!parse_nonnegative_int (tokens[3], command.first) ||
+			    !parse_nonnegative_int (tokens[4], command.second) ||
+			    !parse_command_value (tokens[5], command)) {
+				result.error = line_error (line_number, "invalid trigger probability command");
+				return false;
+			}
+			if (command.value_source == ReactiveCommand::LiteralValue && (command.value < 0.0 || command.value > 1.0)) {
+				result.error = line_error (line_number, "invalid trigger probability value");
+				return false;
+			}
+			command.type = ReactiveCommand::TriggerProbability;
+		} else if (tokens.size () != 4 || !parse_nonnegative_int (tokens[2], command.first) || !parse_nonnegative_int (tokens[3], command.second)) {
 			result.error = line_error (line_number, "invalid trigger command");
 			return false;
+		} else {
+			command.type = ReactiveCommand::Trigger;
 		}
-		command.type = ReactiveCommand::Trigger;
 	} else if (name == "trigger-stop") {
 		if (tokens.size () != 3 || !parse_nonnegative_int (tokens[2], command.first)) {
 			result.error = line_error (line_number, "invalid trigger-stop command");

@@ -18,6 +18,7 @@ class ReactiveActionTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (parseRhythmInsertCommand);
 	CPPUNIT_TEST (parseRouteScopedRhythmCommand);
 	CPPUNIT_TEST (parseRouteScopedRhythmCommandWithMidiValue);
+	CPPUNIT_TEST (parseTriggerProbabilityCommand);
 	CPPUNIT_TEST (parseMarkerTriggerAndTransportCommands);
 	CPPUNIT_TEST (parseRegionTrigger);
 	CPPUNIT_TEST (rejectInvalidRegionTrigger);
@@ -28,6 +29,7 @@ class ReactiveActionTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (rejectInvalidQuantize);
 	CPPUNIT_TEST (rejectInvalidRhythmInsert);
 	CPPUNIT_TEST (rejectInvalidRhythmCommand);
+	CPPUNIT_TEST (rejectInvalidTriggerProbabilityCommand);
 	CPPUNIT_TEST (rejectInvalidWhenCondition);
 	CPPUNIT_TEST (rejectUnknownCommand);
 	CPPUNIT_TEST_SUITE_END ();
@@ -45,6 +47,7 @@ public:
 	void parseRhythmInsertCommand ();
 	void parseRouteScopedRhythmCommand ();
 	void parseRouteScopedRhythmCommandWithMidiValue ();
+	void parseTriggerProbabilityCommand ();
 	void parseMarkerTriggerAndTransportCommands ();
 	void parseRegionTrigger ();
 	void rejectInvalidRegionTrigger ();
@@ -55,6 +58,7 @@ public:
 	void rejectInvalidQuantize ();
 	void rejectInvalidRhythmInsert ();
 	void rejectInvalidRhythmCommand ();
+	void rejectInvalidTriggerProbabilityCommand ();
 	void rejectInvalidWhenCondition ();
 	void rejectUnknownCommand ();
 };

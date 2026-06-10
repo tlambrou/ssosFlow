@@ -33,7 +33,7 @@
   <text x="724" y="302" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">rotation and V chord</text>
   <rect x="596" y="350" width="370" height="64" rx="6" fill="#20282c" stroke="#39444a"/>
   <text x="620" y="388" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">CC 22</text>
-  <text x="724" y="388" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">filter macro and density</text>
+  <text x="724" y="388" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">density, probability, macros</text>
   <rect x="596" y="436" width="370" height="64" rx="6" fill="#20282c" stroke="#39444a"/>
   <text x="620" y="474" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Queue</text>
   <text x="724" y="474" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">preview before release</text>

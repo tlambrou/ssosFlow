@@ -38,6 +38,7 @@ struct LIBARDOUR_API ReactiveCommand {
 	enum Type {
 		Cue,
 		Trigger,
+		TriggerProbability,
 		TriggerStop,
 		StopAll,
 		TransportPlay,

@@ -12,6 +12,8 @@ execute_command (ReactiveCommand const& command, ReactiveActionTarget& target, s
 		return target.cue (command.first, error);
 	case ReactiveCommand::Trigger:
 		return target.trigger (command.first, command.second, error);
+	case ReactiveCommand::TriggerProbability:
+		return target.trigger_probability (command.first, command.second, command.value, error);
 	case ReactiveCommand::TriggerStop:
 		return target.trigger_stop (command.first, error);
 	case ReactiveCommand::StopAll:

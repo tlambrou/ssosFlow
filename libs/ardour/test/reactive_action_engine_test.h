@@ -27,6 +27,7 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (triggerAllChainReturnsAllCommandsAndMetadata);
 	CPPUNIT_TEST (triggerActionWithMidiEventResolvesMacroValue);
 	CPPUNIT_TEST (triggerActionWithMidiEventResolvesRhythmRouteValue);
+	CPPUNIT_TEST (triggerActionWithMidiEventResolvesTriggerProbabilityValue);
 	CPPUNIT_TEST (rotateSequentialChainCommands);
 	CPPUNIT_TEST (rejectUnknownActionWithoutChangingLastAction);
 	CPPUNIT_TEST (trackMacroAndStateValuesFromSelectedCommands);
@@ -63,6 +64,7 @@ public:
 	void triggerAllChainReturnsAllCommandsAndMetadata ();
 	void triggerActionWithMidiEventResolvesMacroValue ();
 	void triggerActionWithMidiEventResolvesRhythmRouteValue ();
+	void triggerActionWithMidiEventResolvesTriggerProbabilityValue ();
 	void rotateSequentialChainCommands ();
 	void rejectUnknownActionWithoutChangingLastAction ();
 	void trackMacroAndStateValuesFromSelectedCommands ();
