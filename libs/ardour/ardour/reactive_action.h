@@ -23,6 +23,7 @@ struct LIBARDOUR_API ReactiveTrigger {
 		MidiNote,
 		MidiCC,
 		Marker,
+		Region,
 		Scene
 	};
 

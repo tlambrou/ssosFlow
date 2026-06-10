@@ -20,6 +20,9 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (ignoreSceneTriggersForMidiAndMarker);
 	CPPUNIT_TEST (matchSceneTriggerByIndex);
 	CPPUNIT_TEST (keepDocumentOrderForMultipleSceneMatches);
+	CPPUNIT_TEST (ignoreRegionTriggersForOtherFamilies);
+	CPPUNIT_TEST (matchRegionTriggerByName);
+	CPPUNIT_TEST (keepDocumentOrderForMultipleRegionMatches);
 	CPPUNIT_TEST (keepDocumentOrderForMultipleMatches);
 	CPPUNIT_TEST (triggerAllChainReturnsAllCommandsAndMetadata);
 	CPPUNIT_TEST (triggerActionWithMidiEventResolvesMacroValue);
@@ -50,6 +53,9 @@ public:
 	void ignoreSceneTriggersForMidiAndMarker ();
 	void matchSceneTriggerByIndex ();
 	void keepDocumentOrderForMultipleSceneMatches ();
+	void ignoreRegionTriggersForOtherFamilies ();
+	void matchRegionTriggerByName ();
+	void keepDocumentOrderForMultipleRegionMatches ();
 	void keepDocumentOrderForMultipleMatches ();
 	void triggerAllChainReturnsAllCommandsAndMetadata ();
 	void triggerActionWithMidiEventResolvesMacroValue ();

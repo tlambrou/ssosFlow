@@ -177,6 +177,21 @@ parse_trigger (std::vector<std::string> const& tokens, size_t line_number, React
 		return true;
 	}
 
+	if (tokens[1] == "region") {
+		if (tokens.size () < 3) {
+			result.error = line_error (line_number, "invalid region trigger");
+			return false;
+		}
+
+		trigger.type = ReactiveTrigger::Region;
+		trigger.name = tokens[2];
+		for (size_t i = 3; i < tokens.size (); ++i) {
+			trigger.name += " " + tokens[i];
+		}
+		action.triggers.push_back (trigger);
+		return true;
+	}
+
 	if (tokens[1] == "scene") {
 		if (tokens.size () != 3 || !parse_nonnegative_int (tokens[2], trigger.number)) {
 			result.error = line_error (line_number, "invalid scene trigger");

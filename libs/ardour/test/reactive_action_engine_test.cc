@@ -283,6 +283,68 @@ ReactiveActionEngineTest::keepDocumentOrderForMultipleSceneMatches ()
 }
 
 void
+ReactiveActionEngineTest::ignoreRegionTriggersForOtherFamilies ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION region.drop\n"
+		"TRIGGER region Breakdown Loop\n"
+		"DO cue 3\n"
+		"END\n");
+
+	CPPUNIT_ASSERT (engine.match_midi_event (ReactiveMidiEvent::note_on (10, 36, 100)).empty ());
+	CPPUNIT_ASSERT (engine.match_marker_event (ReactiveMarkerEvent::named ("Breakdown Loop")).empty ());
+	CPPUNIT_ASSERT (engine.match_scene_event (ReactiveSceneEvent::numbered (3)).empty ());
+}
+
+void
+ReactiveActionEngineTest::matchRegionTriggerByName ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION region.drop\n"
+		"TRIGGER region Breakdown Loop\n"
+		"QUANTIZE 0|1|0\n"
+		"CHAIN sequential\n"
+		"DO cue 3\n"
+		"END\n"
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 1\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_region_event (ReactiveRegionEvent::named ("Breakdown Loop"));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches.size ());
+	CPPUNIT_ASSERT (matches[0].action != 0);
+	CPPUNIT_ASSERT_EQUAL (std::string ("region.drop"), matches[0].action->name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
+	CPPUNIT_ASSERT (ReactiveChainMode::Sequential == matches[0].chain_mode);
+	CPPUNIT_ASSERT_EQUAL (1, matches[0].quantize.beats);
+	CPPUNIT_ASSERT (engine.match_region_event (ReactiveRegionEvent::named ("Verse Loop")).empty ());
+}
+
+void
+ReactiveActionEngineTest::keepDocumentOrderForMultipleRegionMatches ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION first\n"
+		"TRIGGER region Breakdown Loop\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION second\n"
+		"TRIGGER region Breakdown Loop\n"
+		"DO cue 1\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_region_event (ReactiveRegionEvent::named ("Breakdown Loop"));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), matches.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), matches[0].action->name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("second"), matches[1].action->name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches[1].action_index);
+}
+
+void
 ReactiveActionEngineTest::keepDocumentOrderForMultipleMatches ()
 {
 	ReactiveActionEngine engine = engine_from_source (
