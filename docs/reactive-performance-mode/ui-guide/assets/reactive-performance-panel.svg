@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
   <title id="title">Cue-page Reactive Performance panel</title>
-  <desc id="desc">Screenshot-style Cue page with the Reactive Performance panel showing mode, slots, macros, states, track state, routing, and queued action preview.</desc>
+  <desc id="desc">Screenshot-style Cue page with the Reactive Performance panel showing mode, slots, macros, states, track route id, selected state, routing, and queued action preview.</desc>
   <rect width="1200" height="760" fill="#15191c"/>
   <rect x="0" y="0" width="1200" height="54" fill="#23282b"/>
   <circle cx="28" cy="27" r="10" fill="#ff6257"/>
@@ -46,7 +46,7 @@
   <text x="622" y="286" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">space 0.70</text>
   <rect x="890" y="194" width="268" height="114" rx="6" fill="#20282c" stroke="#39444a"/>
   <text x="914" y="226" fill="#50bfd5" font-family="Arial, sans-serif" font-size="17" font-weight="700">State, track, routing</text>
-  <text x="914" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">chord i7 | track 0 active</text>
+  <text x="914" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="16">track 0 [rte-42] selected</text>
   <text x="914" y="286" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">route 0 density 0.45</text>
   <rect x="0" y="334" width="260" height="426" fill="#20262a"/>
   <rect x="260" y="334" width="940" height="426" fill="#111517"/>

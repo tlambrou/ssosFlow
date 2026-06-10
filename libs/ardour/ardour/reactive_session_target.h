@@ -55,7 +55,9 @@ struct LIBARDOUR_API ReactiveSessionStateSummary {
 
 struct LIBARDOUR_API ReactiveTrackStateSummary {
 	size_t slot = 0;
+	std::string route_id;
 	std::string route_name;
+	bool selected = false;
 	bool active = false;
 	bool muted = false;
 	bool soloed = false;

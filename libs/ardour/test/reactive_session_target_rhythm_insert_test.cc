@@ -15,6 +15,7 @@
 #include "ardour/reactive_rhythm_route_inserter.h"
 #include "ardour/reactive_session_target.h"
 #include "ardour/route.h"
+#include "ardour/selection.h"
 #include "ardour/session.h"
 #include "ardour/track.h"
 
@@ -511,37 +512,44 @@ ReactiveSessionTargetRhythmInsertTest::summarizeReactiveTrackStateForRoutes ()
 	midi_route->gain_control ()->set_value (0.5, PBD::Controllable::NoGroup);
 	midi_track->rec_enable_control ()->set_value (1.0, PBD::Controllable::NoGroup);
 	solo_bus->solo_control ()->mod_solo_by_others_downstream (1);
+	_session->selection ().select_stripable_and_maybe_group (solo_bus, SelectionSet, false, true);
 	inactive_bus->set_active (false, this);
 
 	std::vector<ReactiveTrackStateSummary> const summary = target.track_state_summary (8);
 
 	CPPUNIT_ASSERT_EQUAL (size_t (3), summary.size ());
 	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (midi_route->id ().to_s (), summary[0].route_id);
 	CPPUNIT_ASSERT_EQUAL (midi_route->name (), summary[0].route_name);
+	CPPUNIT_ASSERT_EQUAL (false, summary[0].selected);
 	CPPUNIT_ASSERT_EQUAL (true, summary[0].active);
 	CPPUNIT_ASSERT_EQUAL (true, summary[0].muted);
 	CPPUNIT_ASSERT_EQUAL (false, summary[0].soloed);
 	CPPUNIT_ASSERT_EQUAL (true, summary[0].record_enable_available);
 	CPPUNIT_ASSERT_EQUAL (false, summary[0].record_enabled);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.5, summary[0].gain, 0.0001);
-	CPPUNIT_ASSERT (summary[0].status.find ("active muted unsoloed rec-off gain=0.50") != std::string::npos);
+	CPPUNIT_ASSERT (summary[0].status.find ("active unselected muted unsoloed rec-off gain=0.50") != std::string::npos);
 
 	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (solo_bus->id ().to_s (), summary[1].route_id);
 	CPPUNIT_ASSERT_EQUAL (solo_bus->name (), summary[1].route_name);
+	CPPUNIT_ASSERT_EQUAL (true, summary[1].selected);
 	CPPUNIT_ASSERT_EQUAL (true, summary[1].soloed);
 	CPPUNIT_ASSERT_EQUAL (false, summary[1].record_enable_available);
 	CPPUNIT_ASSERT_EQUAL (false, summary[1].record_enabled);
 	CPPUNIT_ASSERT (summary[1].status.find ("rec=-") != std::string::npos);
 
 	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[2].slot);
+	CPPUNIT_ASSERT_EQUAL (inactive_bus->id ().to_s (), summary[2].route_id);
 	CPPUNIT_ASSERT_EQUAL (inactive_bus->name (), summary[2].route_name);
+	CPPUNIT_ASSERT_EQUAL (false, summary[2].selected);
 	CPPUNIT_ASSERT_EQUAL (false, summary[2].active);
 	CPPUNIT_ASSERT_EQUAL (false, summary[2].record_enable_available);
 	CPPUNIT_ASSERT (summary[2].status.find ("inactive") != std::string::npos);
 
 	std::string const formatted = target.format_track_state_summary (8);
 	CPPUNIT_ASSERT (formatted.find ("Track State:") != std::string::npos);
-	CPPUNIT_ASSERT (formatted.find ("0: " + midi_route->name () + " - active muted unsoloed rec-off gain=0.50") != std::string::npos);
-	CPPUNIT_ASSERT (formatted.find ("1: " + solo_bus->name () + " - active unmuted soloed rec=-") != std::string::npos);
-	CPPUNIT_ASSERT (formatted.find ("2: " + inactive_bus->name () + " - inactive") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("0: " + midi_route->name () + " [" + midi_route->id ().to_s () + "] - active unselected muted unsoloed rec-off gain=0.50") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: " + solo_bus->name () + " [" + solo_bus->id ().to_s () + "] - active selected unmuted soloed rec=-") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("2: " + inactive_bus->name () + " [" + inactive_bus->id ().to_s () + "] - inactive unselected") != std::string::npos);
 }

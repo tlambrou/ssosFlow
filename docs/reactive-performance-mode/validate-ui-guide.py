@@ -64,6 +64,8 @@ REQUIRED_COPY = {
     "Scene State",
     "speed=0.00 record=off loop=off locate=idle",
     "Track State",
+    "route id",
+    "selected/unselected state",
 }
 
 

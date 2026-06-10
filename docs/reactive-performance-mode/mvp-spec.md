@@ -598,8 +598,8 @@ Phase 5v adds the first session/clock state read model:
 Phase 5w adds the first track-state read model:
 
 - `ReactiveSessionTarget` exposes bounded `ReactiveTrackStateSummary` rows in the same controller-facing route order used by route-scoped rhythm actions.
-- Rows include route index, route name, active/inactive state, mute state, solo state, record-enable availability/state for real tracks, gain value, and a compact status string.
-- The formatted track-state summary displays rows such as `0: Reactive Rhythm Lane - active unmuted unsoloed rec-off gain=1.00` and uses `rec=-` for non-track routes.
+- Rows include route index, stable route id, route name, selected/unselected state, active/inactive state, mute state, solo state, record-enable availability/state for real tracks, gain value, and a compact status string.
+- The formatted track-state summary displays rows such as `0: Reactive Rhythm Lane [1234] - active selected unmuted unsoloed rec-off gain=1.00` and uses `rec=-` for non-track routes.
 - The existing status dialog and Cue-page panel summary display this read-only section next to session state, routing, and trigger-slot state without adding new route-mutating commands.
 
 Phase 5x extends the session transport read model:

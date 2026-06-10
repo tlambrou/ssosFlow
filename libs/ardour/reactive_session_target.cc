@@ -399,6 +399,7 @@ track_state_status (ReactiveTrackStateSummary const& row)
 {
 	std::ostringstream status;
 	status << (row.active ? "active" : "inactive")
+	       << " " << (row.selected ? "selected" : "unselected")
 	       << " " << (row.muted ? "muted" : "unmuted")
 	       << " " << (row.soloed ? "soloed" : "unsoloed")
 	       << " ";
@@ -843,7 +844,9 @@ ReactiveSessionTarget::track_state_summary (size_t max_routes) const
 
 		ReactiveTrackStateSummary row;
 		row.slot = slot;
+		row.route_id = route->id ().to_s ();
 		row.route_name = route->name ();
+		row.selected = route->is_selected ();
 		row.active = route->active ();
 		row.muted = route->muted ();
 		row.soloed = route->soloed ();
@@ -875,7 +878,7 @@ ReactiveSessionTarget::format_track_state_summary (size_t max_routes) const
 	std::ostringstream text;
 	text << "Track State:";
 	for (std::vector<ReactiveTrackStateSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
-		text << "\n  " << i->slot << ": " << i->route_name << " - " << i->status;
+		text << "\n  " << i->slot << ": " << i->route_name << " [" << i->route_id << "] - " << i->status;
 	}
 
 	return text.str ();
