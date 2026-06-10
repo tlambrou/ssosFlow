@@ -177,6 +177,8 @@ Phase 5y adds the first mixer scene-state read model at the same read-only sessi
 
 Phase 5z adds the first MIDI-input state read model at the runner boundary. `ReactiveActionSlotRunner` now keeps a compact summary of the latest supported note or CC input with event type, channel, note/CC number, velocity/value, source (`event` or parsed `bytes`), matched action count, and matched action name when available. Matched and unmatched supported MIDI events both update the read model, while unsupported byte messages leave the last supported MIDI Input row intact. The status dialog and Cue-page panel append this row so controller troubleshooting shows what the reactive layer actually received before deeper routing or action-state inspection.
 
+Phase 5aa makes macro snapshot state visible without changing action execution. `ReactiveActionEngine::macro_snapshot_summary(...)` now returns bounded snapshot rows with first-store order, snapshot name, stored macro-value count, and a bounded macro/value preview. `ReactiveActionSlotRunner` formats the same read model for the detailed status dialog and compact Cue-page panel summary, so performers can verify recall and morph targets after `DO macro snapshot store ...` actions while keeping the underlying snapshot map private and non-realtime.
+
 Phase 5f adds explicit mode arming at the `ReactiveActionSlotRunner` boundary. This keeps disabled-mode behavior independent of GTK, Generic MIDI, and session routing: action documents can still be loaded/reloaded and inspected, but slot/MIDI execution returns a visible disabled result before target dispatch or action-engine mutation. The Generic MIDI MVP map binds note 47 to `Reactive/toggle-performance-mode` so the performer can arm or disarm the system from a controller after setup.
 
 Phase 5g turns the status dialog from a read-only diagnostic into the first performance-safe control surface. `ReactiveActionSlotRunner` now exposes bounded control rows for the first controller-facing slots with action identity, primary trigger, availability, enabled state, and button labels. The existing status dialog renders those rows as eight large trigger controls plus an Enable/Disable Mode control, using the same slot execution and mode-toggle paths as controller actions and refreshing all read models after each interaction. A dedicated Cue-page panel and controller feedback remain follow-up work.
@@ -187,7 +189,7 @@ Phase 5i binds the Cue-page panel to the existing control summary without moving
 
 Phase 5j adds controller-driven panel refresh feedback. `ReactiveActionSlotRunner::performance_control_summary(...)` marks the latest attempted slot with a `> ` label prefix after manual or MIDI-triggered execution, `ARDOUR_UI::ReactivePerformanceChanged` is emitted after Reactive slot execution, MIDI-byte execution, mode toggles, and document reloads, and `ReactivePerformancePanel` observes that signal on the GUI context so external controller-triggered actions refresh the Cue-page controls.
 
-Phase 5j also moves the first compact live read-model summary into the Cue-page panel. `ReactiveActionSlotRunner::format_panel_summary(...)` formats next action preview, macro bank, user state bank, and harmony bank into a bounded performer-facing string, while `ARDOUR_UI::reactive_performance_panel_summary(...)` appends the existing `ReactiveSessionTarget` routing summary when a session is loaded. The modal status dialog remains the detailed/debug view; the panel now carries the always-visible macro/state/harmony/preview/routing signal required for performance use.
+Phase 5j also moves the first compact live read-model summary into the Cue-page panel. `ReactiveActionSlotRunner::format_panel_summary(...)` formats next action preview, macro bank, Macro Snapshot state, user state bank, and harmony bank into a bounded performer-facing string, while `ARDOUR_UI::reactive_performance_panel_summary(...)` appends the existing `ReactiveSessionTarget` routing summary when a session is loaded. The modal status dialog remains the detailed/debug view; the panel now carries the always-visible macro/snapshot/state/harmony/preview/routing signal required for performance use.
 
 Phase 5k adds the first controller-feedback read model. `ReactiveActionSlotRunner::controller_feedback_summary(...)` exposes bounded slot rows with action identity, availability, enabled state, latest-attempted state, and deterministic feedback values: `0` for unavailable or disabled, `32` for enabled idle, and `127` for the latest attempted enabled slot.
 
@@ -297,7 +299,7 @@ Build the MVP as three small vertical slices:
    - Add feedback only where existing Generic MIDI or control surface APIs already support it.
 
 3. Performance panel and rhythm prototype:
-   - Add a small Cue-page panel with action bank, macro bank, active state, and next action preview.
+   - Add a small Cue-page panel with action bank, macro bank, Macro Snapshot state, active state, and next action preview.
    - Add a LuaProc rhythm script with density, chance, priority, rotation, and quantized parameter latching.
 
 ## Open Questions

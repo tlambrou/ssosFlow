@@ -204,6 +204,7 @@ ReactiveActionEngine::load_document (ReactiveActionDocument const& document, std
 	_sequential_positions.clear ();
 	_macros.clear ();
 	_macro_snapshots.clear ();
+	_macro_snapshot_order.clear ();
 	_states.clear ();
 	_harmony.clear ();
 	_last_action.clear ();
@@ -487,6 +488,40 @@ ReactiveActionEngine::harmony_value (std::string const& name) const
 	return found->second;
 }
 
+std::vector<ReactiveMacroSnapshotSummary>
+ReactiveActionEngine::macro_snapshot_summary (size_t max_snapshots, size_t max_values) const
+{
+	std::vector<ReactiveMacroSnapshotSummary> summary;
+	if (max_snapshots == 0) {
+		return summary;
+	}
+
+	summary.reserve (max_snapshots);
+	for (std::vector<std::string>::const_iterator name = _macro_snapshot_order.begin (); name != _macro_snapshot_order.end () && summary.size () < max_snapshots; ++name) {
+		std::map<std::string, MacroSnapshot>::const_iterator snapshot = _macro_snapshots.find (*name);
+		if (snapshot == _macro_snapshots.end ()) {
+			continue;
+		}
+
+		ReactiveMacroSnapshotSummary row;
+		row.slot = summary.size ();
+		row.name = snapshot->first;
+		row.value_count = snapshot->second.size ();
+		row.values.reserve (max_values);
+
+		for (MacroSnapshot::const_iterator value = snapshot->second.begin (); value != snapshot->second.end () && row.values.size () < max_values; ++value) {
+			ReactiveMacroSnapshotValueSummary value_row;
+			value_row.name = value->first;
+			value_row.value = value->second;
+			row.values.push_back (value_row);
+		}
+
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
 bool
 ReactiveActionEngine::preview_plan_commands (std::vector<ReactiveCommand> const& input, ReactiveMidiEvent const* event, std::vector<ReactiveCommand>& output, std::string& error) const
 {
@@ -584,6 +619,7 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 	std::vector<ReactiveCommand> planned;
 	std::map<std::string, double> macros = _macros;
 	std::map<std::string, MacroSnapshot> macro_snapshots = _macro_snapshots;
+	std::vector<std::string> macro_snapshot_order = _macro_snapshot_order;
 	std::map<std::string, std::string> states = _states;
 	std::map<std::string, std::string> harmony = _harmony;
 
@@ -592,6 +628,9 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 	for (std::vector<ReactiveCommand>::const_iterator command = input.begin (); command != input.end (); ++command) {
 		ReactiveCommand resolved = resolve_command_value (*command, event);
 		if (resolved.type == ReactiveCommand::MacroSnapshotStore) {
+			if (macro_snapshots.find (resolved.name) == macro_snapshots.end ()) {
+				macro_snapshot_order.push_back (resolved.name);
+			}
 			macro_snapshots[resolved.name] = macros;
 			continue;
 		}
@@ -646,6 +685,7 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 
 	_macros = macros;
 	_macro_snapshots = macro_snapshots;
+	_macro_snapshot_order = macro_snapshot_order;
 	_states = states;
 	_harmony = harmony;
 	output = planned;

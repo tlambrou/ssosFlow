@@ -127,6 +127,7 @@ public:
 	std::vector<ReactiveControllerFeedbackSummary> controller_feedback_summary (size_t max_slots) const;
 	std::vector<ReactiveControllerFeedbackMidiMessage> controller_feedback_midi_messages (std::vector<ReactiveControllerFeedbackBinding> const&) const;
 	std::vector<ReactiveMacroSlotSummary> macro_bank_summary (size_t max_slots) const;
+	std::vector<ReactiveMacroSnapshotSummary> macro_snapshot_summary (size_t max_snapshots, size_t max_values) const;
 	std::vector<ReactiveStateSlotSummary> state_bank_summary (size_t max_slots) const;
 	std::vector<ReactiveHarmonySlotSummary> harmony_bank_summary (size_t max_slots) const;
 	ReactiveActionPreviewSummary preview_slot (size_t slot);
@@ -167,6 +168,7 @@ public:
 	std::string format_panel_summary (size_t max_items) const;
 	std::string format_action_bank_summary (size_t max_slots) const;
 	std::string format_macro_bank_summary (size_t max_slots) const;
+	std::string format_macro_snapshot_summary (size_t max_snapshots, size_t max_values) const;
 	std::string format_state_bank_summary (size_t max_slots) const;
 	std::string format_harmony_bank_summary (size_t max_slots) const;
 

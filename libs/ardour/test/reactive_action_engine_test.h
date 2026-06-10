@@ -33,6 +33,7 @@ class ReactiveActionEngineTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (trackMacroAndStateValuesFromSelectedCommands);
 	CPPUNIT_TEST (trackHarmonyValuesAndConditions);
 	CPPUNIT_TEST (storeAndRecallMacroSnapshotValues);
+	CPPUNIT_TEST (summarizeMacroSnapshotMetadata);
 	CPPUNIT_TEST (rejectMissingMacroSnapshotRecallWithoutChangingLastAction);
 	CPPUNIT_TEST (morphBetweenMacroSnapshots);
 	CPPUNIT_TEST (morphBetweenMacroSnapshotsWithMidiValue);
@@ -70,6 +71,7 @@ public:
 	void trackMacroAndStateValuesFromSelectedCommands ();
 	void trackHarmonyValuesAndConditions ();
 	void storeAndRecallMacroSnapshotValues ();
+	void summarizeMacroSnapshotMetadata ();
 	void rejectMissingMacroSnapshotRecallWithoutChangingLastAction ();
 	void morphBetweenMacroSnapshots ();
 	void morphBetweenMacroSnapshotsWithMidiValue ();

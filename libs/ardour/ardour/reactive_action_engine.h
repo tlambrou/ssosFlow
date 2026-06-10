@@ -61,6 +61,18 @@ struct LIBARDOUR_API ReactiveActionPlan {
 	std::vector<ReactiveCommand> commands;
 };
 
+struct LIBARDOUR_API ReactiveMacroSnapshotValueSummary {
+	std::string name;
+	double value = 0.0;
+};
+
+struct LIBARDOUR_API ReactiveMacroSnapshotSummary {
+	size_t slot = 0;
+	std::string name;
+	size_t value_count = 0;
+	std::vector<ReactiveMacroSnapshotValueSummary> values;
+};
+
 class LIBARDOUR_API ReactiveActionEngine {
 public:
 	bool load_document (ReactiveActionDocument const&, std::string& error);
@@ -79,6 +91,7 @@ public:
 	double macro_value (std::string const& name) const;
 	std::string state_value (std::string const& name) const;
 	std::string harmony_value (std::string const& name) const;
+	std::vector<ReactiveMacroSnapshotSummary> macro_snapshot_summary (size_t max_snapshots, size_t max_values) const;
 	std::string last_action () const { return _last_action; }
 
 	ReactiveActionDocument const& document () const { return _document; }
@@ -94,6 +107,7 @@ private:
 	std::map<std::string, size_t> _sequential_positions;
 	std::map<std::string, double> _macros;
 	std::map<std::string, MacroSnapshot> _macro_snapshots;
+	std::vector<std::string> _macro_snapshot_order;
 	std::map<std::string, std::string> _states;
 	std::map<std::string, std::string> _harmony;
 	bool _transport_rolling = false;

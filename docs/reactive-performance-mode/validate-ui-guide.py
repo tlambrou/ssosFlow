@@ -63,6 +63,7 @@ REQUIRED_COPY = {
     "View full size",
     "Scene State",
     "MIDI Input",
+    "Macro Snapshots",
     "source=bytes",
     "matches=1",
     "speed=0.00 record=off loop=off locate=idle",

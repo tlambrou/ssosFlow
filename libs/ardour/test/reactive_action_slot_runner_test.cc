@@ -1303,6 +1303,75 @@ ReactiveActionSlotRunnerTest::summarizeMacroBankForPerformancePanel ()
 }
 
 void
+ReactiveActionSlotRunnerTest::summarizeMacroSnapshotsForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT (runner.macro_snapshot_summary (8, 2).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Macro snapshots: none"), runner.format_macro_snapshot_summary (8, 2));
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION store.verse\n"
+		"DO macro filter 0.25\n"
+		"DO macro resonance 0.70\n"
+		"DO macro snapshot store verse\n"
+		"END\n"
+		"ACTION store.chorus\n"
+		"DO macro drive 0.33\n"
+		"DO macro filter 0.80\n"
+		"DO macro resonance 0.20\n"
+		"DO macro snapshot store chorus\n"
+		"END\n"
+		"ACTION recall.verse\n"
+		"DO macro snapshot recall verse ramp 0|2|0\n"
+		"END\n"
+		"ACTION morph.half\n"
+		"DO macro morph verse chorus amount 0.50 ramp 0|1|0\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+	CPPUNIT_ASSERT (runner.macro_snapshot_summary (8, 2).empty ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (1, target).ok);
+
+	std::vector<ReactiveMacroSnapshotSummary> summary = runner.macro_snapshot_summary (8, 2);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("verse"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].value_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].values.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), summary[0].values[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, summary[0].values[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("resonance"), summary[0].values[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.70, summary[0].values[1].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chorus"), summary[1].name);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary[1].value_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[1].values.size ());
+
+	std::string formatted = runner.format_macro_snapshot_summary (8, 2);
+	CPPUNIT_ASSERT (formatted.find ("0: verse - 2 values (filter=0.25, resonance=0.7)") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("1: chorus - 3 values (drive=0.33, filter=0.8, ...)") != std::string::npos);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (2, target).ok);
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (3, target).ok);
+	summary = runner.macro_snapshot_summary (8, 2);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("verse"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chorus"), summary[1].name);
+
+	formatted = runner.format_panel_summary (2);
+	CPPUNIT_ASSERT (formatted.find ("Macro Snapshots: verse[filter=0.25, resonance=0.7], chorus[drive=0.33, filter=0.8, ...]") != std::string::npos);
+
+	runner.clear ();
+	CPPUNIT_ASSERT (runner.macro_snapshot_summary (8, 2).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Macro snapshots: none"), runner.format_macro_snapshot_summary (8, 2));
+}
+
+void
 ReactiveActionSlotRunnerTest::summarizeStateBankForPerformancePanel ()
 {
 	ReactiveActionSlotRunner runner;
@@ -1707,7 +1776,7 @@ ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
 	RecordingTarget target;
 	std::string error;
 
-	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMIDI Input: none\nMacros: none\nStates: none\nHarmony: none"), runner.format_panel_summary (2));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Next: none\nMIDI Input: none\nMacros: none\nMacro Snapshots: none\nStates: none\nHarmony: none"), runner.format_panel_summary (2));
 
 	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
 		"ACTION setup\n"
