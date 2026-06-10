@@ -602,6 +602,12 @@ Phase 5w adds the first track-state read model:
 - The formatted track-state summary displays rows such as `0: Reactive Rhythm Lane - active unmuted unsoloed rec-off gain=1.00` and uses `rec=-` for non-track routes.
 - The existing status dialog and Cue-page panel summary display this read-only section next to session state, routing, and trigger-slot state without adding new route-mutating commands.
 
+Phase 5x extends the session transport read model:
+
+- `ReactiveSessionStateSummary` now includes transport speed, session record-enabled state, play-loop state, and locate-pending state from Ardour's existing `Session` APIs.
+- The formatted session-state summary displays rows such as `stopped @ 1|1|0 speed=0.00 record=off loop=off locate=idle tempo=120.00 meter=4/4 sample=0 routes=3 trigger-routes=3`.
+- The status dialog and Cue-page panel receive these fields through the existing `format_session_state_summary()` path, keeping the slice read-only and avoiding new transport ownership, realtime callbacks, or UI-specific state.
+
 Phase 5f adds an explicit mode-arm toggle:
 
 - `ReactiveActionSlotRunner` exposes enabled/disabled state and a compact status string for the status panel.

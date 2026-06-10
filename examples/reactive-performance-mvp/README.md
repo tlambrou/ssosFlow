@@ -38,7 +38,7 @@ The bundled MVP map uses:
 ## Smoke Check
 
 1. Open `Reactive/show-action-document-status`.
-2. Confirm the action document source is `session`, twelve actions are loaded, Session State shows stopped/rolling transport, BBT, tempo, meter, sample position, and route counts, Track State shows active/mute/solo/record/gain values for controller-facing routes, and the Trigger Slots section shows seeded clips such as `Reactive Cue 0 Reset` plus empty slots.
+2. Confirm the action document source is `session`, twelve actions are loaded, Session State shows stopped/rolling transport plus speed, record, loop, locate, BBT, tempo, meter, sample position, and route counts, Track State shows active/mute/solo/record/gain values for controller-facing routes, and the Trigger Slots section shows seeded clips such as `Reactive Cue 0 Reset` plus empty slots.
 3. Trigger note 36 and confirm route 0 receives `Reactive Rhythm State MVP`, resets rhythm parameters, updates the harmony bank to `key = C_minor`, `scale = aeolian`, `chord = i`, keeps Session State and Track State visible, keeps route 0 trigger slot 0 visible as `Reactive Cue 0 Reset playable`, and launches cue row 0 if it exists.
 4. Trigger notes 37, 38, and 39 to change route 0 rhythm density, chance, priority, or rotation, and confirm the harmony bank moves through `iv`, `VI`, and `V`.
 5. While transport is stopped, trigger note 40 and confirm transport starts; while transport is rolling, trigger note 41 or live trigger note 46 and confirm cue row 4 launches if it exists.
