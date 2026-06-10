@@ -50,6 +50,13 @@ matches_marker_event (ReactiveTrigger const& trigger, ReactiveMarkerEvent const&
 	       trigger.name == event.name;
 }
 
+static bool
+matches_scene_event (ReactiveTrigger const& trigger, ReactiveSceneEvent const& event)
+{
+	return trigger.type == ReactiveTrigger::Scene &&
+	       trigger.number == event.number;
+}
+
 static double
 normalized_midi_value (ReactiveMidiEvent const& event)
 {
@@ -135,6 +142,14 @@ ReactiveMarkerEvent::named (std::string const& name)
 	return event;
 }
 
+ReactiveSceneEvent
+ReactiveSceneEvent::numbered (int number)
+{
+	ReactiveSceneEvent event;
+	event.number = number;
+	return event;
+}
+
 bool
 ReactiveActionEngine::load_document (ReactiveActionDocument const& document, std::string& error)
 {
@@ -187,6 +202,33 @@ ReactiveActionEngine::match_marker_event (ReactiveMarkerEvent const& event) cons
 
 		for (std::vector<ReactiveTrigger>::const_iterator trigger = action.triggers.begin (); trigger != action.triggers.end (); ++trigger) {
 			if (!matches_marker_event (*trigger, event)) {
+				continue;
+			}
+
+			ReactiveActionMatch match;
+			match.action = &action;
+			match.action_index = action_index;
+			match.chain_mode = action.chain_mode;
+			match.quantize = action.quantize;
+			matches.push_back (match);
+			break;
+		}
+	}
+
+	return matches;
+}
+
+std::vector<ReactiveActionMatch>
+ReactiveActionEngine::match_scene_event (ReactiveSceneEvent const& event) const
+{
+	std::vector<ReactiveActionMatch> matches;
+	std::vector<ReactiveAction> const& actions = _document.actions ();
+
+	for (size_t action_index = 0; action_index < actions.size (); ++action_index) {
+		ReactiveAction const& action = actions[action_index];
+
+		for (std::vector<ReactiveTrigger>::const_iterator trigger = action.triggers.begin (); trigger != action.triggers.end (); ++trigger) {
+			if (!matches_scene_event (*trigger, event)) {
 				continue;
 			}
 

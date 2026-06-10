@@ -177,6 +177,17 @@ parse_trigger (std::vector<std::string> const& tokens, size_t line_number, React
 		return true;
 	}
 
+	if (tokens[1] == "scene") {
+		if (tokens.size () != 3 || !parse_nonnegative_int (tokens[2], trigger.number)) {
+			result.error = line_error (line_number, "invalid scene trigger");
+			return false;
+		}
+
+		trigger.type = ReactiveTrigger::Scene;
+		action.triggers.push_back (trigger);
+		return true;
+	}
+
 	if (tokens.size () < 5 || tokens[1] != "midi") {
 		result.error = line_error (line_number, "invalid trigger");
 		return false;

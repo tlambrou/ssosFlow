@@ -13,8 +13,10 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (executeMidiCCTriggerRhythmRouteValueFromController);
 	CPPUNIT_TEST (executeMidiBytesThroughRunner);
 	CPPUNIT_TEST (executeMarkerTriggerByDocumentOrder);
+	CPPUNIT_TEST (executeSceneTriggerByDocumentOrder);
 	CPPUNIT_TEST (reportMidiEventWithoutLoadedDocumentOrMatch);
 	CPPUNIT_TEST (reportMarkerEventWithoutLoadedDocumentOrMatch);
+	CPPUNIT_TEST (reportSceneEventWithoutLoadedDocumentOrMatch);
 	CPPUNIT_TEST (reportUnsupportedMidiBytes);
 	CPPUNIT_TEST (executeBuiltInMvpFallbackRhythmDemo);
 	CPPUNIT_TEST (reportMissingDocumentAndOutOfRangeSlot);
@@ -36,6 +38,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (previewSlotForPerformancePanelWithoutMutatingState);
 	CPPUNIT_TEST (previewMidiEventForPerformancePanel);
 	CPPUNIT_TEST (previewMarkerEventForPerformancePanel);
+	CPPUNIT_TEST (previewSceneEventForPerformancePanel);
 	CPPUNIT_TEST (formatCompactPanelSummaryForCuePage);
 	CPPUNIT_TEST (transportProviderControlsSlotConditions);
 	CPPUNIT_TEST (transportProviderControlsMidiConditions);
@@ -45,6 +48,7 @@ class ReactiveActionSlotRunnerTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath);
 	CPPUNIT_TEST (queueQuantizedMidiActionPreservesControllerValue);
 	CPPUNIT_TEST (queueQuantizedMarkerActionUsingTempoMapClock);
+	CPPUNIT_TEST (queueQuantizedSceneActionUsingTempoMapClock);
 	CPPUNIT_TEST (queueQuantizedMidiBytesUsingTempoMapClock);
 	CPPUNIT_TEST (clearAndLoadDocumentClearQueuedActions);
 	CPPUNIT_TEST (disabledPerformanceModeDoesNotQueueActions);
@@ -58,8 +62,10 @@ public:
 	void executeMidiCCTriggerRhythmRouteValueFromController ();
 	void executeMidiBytesThroughRunner ();
 	void executeMarkerTriggerByDocumentOrder ();
+	void executeSceneTriggerByDocumentOrder ();
 	void reportMidiEventWithoutLoadedDocumentOrMatch ();
 	void reportMarkerEventWithoutLoadedDocumentOrMatch ();
+	void reportSceneEventWithoutLoadedDocumentOrMatch ();
 	void reportUnsupportedMidiBytes ();
 	void executeBuiltInMvpFallbackRhythmDemo ();
 	void reportMissingDocumentAndOutOfRangeSlot ();
@@ -81,6 +87,7 @@ public:
 	void previewSlotForPerformancePanelWithoutMutatingState ();
 	void previewMidiEventForPerformancePanel ();
 	void previewMarkerEventForPerformancePanel ();
+	void previewSceneEventForPerformancePanel ();
 	void formatCompactPanelSummaryForCuePage ();
 	void transportProviderControlsSlotConditions ();
 	void transportProviderControlsMidiConditions ();
@@ -90,6 +97,7 @@ public:
 	void zeroQuantizeSlotActionExecutesImmediatelyThroughQueuePath ();
 	void queueQuantizedMidiActionPreservesControllerValue ();
 	void queueQuantizedMarkerActionUsingTempoMapClock ();
+	void queueQuantizedSceneActionUsingTempoMapClock ();
 	void queueQuantizedMidiBytesUsingTempoMapClock ();
 	void clearAndLoadDocumentClearQueuedActions ();
 	void disabledPerformanceModeDoesNotQueueActions ();

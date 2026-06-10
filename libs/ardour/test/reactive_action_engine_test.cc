@@ -222,6 +222,67 @@ ReactiveActionEngineTest::keepDocumentOrderForMultipleMarkerMatches ()
 }
 
 void
+ReactiveActionEngineTest::ignoreSceneTriggersForMidiAndMarker ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION scene.drop\n"
+		"TRIGGER scene 3\n"
+		"DO cue 3\n"
+		"END\n");
+
+	CPPUNIT_ASSERT (engine.match_midi_event (ReactiveMidiEvent::note_on (10, 36, 100)).empty ());
+	CPPUNIT_ASSERT (engine.match_marker_event (ReactiveMarkerEvent::named ("Drop")).empty ());
+}
+
+void
+ReactiveActionEngineTest::matchSceneTriggerByIndex ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION scene.drop\n"
+		"TRIGGER scene 3\n"
+		"QUANTIZE 0|1|0\n"
+		"CHAIN sequential\n"
+		"DO cue 3\n"
+		"END\n"
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 1\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_scene_event (ReactiveSceneEvent::numbered (3));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches.size ());
+	CPPUNIT_ASSERT (matches[0].action != 0);
+	CPPUNIT_ASSERT_EQUAL (std::string ("scene.drop"), matches[0].action->name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
+	CPPUNIT_ASSERT (ReactiveChainMode::Sequential == matches[0].chain_mode);
+	CPPUNIT_ASSERT_EQUAL (1, matches[0].quantize.beats);
+	CPPUNIT_ASSERT (engine.match_scene_event (ReactiveSceneEvent::numbered (4)).empty ());
+}
+
+void
+ReactiveActionEngineTest::keepDocumentOrderForMultipleSceneMatches ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION first\n"
+		"TRIGGER scene 2\n"
+		"DO cue 0\n"
+		"END\n"
+		"ACTION second\n"
+		"TRIGGER scene 2\n"
+		"DO cue 1\n"
+		"END\n");
+
+	std::vector<ReactiveActionMatch> matches = engine.match_scene_event (ReactiveSceneEvent::numbered (2));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), matches.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), matches[0].action->name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("second"), matches[1].action->name);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), matches[0].action_index);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), matches[1].action_index);
+}
+
+void
 ReactiveActionEngineTest::keepDocumentOrderForMultipleMatches ()
 {
 	ReactiveActionEngine engine = engine_from_source (
