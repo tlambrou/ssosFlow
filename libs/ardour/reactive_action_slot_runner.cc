@@ -1546,6 +1546,12 @@ ReactiveActionSlotRunner::format_queued_action_summary (size_t max_items, Tempor
 		if (i->due) {
 			text << " - due";
 		}
+		if (!i->command_summaries.empty ()) {
+			text << "\n    Commands:";
+			for (std::vector<std::string>::const_iterator command = i->command_summaries.begin (); command != i->command_summaries.end (); ++command) {
+				text << "\n    - " << *command;
+			}
+		}
 	}
 
 	return text.str ();

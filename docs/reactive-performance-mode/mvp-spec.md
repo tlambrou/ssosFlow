@@ -643,7 +643,7 @@ Phase 5n wires those feedback bindings to Generic MIDI's output port through a c
 Phase 5o adds the first backend queued-action scheduler:
 
 - `ReactiveActionScheduler` queues already-planned actions with slot index, action name, primary trigger label, quantize value, requested BBT, due BBT, and planned commands.
-- The scheduler reports bounded queued-action summary rows for UI/status surfaces, including formatted request/due times, command count, and whether the item is currently due.
+- The scheduler reports bounded queued-action summary rows for UI/status surfaces, including formatted request/due times, command count, bounded command details, and whether the item is currently due.
 - `pop_due(...)` releases due actions in deterministic due-time order, preserving queue id order for actions due at the same BBT.
 - Zero-quantize plans are treated as due at the request BBT even when a later due BBT is supplied, so immediate actions cannot get stuck in the queue.
 - This slice is deliberately backend-only and non-realtime. The later session-clock bridge should compute due BBT from Ardour's `TempoMap`, enqueue non-immediate actions from the runner, and execute popped actions from a safe UI/session context.
@@ -654,7 +654,7 @@ Phase 5p connects the scheduler to the runner without adding realtime session ev
 - Nonzero-quantize plans are queued with caller-supplied requested/due BBT values and do not dispatch target commands until `release_due_queued_actions(...)` is called.
 - Zero-quantize plans still execute immediately through the existing executor path.
 - Queued MIDI-triggered plans preserve the matched action slot and event-derived values such as `DO macro <name> midi-value` and `DO macro morph <from> <to> amount midi-value`.
-- The runner exposes bounded queued-action summaries and a compact formatter for future Cue-page/status UI display.
+- The runner exposes bounded queued-action summaries and a compact formatter for Cue-page/status UI display, including resolved command details from the frozen queued plan.
 - Clearing/replacing the action document and disabling Reactive Performance Mode clear pending queued actions, keeping disarm/reload behavior predictable under performance pressure.
 - This remains a non-realtime bridge. The next slice should compute due BBT from Ardour's `TempoMap` and poll/release due actions from a safe GTK/session clock context before any native `SessionEvent` design.
 
@@ -664,7 +664,7 @@ Phase 5q connects queued actions to the session clock without adding a native re
 - The runner now has TempoMap-backed `execute_or_queue_slot(...)`, `execute_or_queue_midi_event(...)`, and `execute_or_queue_midi_bytes(...)` overloads, so callers do not parse preview text or guess an action's quantize value before planning.
 - `ARDOUR_UI` uses the current session transport sample to compute the request BBT, then routes manual panel/status actions and Generic MIDI trigger bytes through the queue-aware runner path.
 - The Cue-page Reactive Performance panel polls queued actions from GTK space every 100 ms and releases due actions through `ReactiveSessionTarget`, keeping execution out of realtime callbacks.
-- The always-visible panel summary and detailed status dialog now include queued-action summary text so performers can see pending quantized work.
+- The always-visible panel summary and detailed status dialog now include queued-action summary text and command details so performers can see pending quantized work and what it will do when released.
 - This is still an MVP clock bridge: it uses polling rather than sample-accurate native `SessionEvent` scheduling, and exact hardware/controller smoke testing remains follow-up.
 
 Phase 5s makes queued quantized actions visible in that controller-feedback model:
@@ -674,6 +674,13 @@ Phase 5s makes queued quantized actions visible in that controller-feedback mode
 - Latest-attempted feedback takes priority over queued feedback for the same slot, so a just-pressed quantized action still gives immediate full-bright confirmation while it remains pending.
 - Queued feedback clears when pending actions release, when Reactive Performance Mode is disabled, or when the action document is cleared/reloaded through the existing queue-clearing paths.
 - The existing cached Generic MIDI feedback bridge inherits the queued value through `controller_feedback_midi_messages(...)`; no new realtime scheduling or hardware-specific controller behavior is added in this slice.
+
+Phase 5t makes queued-action previews more useful under performance pressure:
+
+- `ReactiveQueuedActionSummary` now carries a bounded list of musician-readable command summaries copied from the queued plan.
+- The summaries are generated after action planning, so queued MIDI-triggered actions preserve already-resolved controller values such as CC-derived macro values and macro morph amounts.
+- `ReactiveActionSlotRunner::format_queued_action_summary(...)` prints those command details under each pending action for the status dialog and Cue-page panel read model.
+- The output remains bounded and read-only; queued execution, release ordering, and realtime boundaries are unchanged.
 
 Phase 6: add reactive rhythm buffer processing, LuaProc script or processor insertion, and demo routing.
 
@@ -765,8 +772,8 @@ Phase 7m seeds the first region-trigger landmark in the repeatable template:
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, macro snapshot/morph syntax, route-scoped rhythm `midi-value`, and harmony commands/conditions.
 - Engine tests cover action lookup, chain state, literal and event-derived macro state, macro snapshot recall, literal and MIDI-derived macro morphs, harmony state and conditions, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
-- Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
-- Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
+- Scheduler tests cover queued-action summaries with bounded command details, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
+- Runner queue tests cover quantized slot/MIDI action queuing, formatted queued command details, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
 - Session-target tests cover route-scoped rhythm insertion, parameter writes, missing-target errors, and routing summaries with live rhythm parameter values.
 - Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
