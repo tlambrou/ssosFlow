@@ -263,6 +263,20 @@ namespace ARDOUR { namespace LuaAPI {
 	bool ensure_session_marker (ARDOUR::Session* session, const std::string& name, Temporal::timepos_t const& position);
 
 	/**
+	 * Ensure a visible MIDI region exists on the named route playlist.
+	 *
+	 * If a visible region with the same name already exists on that route, no
+	 * new region is created. Intended for non-realtime setup scripts and
+	 * SessionInit helpers.
+	 */
+	bool ensure_session_midi_region (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		const std::string& region_name,
+		Temporal::timepos_t const& position,
+		Temporal::timecnt_t const& length);
+
+	/**
 	 * Generic conversion from audio sample count to timecode.
 	 * (TimecodeType, sample-rate, sample-pos)
 	 */

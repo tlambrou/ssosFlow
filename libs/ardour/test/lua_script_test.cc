@@ -5,11 +5,15 @@
 #include "ardour/audio_track.h"
 #include "ardour/audioengine.h"
 #include "ardour/location.h"
+#include "ardour/lua_api.h"
 #include "ardour/luabindings.h"
 #include "ardour/luascripting.h"
 #include "ardour/lua_script_params.h"
+#include "ardour/midi_track.h"
+#include "ardour/playlist.h"
 #include "ardour/plugin_manager.h"
 #include "ardour/plugin_insert.h"
+#include "ardour/region.h"
 #include "ardour/session.h"
 
 #include "lua_script_test.h"
@@ -95,6 +99,30 @@ count_named_markers (Session& session, std::string const& name)
 	return count;
 }
 
+static size_t
+count_named_regions_on_route (Session& session, std::string const& route_name, std::string const& region_name)
+{
+	std::shared_ptr<Route> route = session.route_by_name (route_name);
+	std::shared_ptr<MidiTrack> midi_track = std::dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track) {
+		return 0;
+	}
+
+	std::shared_ptr<Playlist> playlist = midi_track->playlist ();
+	if (!playlist) {
+		return 0;
+	}
+
+	size_t count = 0;
+	playlist->foreach_region ([&count, &region_name] (std::shared_ptr<Region> region) {
+		if (region && !region->hidden () && region->name () == region_name) {
+			++count;
+		}
+	});
+
+	return count;
+}
+
 static std::string
 reactive_template_path ()
 {
@@ -119,6 +147,7 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"function ardour (entry) ardour_metadata = entry end\n"
 		"created_tracks = {}\n"
 		"created_markers = {}\n"
+		"created_regions = {}\n"
 		"saved = false\n"
 		"ARDOUR = {\n"
 		"  LuaAPI = {\n"
@@ -133,6 +162,10 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"    ensure_session_marker = function (session, name, position)\n"
 		"      table.insert (created_markers, { name = name, position = position })\n"
 		"      return true\n"
+		"    end,\n"
+		"    ensure_session_midi_region = function (session, route_name, region_name, position, length)\n"
+		"      table.insert (created_regions, { route_name = route_name, region_name = region_name, position = position, length = length })\n"
+		"      return true\n"
 		"    end\n"
 		"  },\n"
 		"  DataType = function (name) return { name = name } end,\n"
@@ -144,6 +177,9 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"}\n"
 		"Temporal = {\n"
 		"  timepos_t = function (samples)\n"
+		"    return { samples = function () return samples end }\n"
+		"  end,\n"
+		"  timecnt_t = function (samples)\n"
 		"    return { samples = function () return samples end }\n"
 		"  end\n"
 		"}\n"
@@ -179,6 +215,11 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (#created_markers == 1, 'expected one seeded marker')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_markers[1].name == 'Breakdown', 'expected Breakdown marker')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_markers[1].position:samples () > 0, 'expected positive marker position')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (#created_regions == 1, 'expected one seeded region landmark')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].route_name == 'Reactive Rhythm Lane', 'expected region on rhythm lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].region_name == 'Breakdown Loop', 'expected Breakdown Loop region')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].position:samples () > 0, 'expected positive region position')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].length:samples () > 0, 'expected positive region length')"));
 	int const save_type = lua.do_command ("assert (saved == true, 'expected template to save session')");
 	CPPUNIT_ASSERT_EQUAL (0, save_type);
 }
@@ -310,6 +351,55 @@ LuaScriptTest::reactive_performance_lua_api_ensures_session_marker_test ()
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_marker (Session, 'Breakdown', Temporal.timepos_t (96000)) == true)"));
 	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_markers (*_session, "Breakdown"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_marker (Session, '', Temporal.timepos_t (48000)) == false)"));
+}
+
+void
+LuaScriptTest::reactive_performance_lua_api_ensures_midi_region_test ()
+{
+	LuaState lua (false, false);
+	LuaBindings::stddef (lua.getState ());
+	LuaBindings::common (lua.getState ());
+	LuaBindings::non_rt (lua.getState ());
+	LuaBindings::set_session (lua.getState (), _session);
+
+	std::list<std::shared_ptr<MidiTrack> > tracks = _session->new_midi_track (
+		ChanCount (DataType::MIDI, 1),
+		ChanCount (DataType::MIDI, 1),
+		false,
+		PluginInfoPtr (),
+		nullptr,
+		std::shared_ptr<RouteGroup> (),
+		1,
+		"Reactive Rhythm Lane",
+		PresentationInfo::max_order,
+		Normal,
+		false,
+		true);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), tracks.size ());
+
+	CPPUNIT_ASSERT_EQUAL (size_t (0), count_named_regions_on_route (*_session, "Reactive Rhythm Lane", "Breakdown Loop"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Reactive Rhythm Lane', 'Breakdown Loop', Temporal.timepos_t (48000 * 16), Temporal.timecnt_t (48000 * 4)) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_regions_on_route (*_session, "Reactive Rhythm Lane", "Breakdown Loop"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Reactive Rhythm Lane', 'Breakdown Loop', Temporal.timepos_t (48000 * 20), Temporal.timecnt_t (48000 * 4)) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_regions_on_route (*_session, "Reactive Rhythm Lane", "Breakdown Loop"));
+	CPPUNIT_ASSERT (!ARDOUR::LuaAPI::ensure_session_midi_region (nullptr, "Reactive Rhythm Lane", "Breakdown Loop", Temporal::timepos_t (48000), Temporal::timecnt_t (48000)));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, '', 'Missing Route Name', Temporal.timepos_t (48000), Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Reactive Rhythm Lane', '', Temporal.timepos_t (48000), Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Reactive Rhythm Lane', 'Bad Position', Temporal.timepos_t (-1), Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Reactive Rhythm Lane', 'Bad Length', Temporal.timepos_t (48000), Temporal.timecnt_t (0)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Missing Lane', 'Missing Loop', Temporal.timepos_t (48000), Temporal.timecnt_t (48000)) == false)"));
+
+	AudioTrackList audio_tracks = _session->new_audio_track (
+		1,
+		1,
+		std::shared_ptr<RouteGroup> (),
+		1,
+		"Audio Lane",
+		PresentationInfo::max_order,
+		Normal,
+		false);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), audio_tracks.size ());
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Audio Lane', 'Audio Region Rejected', Temporal.timepos_t (48000), Temporal.timecnt_t (48000)) == false)"));
 }
 
 void

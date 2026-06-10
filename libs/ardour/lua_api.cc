@@ -33,11 +33,18 @@
 #include "ardour/lua_api.h"
 #include "ardour/luaproc.h"
 #include "ardour/luascripting.h"
+#include "ardour/midi_playlist.h"
+#include "ardour/midi_source.h"
+#include "ardour/midi_track.h"
+#include "ardour/playlist.h"
 #include "ardour/plugin.h"
 #include "ardour/plugin_insert.h"
 #include "ardour/plugin_manager.h"
 #include "ardour/readable.h"
+#include "ardour/region.h"
 #include "ardour/region_factory.h"
+#include "ardour/route.h"
+#include "ardour/session.h"
 #include "ardour/simple_export.h"
 #include "ardour/source_factory.h"
 #include "ardour/uri_map.h"
@@ -890,6 +897,65 @@ ARDOUR::LuaAPI::ensure_session_marker (Session* session, const std::string& name
 	}
 
 	locations->add (new Location (*session, position, position, name, Location::IsMark), false);
+	return true;
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_region (
+	Session* session,
+	const std::string& route_name,
+	const std::string& region_name,
+	Temporal::timepos_t const& position,
+	Temporal::timecnt_t const& length)
+{
+	if (!session || route_name.empty () || region_name.empty () || position.is_negative () || !length.is_positive ()) {
+		return false;
+	}
+
+	std::shared_ptr<Route> route = session->route_by_name (route_name);
+	std::shared_ptr<MidiTrack> midi_track = std::dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track) {
+		return false;
+	}
+
+	std::shared_ptr<Playlist> playlist = midi_track->playlist ();
+	if (!playlist) {
+		return false;
+	}
+
+	bool exists = false;
+	playlist->foreach_region ([&exists, &region_name] (std::shared_ptr<Region> region) {
+		if (region && !region->hidden () && region->name () == region_name) {
+			exists = true;
+		}
+	});
+	if (exists) {
+		return true;
+	}
+
+	std::shared_ptr<MidiSource> source;
+	try {
+		source = session->create_midi_source_for_session (region_name);
+	} catch (...) {
+		return false;
+	}
+	if (!source) {
+		return false;
+	}
+
+	PropertyList plist;
+	plist.add (Properties::start, Temporal::timepos_t (0));
+	plist.add (Properties::length, length);
+	plist.add (Properties::name, region_name);
+	plist.add (Properties::layer, 0);
+	plist.add (Properties::opaque, true);
+
+	std::shared_ptr<Region> region = RegionFactory::create (std::dynamic_pointer_cast<Source> (source), plist, true);
+	if (!region) {
+		return false;
+	}
+
+	playlist->add_region (region, position);
 	return true;
 }
 

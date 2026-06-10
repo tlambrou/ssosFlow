@@ -157,6 +157,21 @@ local function seed_demo_markers ()
 	ARDOUR.LuaAPI.ensure_session_marker (Session, "Breakdown", Temporal.timepos_t (sample_rate * 16))
 end
 
+local function seed_demo_regions ()
+	local sample_rate = 48000
+	local session_sample_rate = Session:nominal_sample_rate ()
+	if session_sample_rate and session_sample_rate > 0 then
+		sample_rate = session_sample_rate
+	end
+
+	ARDOUR.LuaAPI.ensure_session_midi_region (
+		Session,
+		"Reactive Rhythm Lane",
+		"Breakdown Loop",
+		Temporal.timepos_t (sample_rate * 24),
+		Temporal.timecnt_t (sample_rate * 4))
+end
+
 function factory () return function ()
 	local group = ARDOUR.RouteGroup ()
 	local input = ARDOUR.ChanCount (ARDOUR.DataType ("midi"), 1)
@@ -206,6 +221,7 @@ function factory () return function ()
 		true)
 
 	seed_demo_markers ()
+	seed_demo_regions ()
 	install_demo_action_document ()
 
 	Session:save_state ("")
