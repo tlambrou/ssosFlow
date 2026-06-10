@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Cue-page Reactive Performance panel</title>
+  <desc id="desc">Screenshot-style Cue page with the Reactive Performance panel showing mode, slots, macros, states, routing, and queued action preview.</desc>
+  <rect width="1200" height="760" fill="#15191c"/>
+  <rect x="0" y="0" width="1200" height="54" fill="#23282b"/>
+  <circle cx="28" cy="27" r="10" fill="#ff6257"/>
+  <circle cx="55" cy="27" r="10" fill="#ffbd2e"/>
+  <circle cx="82" cy="27" r="10" fill="#28c840"/>
+  <text x="116" y="36" fill="#eef3f2" font-family="Arial, sans-serif" font-size="22" font-weight="700">Cues - reactive-mvp-demo</text>
+  <rect x="0" y="54" width="1200" height="92" fill="#1d2326"/>
+  <rect x="26" y="76" width="168" height="46" rx="5" fill="#1d5e33" stroke="#7cc36f"/>
+  <text x="52" y="106" fill="#ffffff" font-family="Arial, sans-serif" font-size="19" font-weight="700">Mode Enabled</text>
+  <rect x="214" y="76" width="116" height="46" rx="5" fill="#2f373b" stroke="#506068"/>
+  <text x="246" y="106" fill="#ffffff" font-family="Arial, sans-serif" font-size="19">Reload</text>
+  <rect x="348" y="76" width="116" height="46" rx="5" fill="#2f373b" stroke="#506068"/>
+  <text x="382" y="106" fill="#ffffff" font-family="Arial, sans-serif" font-size="19">Status</text>
+  <rect x="492" y="76" width="304" height="46" rx="5" fill="#101416" stroke="#506068"/>
+  <text x="516" y="106" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18">Next: demo.cue.reset @ bar</text>
+  <rect x="826" y="76" width="332" height="46" rx="5" fill="#101416" stroke="#506068"/>
+  <text x="850" y="106" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Action doc: session, 12 actions</text>
+  <rect x="0" y="146" width="1200" height="188" fill="#111517"/>
+  <text x="26" y="184" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Reactive Performance</text>
+  <g>
+    <rect x="26" y="208" width="122" height="76" rx="6" fill="#1f6b77" stroke="#50bfd5"/>
+    <text x="50" y="238" fill="#ffffff" font-family="Arial, sans-serif" font-size="17" font-weight="700">Slot 0</text>
+    <text x="50" y="264" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">reset</text>
+  </g>
+  <g>
+    <rect x="164" y="208" width="122" height="76" rx="6" fill="#25323a" stroke="#506068"/>
+    <text x="188" y="238" fill="#ffffff" font-family="Arial, sans-serif" font-size="17" font-weight="700">Slot 1</text>
+    <text x="188" y="264" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">tighten</text>
+  </g>
+  <g>
+    <rect x="302" y="208" width="122" height="76" rx="6" fill="#25323a" stroke="#506068"/>
+    <text x="326" y="238" fill="#ffffff" font-family="Arial, sans-serif" font-size="17" font-weight="700">Slot 2</text>
+    <text x="326" y="264" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">sparse</text>
+  </g>
+  <g>
+    <rect x="440" y="208" width="122" height="76" rx="6" fill="#25323a" stroke="#506068"/>
+    <text x="464" y="238" fill="#ffffff" font-family="Arial, sans-serif" font-size="17" font-weight="700">Slot 3</text>
+    <text x="464" y="264" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">drop</text>
+  </g>
+  <rect x="598" y="194" width="268" height="114" rx="6" fill="#20282c" stroke="#39444a"/>
+  <text x="622" y="226" fill="#50bfd5" font-family="Arial, sans-serif" font-size="17" font-weight="700">Macro bank</text>
+  <text x="622" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">filter 0.55 | texture 0.40</text>
+  <text x="622" y="286" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">space 0.70</text>
+  <rect x="890" y="194" width="268" height="114" rx="6" fill="#20282c" stroke="#39444a"/>
+  <text x="914" y="226" fill="#50bfd5" font-family="Arial, sans-serif" font-size="17" font-weight="700">State and routing</text>
+  <text x="914" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">chord i7 | section region</text>
+  <text x="914" y="286" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">route 0 density 0.45</text>
+  <rect x="0" y="334" width="260" height="426" fill="#20262a"/>
+  <rect x="260" y="334" width="940" height="426" fill="#111517"/>
+  <text x="44" y="394" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="700">Reactive Rhythm Lane</text>
+  <text x="44" y="476" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="700">Reactive Harmony Lane</text>
+  <text x="44" y="558" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="700">Reactive Macro Lane</text>
+  <g>
+    <rect x="292" y="374" width="110" height="74" rx="6" fill="#1f6b77" stroke="#50bfd5"/>
+    <text x="318" y="418" fill="#ffffff" font-family="Arial, sans-serif" font-size="18">Cue 0</text>
+    <rect x="416" y="374" width="110" height="74" rx="6" fill="#1f6b77" stroke="#50bfd5"/>
+    <text x="442" y="418" fill="#ffffff" font-family="Arial, sans-serif" font-size="18">Cue 1</text>
+    <rect x="540" y="374" width="110" height="74" rx="6" fill="#1f6b77" stroke="#50bfd5"/>
+    <text x="566" y="418" fill="#ffffff" font-family="Arial, sans-serif" font-size="18">Cue 2</text>
+    <rect x="292" y="536" width="110" height="74" rx="6" fill="#70352f" stroke="#ff6c5f"/>
+    <text x="318" y="580" fill="#ffffff" font-family="Arial, sans-serif" font-size="18">Macro</text>
+  </g>
+  <rect x="716" y="430" width="396" height="80" rx="6" fill="#211d13" stroke="#f6ca63"/>
+  <text x="740" y="462" fill="#f6ca63" font-family="Arial, sans-serif" font-size="18" font-weight="700">Queued preview</text>
+  <text x="740" y="492" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">demo.filter.sweep releases at next bar</text>
+</svg>

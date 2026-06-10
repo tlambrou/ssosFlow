@@ -26,12 +26,14 @@
   <path d="M930 286 l8 8 l8-8" fill="none" stroke="#aab4b0" stroke-width="3"/>
   <text x="438" y="368" fill="#eef3f2" font-family="Arial, sans-serif" font-size="21">Demo bindings</text>
   <rect x="438" y="386" width="520" height="188" rx="5" fill="#111517" stroke="#39444a"/>
-  <text x="462" y="426" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Ch 10 notes 36-43</text>
-  <text x="690" y="426" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">Trigger reactive slots</text>
-  <text x="462" y="470" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Ch 10 note 44</text>
-  <text x="690" y="470" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">Show action status</text>
-  <text x="462" y="514" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Ch 10 note 45</text>
-  <text x="690" y="514" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">Reload action document</text>
-  <text x="462" y="558" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Ch 1 CC 22</text>
-  <text x="690" y="558" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">Rhythm density macro</text>
+  <text x="462" y="420" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 notes 36-43</text>
+  <text x="690" y="420" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Trigger reactive slots</text>
+  <text x="462" y="456" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 note 44</text>
+  <text x="690" y="456" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Show action status</text>
+  <text x="462" y="492" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 note 45</text>
+  <text x="690" y="492" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Reload document</text>
+  <text x="462" y="528" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 note 47</text>
+  <text x="690" y="528" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Toggle mode</text>
+  <text x="462" y="564" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 1 CC 22</text>
+  <text x="690" y="564" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Rhythm density macro</text>
 </svg>

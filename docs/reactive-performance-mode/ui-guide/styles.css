@@ -24,6 +24,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  overflow-x: hidden;
 }
 
 .topbar {
@@ -34,6 +35,13 @@ body {
   padding: 28px clamp(18px, 4vw, 56px);
   border-bottom: 1px solid var(--line);
   background: #15191d;
+}
+
+.topbar-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .eyebrow,
@@ -57,6 +65,7 @@ h1 {
   font-size: clamp(28px, 4vw, 48px);
   line-height: 1.05;
   letter-spacing: 0;
+  overflow-wrap: normal;
 }
 
 h2 {
@@ -67,6 +76,8 @@ h2 {
 p {
   color: var(--muted);
   line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 main {
@@ -90,10 +101,15 @@ button {
   white-space: nowrap;
 }
 
-.status-grid,
-.test-grid {
+.status-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.test-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -161,15 +177,26 @@ button {
 }
 
 code {
-  display: block;
-  overflow-x: auto;
-  padding: 12px;
-  border-radius: 6px;
+  display: inline;
+  padding: 2px 5px;
+  border-radius: 4px;
   background: #0b0f11;
   color: #d9efe9;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.command code,
+.test-grid code {
+  display: block;
+  overflow-x: auto;
+  padding: 12px;
+  border-radius: 6px;
   line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .notice {
@@ -368,6 +395,16 @@ figcaption {
 }
 
 @media (max-width: 860px) {
+  h1 {
+    font-size: 26px;
+    line-height: 1.08;
+  }
+
+  main {
+    width: 100%;
+    padding: 28px 16px 56px;
+  }
+
   .topbar,
   .command-panel,
   .step {
@@ -376,6 +413,12 @@ figcaption {
 
   .topbar {
     display: grid;
+    width: 100%;
+    padding: 28px 20px;
+  }
+
+  .topbar-links {
+    justify-content: flex-start;
   }
 
   .status-grid,
@@ -385,6 +428,26 @@ figcaption {
 
   .doc-link {
     width: fit-content;
+  }
+
+  .command {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .command button {
+    position: static;
+    width: fit-content;
+  }
+
+  .command code,
+  .test-grid code {
+    max-width: 100%;
+    overflow-x: hidden;
+    white-space: normal;
+    word-break: break-all;
   }
 
   .progress-panel {
