@@ -91,12 +91,17 @@
 #include "ardour/disk_reader.h"
 #include "ardour/disk_writer.h"
 #include "ardour/filesystem_paths.h"
+#include "ardour/location.h"
 #include "ardour/monitor_control.h"
 #include "ardour/midi_track.h"
+#include "ardour/playlist.h"
 #include "ardour/port.h"
 #include "ardour/plugin_manager.h"
 #include "ardour/process_thread.h"
 #include "ardour/profile.h"
+#include "ardour/reactive_action_document_loader.h"
+#include "ardour/reactive_session_target.h"
+#include "ardour/region.h"
 #include "ardour/revision.h"
 #include "ardour/session_directory.h"
 #include "ardour/session_route.h"
@@ -108,7 +113,12 @@
 #include "ardour/vca_manager.h"
 #include "ardour/utils.h"
 
+#include "temporal/tempo.h"
+#include "temporal/timeline.h"
+
 #include "LuaBridge/LuaBridge.h"
+
+#include "control_protocol/basic_ui.h"
 
 #ifdef PLATFORM_WINDOWS
 #include "pbd/windows_mmcss.h"
@@ -203,6 +213,74 @@ using namespace ArdourWidgets;
 using namespace Gtk;
 using namespace std;
 using namespace Editing;
+
+namespace {
+
+static vector<ReactiveMarkerObservation>
+reactive_marker_observations (Session& session)
+{
+	vector<ReactiveMarkerObservation> markers;
+
+	Locations const* locations = session.locations ();
+	if (!locations) {
+		return markers;
+	}
+
+	Locations::LocationList const& list = locations->list ();
+	for (Locations::LocationList::const_iterator location = list.begin (); location != list.end (); ++location) {
+		if (!*location || !(*location)->is_mark () || (*location)->is_hidden () || (*location)->name ().empty ()) {
+			continue;
+		}
+
+		markers.push_back (ReactiveMarkerObservation::at ((*location)->name (), (*location)->start_sample ()));
+	}
+
+	return markers;
+}
+
+static vector<ReactiveRegionObservation>
+reactive_region_observations (Session& session)
+{
+	vector<ReactiveRegionObservation> observations;
+	std::shared_ptr<RouteList> tracks = session.get_tracks ();
+	if (!tracks) {
+		return observations;
+	}
+
+	size_t route_order = 0;
+	for (RouteList::const_iterator route = tracks->begin (); route != tracks->end (); ++route, ++route_order) {
+		std::shared_ptr<Track> track = std::dynamic_pointer_cast<Track> (*route);
+		if (!track) {
+			continue;
+		}
+
+		std::shared_ptr<Playlist> playlist = track->playlist ();
+		if (!playlist) {
+			continue;
+		}
+
+		std::shared_ptr<RegionList> regions = playlist->region_list ();
+		if (!regions) {
+			continue;
+		}
+
+		for (RegionList::const_iterator region = regions->begin (); region != regions->end (); ++region) {
+			if (!*region || (*region)->hidden () || (*region)->name ().empty ()) {
+				continue;
+			}
+
+			observations.push_back (ReactiveRegionObservation::at (
+				(*region)->name (),
+				(*region)->position_sample (),
+				track->name (),
+				route_order));
+		}
+	}
+
+	return observations;
+}
+
+} // namespace
 
 ARDOUR_UI *ARDOUR_UI::theArdourUI = 0;
 
@@ -431,6 +509,8 @@ ARDOUR_UI::ARDOUR_UI (int *argcp, char **argvp[], const char* localedir)
 	/* handle dialog requests */
 
 	ARDOUR::Session::Dialog.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::session_dialog, this, _1), gui_context());
+	BasicUI::ReactiveMidiBytes.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::trigger_reactive_midi_bytes, this, _1), gui_context());
+	BasicUI::ReactiveFeedbackBindingsChanged.connect (forever_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::set_reactive_controller_feedback_bindings, this, _1), gui_context());
 
 	/* handle pending state with a dialog (PROBLEM: needs to return a value and thus cannot be x-thread) */
 
@@ -3144,7 +3224,546 @@ ARDOUR_UI::trigger_cue_row (int r)
 		return;
 	}
 
+	trigger_reactive_scene_event (r);
 	_basic_ui->trigger_cue_row (r);
+}
+
+bool
+ARDOUR_UI::ensure_reactive_action_document ()
+{
+	_reactive_action_slots.set_transport_rolling_provider ([this] () {
+		return _session && _session->transport_state_rolling ();
+	});
+
+	std::string session_path = _session ? _session->path () : std::string ();
+
+	if (_reactive_action_slots.loaded () && _reactive_action_document_session_path == session_path) {
+		return true;
+	}
+
+	return load_reactive_action_document (false);
+}
+
+bool
+ARDOUR_UI::load_reactive_action_document (bool report_success)
+{
+	std::string session_path = _session ? _session->path () : std::string ();
+	ReactiveActionDocumentLoadResult load_result;
+
+	if (!ReactiveActionDocumentLoader::load_from_paths (
+		    _reactive_action_slots,
+		    session_path,
+		    user_config_directory (),
+		    ReactiveActionDocumentLoader::mvp_fallback_source (),
+		    load_result)) {
+		_reactive_action_document_load_result = load_result;
+		_reactive_action_document_session_path.clear ();
+		_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+		_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+		warning << string_compose (_("Could not load Reactive Performance action document: %1"), load_result.error) << endmsg;
+		return false;
+	}
+
+	_reactive_action_document_load_result = load_result;
+	_reactive_action_document_session_path = session_path;
+	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	if (report_success) {
+		info << ReactiveActionDocumentLoader::describe_load_result (load_result) << endmsg;
+	}
+
+	return true;
+}
+
+bool
+ARDOUR_UI::reload_reactive_action_document_from_disk (bool report_success)
+{
+	if (!_session) {
+		warning << _("Reactive action document reload ignored: no session is loaded") << endmsg;
+		return false;
+	}
+
+	_reactive_action_slots.clear ();
+	_reactive_action_document_session_path.clear ();
+	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	return load_reactive_action_document (report_success);
+}
+
+void
+ARDOUR_UI::reload_reactive_action_document ()
+{
+	reload_reactive_action_document_from_disk (true);
+	reactive_performance_changed ();
+}
+
+Temporal::BBT_Time
+ARDOUR_UI::reactive_performance_bbt_now () const
+{
+	if (!_session) {
+		return Temporal::BBT_Time ();
+	}
+
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	return tmap->bbt_at (Temporal::timepos_t (_session->transport_sample ()));
+}
+
+void
+ARDOUR_UI::toggle_reactive_performance_mode ()
+{
+	_reactive_action_slots.set_performance_enabled (!_reactive_action_slots.performance_enabled ());
+	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	info << _reactive_action_slots.format_performance_mode_status () << endmsg;
+	reactive_performance_changed ();
+}
+
+void
+ARDOUR_UI::show_reactive_action_document_status ()
+{
+	if (!_session) {
+		warning << _("Reactive action document status ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	ensure_reactive_action_document ();
+
+	const int toggle_mode_response = 1000;
+	const int trigger_slot_response_base = 1100;
+
+	ArdourDialog dialog (_("Reactive Performance"), true, false);
+	ReactiveSessionTarget target (*_session);
+	Gtk::Label status;
+	status.set_alignment (0.0, 0.0);
+	status.set_line_wrap (true);
+	status.set_selectable (true);
+
+	std::vector<Gtk::Button*> slot_buttons;
+	slot_buttons.reserve (8);
+	for (int slot = 0; slot < 8; ++slot) {
+		Gtk::Button* button = dialog.add_button ("", trigger_slot_response_base + slot);
+		button->set_size_request (120, 44);
+		slot_buttons.push_back (button);
+	}
+
+	Gtk::Button* mode_button = dialog.add_button ("", toggle_mode_response);
+	mode_button->set_size_request (120, 44);
+	dialog.add_button (_("Reload"), RESPONSE_APPLY);
+	dialog.add_button (Stock::CLOSE, RESPONSE_CLOSE);
+
+	const auto status_text = [&]() {
+		return _reactive_action_slots.format_performance_mode_status () +
+			"\n\n" +
+			ReactiveActionDocumentLoader::format_status (_reactive_action_document_load_result) +
+			"\n\n" +
+			_reactive_action_slots.format_last_execution_status () +
+			"\n\n" +
+			_reactive_action_slots.format_midi_input_summary () +
+			"\n\n" +
+			_reactive_action_slots.format_performance_control_summary (8) +
+			"\n\n" +
+			_reactive_action_slots.format_next_action_preview () +
+			"\n\n" +
+			_reactive_action_slots.format_queued_action_summary (8, reactive_performance_bbt_now ()) +
+			"\n\n" +
+			target.format_session_state_summary () +
+			"\n\n" +
+			target.format_track_state_summary (8) +
+			"\n\n" +
+			target.format_mixer_scene_summary (8) +
+			"\n\n" +
+			target.format_routing_summary (8) +
+			"\n\n" +
+			target.format_trigger_slot_summary (8, 4) +
+			"\n\n" +
+			_reactive_action_slots.format_action_bank_summary (8) +
+			"\n\n" +
+			_reactive_action_slots.format_macro_bank_summary (8) +
+			"\n\n" +
+			_reactive_action_slots.format_macro_snapshot_summary (8, 4) +
+			"\n\n" +
+			_reactive_action_slots.format_state_bank_summary (8) +
+			"\n\n" +
+			_reactive_action_slots.format_harmony_bank_summary (8);
+	};
+
+	const auto refresh_controls = [&]() {
+		std::vector<ReactivePerformanceControlSummary> const controls = _reactive_action_slots.performance_control_summary (slot_buttons.size ());
+		for (size_t slot = 0; slot < slot_buttons.size (); ++slot) {
+			if (slot < controls.size ()) {
+				slot_buttons[slot]->set_label (controls[slot].button_label);
+				slot_buttons[slot]->set_sensitive (controls[slot].enabled);
+			} else {
+				std::ostringstream label;
+				label << slot << " empty";
+				slot_buttons[slot]->set_label (label.str ());
+				slot_buttons[slot]->set_sensitive (false);
+			}
+		}
+
+		mode_button->set_label (_reactive_action_slots.performance_enabled () ? _("Disable Mode") : _("Enable Mode"));
+		status.set_text (status_text ());
+	};
+
+	dialog.get_vbox()->pack_start (status, true, true, 12);
+	dialog.set_default_response (RESPONSE_CLOSE);
+	dialog.set_resizable (true);
+	refresh_controls ();
+	dialog.show_all ();
+
+	while (true) {
+		int const response = dialog.run ();
+		if (response == RESPONSE_APPLY) {
+			reload_reactive_action_document_from_disk (true);
+			reactive_performance_changed ();
+		} else if (response == toggle_mode_response) {
+			toggle_reactive_performance_mode ();
+		} else if (response >= trigger_slot_response_base && response < trigger_slot_response_base + 8) {
+			int const slot = response - trigger_slot_response_base;
+			Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+			ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_slot (
+				static_cast<size_t> (slot),
+				target,
+				*tmap,
+				reactive_performance_bbt_now ());
+			if (!result.ok) {
+				warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
+			}
+			reactive_performance_changed ();
+		} else {
+			break;
+		}
+
+		refresh_controls ();
+		dialog.show_all ();
+	}
+}
+
+std::vector<ReactivePerformanceControlSummary>
+ARDOUR_UI::reactive_performance_control_summary (size_t max_slots)
+{
+	if (_session) {
+		ensure_reactive_action_document ();
+	}
+
+	return _reactive_action_slots.performance_control_summary (max_slots);
+}
+
+std::string
+ARDOUR_UI::reactive_performance_panel_summary (size_t max_items)
+{
+	if (_session) {
+		ensure_reactive_action_document ();
+	}
+
+	std::string summary = _reactive_action_slots.format_panel_summary (max_items);
+	summary += "\n";
+	summary += _reactive_action_slots.format_queued_action_summary (max_items, reactive_performance_bbt_now ());
+	summary += "\n";
+
+	if (_session) {
+		ReactiveSessionTarget target (*_session);
+		summary += target.format_session_state_summary ();
+		summary += "\n";
+		summary += target.format_track_state_summary (max_items);
+		summary += "\n";
+		summary += target.format_mixer_scene_summary (max_items);
+		summary += "\n";
+		summary += target.format_routing_summary (max_items);
+		summary += "\n";
+		summary += target.format_trigger_slot_summary (max_items, 2);
+	} else {
+		summary += "Session State: none";
+		summary += "\n";
+		summary += "Track State: none";
+		summary += "\n";
+		summary += "Routing: none";
+		summary += "\n";
+		summary += "Trigger Slots: none";
+	}
+
+	return summary;
+}
+
+bool
+ARDOUR_UI::reactive_performance_enabled () const
+{
+	return _reactive_action_slots.performance_enabled ();
+}
+
+void
+ARDOUR_UI::set_reactive_controller_feedback_bindings (std::vector<ReactiveControllerFeedbackBinding> bindings)
+{
+	_reactive_controller_feedback_bindings = bindings;
+	update_reactive_controller_feedback ();
+}
+
+void
+ARDOUR_UI::update_reactive_controller_feedback ()
+{
+	std::vector<ReactiveControllerFeedbackMidiMessage> messages;
+
+	if (!_reactive_controller_feedback_bindings.empty ()) {
+		if (_session) {
+			ensure_reactive_action_document ();
+		}
+		messages = _reactive_action_slots.controller_feedback_midi_messages (_reactive_controller_feedback_bindings);
+	}
+
+	BasicUI::ReactiveFeedbackMidiMessagesChanged (messages);
+}
+
+void
+ARDOUR_UI::reactive_performance_changed ()
+{
+	update_reactive_controller_feedback ();
+	ReactivePerformanceChanged (); // EMIT SIGNAL
+}
+
+void
+ARDOUR_UI::trigger_reactive_action (int slot)
+{
+	if (!_session) {
+		warning << _("Reactive action ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	if (slot < 0) {
+		warning << string_compose (_("Reactive action slot %1 is invalid"), slot) << endmsg;
+		return;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return;
+	}
+
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_slot (
+		static_cast<size_t> (slot),
+		target,
+		*tmap,
+		reactive_performance_bbt_now ());
+	if (!result.ok) {
+		warning << string_compose (_("Reactive action slot %1 failed: %2"), slot, result.error) << endmsg;
+	}
+	reactive_performance_changed ();
+}
+
+void
+ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
+{
+	if (!_session) {
+		warning << _("Reactive MIDI trigger ignored: no session is loaded") << endmsg;
+		return;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return;
+	}
+
+	unsigned char const* bytes = message.empty () ? 0 : &message[0];
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_midi_bytes (
+		bytes,
+		message.size (),
+		target,
+		*tmap,
+		reactive_performance_bbt_now ());
+	if (!result.ok) {
+		warning << string_compose (_("Reactive MIDI trigger failed: %1"), result.error) << endmsg;
+	}
+	reactive_performance_changed ();
+}
+
+bool
+ARDOUR_UI::trigger_reactive_scene_event (int scene)
+{
+	if (!_session || scene < 0) {
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return false;
+	}
+
+	ReactiveSceneEvent const event = ReactiveSceneEvent::numbered (scene);
+	ReactiveActionPreviewSummary const preview = _reactive_action_slots.preview_scene_event (event);
+	if (!preview.available) {
+		return false;
+	}
+
+	bool const performance_enabled = _reactive_action_slots.performance_enabled ();
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_scene_event (
+		event,
+		target,
+		*tmap,
+		reactive_performance_bbt_now ());
+	if (!result.ok && performance_enabled) {
+		warning << string_compose (_("Reactive scene trigger %1 failed: %2"), scene, result.error) << endmsg;
+	}
+	reactive_performance_changed ();
+	return result.ok;
+}
+
+bool
+ARDOUR_UI::poll_reactive_performance_queue ()
+{
+	bool changed = poll_reactive_performance_markers ();
+	changed = poll_reactive_performance_regions () || changed;
+
+	if (!_session || _reactive_action_slots.queued_action_count () == 0) {
+		return changed;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return changed;
+	}
+
+	size_t const queued_before = _reactive_action_slots.queued_action_count ();
+	ReactiveSessionTarget target (*_session);
+	ReactiveExecutionResult result = _reactive_action_slots.release_due_queued_actions (reactive_performance_bbt_now (), target);
+	size_t const queued_after = _reactive_action_slots.queued_action_count ();
+	changed = changed || queued_before != queued_after || result.commands_executed > 0 || !result.ok;
+
+	if (!result.ok) {
+		warning << string_compose (_("Reactive queued action release failed: %1"), result.error) << endmsg;
+	}
+
+	if (changed) {
+		reactive_performance_changed ();
+	}
+
+	return changed;
+}
+
+bool
+ARDOUR_UI::poll_reactive_performance_regions ()
+{
+	if (!_session) {
+		_reactive_region_crossing_detector.reset ();
+		return false;
+	}
+
+	if (!_reactive_action_slots.performance_enabled ()) {
+		_reactive_region_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		_reactive_region_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	vector<ReactiveRegionObservation> const regions = reactive_region_observations (*_session);
+	vector<ReactiveRegionCrossing> const crossings = _reactive_region_crossing_detector.poll (
+		_session->transport_sample (),
+		_session->transport_state_rolling (),
+		regions);
+
+	if (crossings.empty ()) {
+		return false;
+	}
+
+	bool changed = false;
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+
+	for (vector<ReactiveRegionCrossing>::const_iterator crossing = crossings.begin (); crossing != crossings.end (); ++crossing) {
+		ReactiveRegionEvent const event = ReactiveRegionEvent::named (crossing->name);
+		if (!_reactive_action_slots.preview_region_event (event).available) {
+			continue;
+		}
+
+		ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_region_event (
+			event,
+			target,
+			*tmap,
+			reactive_performance_bbt_now ());
+		changed = true;
+
+		if (!result.ok) {
+			warning << string_compose (_("Reactive region trigger '%1' on '%2' failed: %3"), crossing->name, crossing->route_name, result.error) << endmsg;
+		}
+	}
+
+	if (changed) {
+		reactive_performance_changed ();
+	}
+
+	return changed;
+}
+
+bool
+ARDOUR_UI::poll_reactive_performance_markers ()
+{
+	if (!_session) {
+		_reactive_marker_crossing_detector.reset ();
+		return false;
+	}
+
+	if (!_reactive_action_slots.performance_enabled ()) {
+		_reactive_marker_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		_reactive_marker_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	vector<ReactiveMarkerObservation> const markers = reactive_marker_observations (*_session);
+	vector<ReactiveMarkerCrossing> const crossings = _reactive_marker_crossing_detector.poll (
+		_session->transport_sample (),
+		_session->transport_state_rolling (),
+		markers);
+
+	if (crossings.empty ()) {
+		return false;
+	}
+
+	bool changed = false;
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+
+	for (vector<ReactiveMarkerCrossing>::const_iterator crossing = crossings.begin (); crossing != crossings.end (); ++crossing) {
+		ReactiveMarkerEvent const event = ReactiveMarkerEvent::named (crossing->name);
+		if (!_reactive_action_slots.preview_marker_event (event).available) {
+			continue;
+		}
+
+		ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_marker_event (
+			event,
+			target,
+			*tmap,
+			reactive_performance_bbt_now ());
+		changed = true;
+
+		if (!result.ok) {
+			warning << string_compose (_("Reactive marker trigger '%1' failed: %2"), crossing->name, result.error) << endmsg;
+		}
+	}
+
+	if (changed) {
+		reactive_performance_changed ();
+	}
+
+	return changed;
+}
+
+void
+ARDOUR_UI::reset_reactive_marker_crossing_detector (samplepos_t sample)
+{
+	_reactive_marker_crossing_detector.reset (sample);
+}
+
+void
+ARDOUR_UI::reset_reactive_region_crossing_detector (samplepos_t sample)
+{
+	_reactive_region_crossing_detector.reset (sample);
 }
 
 void

@@ -1,0 +1,125 @@
+ACTION demo.reset
+TRIGGER midi note ch=10 note=36
+DO rhythm insert 0
+DO rhythm route 0 density 1
+DO rhythm route 0 chance 1
+DO rhythm route 0 priority_mode 0
+DO rhythm route 0 rotation 0
+DO harmony key C_minor
+DO harmony scale aeolian
+DO harmony chord i
+DO state groove reset
+DO cue 0
+END
+
+ACTION demo.tighten
+TRIGGER midi note ch=10 note=37
+DO rhythm insert 0
+DO rhythm route 0 density 0.75
+DO rhythm route 0 chance 1
+DO rhythm route 0 priority_mode 3
+DO harmony chord iv
+DO state groove tight
+DO cue 1
+END
+
+ACTION demo.sparse
+TRIGGER midi note ch=10 note=38
+DO rhythm insert 0
+DO rhythm route 0 density 0.35
+DO rhythm route 0 chance 0.5
+DO rhythm route 0 priority_mode 1
+DO harmony chord VI
+DO state groove sparse
+DO cue 2
+END
+
+ACTION demo.rotate
+TRIGGER midi note ch=10 note=39
+DO rhythm insert 0
+DO rhythm route 0 rotation 4
+DO harmony chord V
+DO state groove rotated
+DO cue 3
+END
+
+ACTION demo.play.when.stopped
+TRIGGER midi note ch=10 note=40
+WHEN transport stopped
+DO state transport stopped
+DO transport play
+END
+
+ACTION demo.cue.when.rolling
+TRIGGER midi note ch=10 note=41
+TRIGGER midi note ch=10 note=46
+WHEN transport rolling
+QUANTIZE 1|0|0
+DO state transport rolling
+DO cue 4
+END
+
+ACTION demo.stop.when.rolling
+TRIGGER midi note ch=10 note=42
+WHEN transport rolling
+DO state transport stopping
+DO transport stop
+END
+
+ACTION demo.mark.stopped
+TRIGGER midi note ch=10 note=43
+WHEN transport stopped
+DO state transport stopped-ready
+END
+
+ACTION demo.filter.sweep
+TRIGGER midi cc ch=1 cc=22
+DO rhythm insert 0
+DO rhythm route 0 density midi-value
+DO trigger probability 0 0 midi-value
+DO macro filter midi-value ramp 0|1|0
+DO macro texture 0.20
+DO macro space 0.80
+DO macro snapshot store texture_low
+DO macro texture 0.80
+DO macro space 0.25
+DO macro snapshot store texture_high
+DO macro morph texture_low texture_high amount midi-value ramp 0|1|0
+DO state macro filter
+END
+
+ACTION demo.marker.breakdown
+TRIGGER marker Breakdown
+QUANTIZE 1|0|0
+DO rhythm insert 0
+DO rhythm route 0 density 0.25
+DO rhythm route 0 chance 0.35
+DO macro filter 0.25 ramp 0|1|0
+DO harmony chord bVII
+DO state section breakdown
+DO cue 2
+END
+
+ACTION demo.region.breakdown.loop
+TRIGGER region Breakdown Loop
+QUANTIZE 0|1|0
+DO rhythm insert 0
+DO rhythm route 0 density 0.55
+DO rhythm route 0 chance 0.75
+DO macro filter 0.55 ramp 0|1|0
+DO harmony chord i7
+DO state section region-breakdown
+DO cue 3
+END
+
+ACTION demo.scene.drop
+TRIGGER scene 3
+QUANTIZE 1|0|0
+DO rhythm insert 0
+DO rhythm route 0 density 0.80
+DO rhythm route 0 chance 0.90
+DO rhythm route 0 rotation 2
+DO macro filter 0.70 ramp 0|1|0
+DO harmony chord V7
+DO state section scene-drop
+END

@@ -189,6 +189,25 @@ libardour_sources = [
         'readable.cc',
         'readonly_control.cc',
         'raw_midi_parser.cc',
+        'reactive_action.cc',
+        'reactive_action_clock.cc',
+        'reactive_action_scheduler.cc',
+        'reactive_controller_feedback_midi_cache.cc',
+        'reactive_action_document_loader.cc',
+        'reactive_action_engine.cc',
+        'reactive_action_executor.cc',
+        'reactive_action_slot_runner.cc',
+        'reactive_rhythm_chance_source.cc',
+        'reactive_marker_crossing_detector.cc',
+        'reactive_region_crossing_detector.cc',
+        'reactive_rhythm.cc',
+        'reactive_rhythm_insertion_plan.cc',
+        'reactive_rhythm_route_inserter.cc',
+        'reactive_rhythm_midi_byte_adapter.cc',
+        'reactive_rhythm_midi_buffer_adapter.cc',
+        'reactive_rhythm_midi_adapter.cc',
+        'reactive_rhythm_step_source.cc',
+        'reactive_session_target.cc',
         'recent_sessions.cc',
         'record_enable_control.cc',
         'record_safe_control.cc',
@@ -643,6 +662,29 @@ def build(bld):
             create_ardour_test_program(bld, obj.includes, 'unit-test-playlist_layering', 'test_playlist_layering', ['test/playlist_layering_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-plugins', 'test_plugins', ['test/plugins_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-region_naming', 'test_region_naming', ['test/region_naming_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action', 'test_reactive_action', ['test/reactive_action_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_clock', 'test_reactive_action_clock', ['test/reactive_action_clock_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_document_loader', 'test_reactive_action_document_loader', ['test/reactive_action_document_loader_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_engine', 'test_reactive_action_engine', ['test/reactive_action_engine_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_executor', 'test_reactive_action_executor', ['test/reactive_action_executor_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_scheduler', 'test_reactive_action_scheduler', ['test/reactive_action_scheduler_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_slot_runner', 'test_reactive_action_slot_runner', ['test/reactive_action_slot_runner_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_controller_feedback_midi_cache', 'test_reactive_controller_feedback_midi_cache', ['test/reactive_controller_feedback_midi_cache_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_marker_crossing_detector', 'test_reactive_marker_crossing_detector', ['test/reactive_marker_crossing_detector_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_midi_map', 'test_reactive_midi_map', ['test/reactive_midi_map_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_region_crossing_detector', 'test_reactive_region_crossing_detector', ['test/reactive_region_crossing_detector_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_chance_source', 'test_reactive_rhythm_chance_source', ['test/reactive_rhythm_chance_source_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_insertion_plan', 'test_reactive_rhythm_insertion_plan', ['test/reactive_rhythm_insertion_plan_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_luaproc_harness', 'test_reactive_rhythm_luaproc_harness', ['test/reactive_rhythm_luaproc_harness_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_luaproc_plugininsert', 'test_reactive_rhythm_luaproc_plugininsert', ['test/reactive_rhythm_luaproc_plugininsert_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_route_inserter', 'test_reactive_rhythm_route_inserter', ['test/reactive_rhythm_route_inserter_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm', 'test_reactive_rhythm', ['test/reactive_rhythm_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_byte_adapter', 'test_reactive_rhythm_midi_byte_adapter', ['test/reactive_rhythm_midi_byte_adapter_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_buffer_adapter', 'test_reactive_rhythm_midi_buffer_adapter', ['test/reactive_rhythm_midi_buffer_adapter_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_midi_adapter', 'test_reactive_rhythm_midi_adapter', ['test/reactive_rhythm_midi_adapter_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_step_source', 'test_reactive_rhythm_step_source', ['test/reactive_rhythm_step_source_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_session_target_rhythm_insert', 'test_reactive_session_target_rhythm_insert', ['test/reactive_session_target_rhythm_insert_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_session_target', 'test_reactive_session_target', ['test/reactive_session_target_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-control_surface', 'test_control_surfaces', ['test/control_surfaces_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-mtdm', 'test_mtdm', ['test/mtdm_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-sha1', 'test_sha1', ['test/sha1_test.cc'])
@@ -665,6 +707,29 @@ def build(bld):
             'test/playlist_layering_test.cc',
             'test/plugins_test.cc',
             'test/region_naming_test.cc',
+            'test/reactive_action_test.cc',
+            'test/reactive_action_clock_test.cc',
+            'test/reactive_action_document_loader_test.cc',
+            'test/reactive_action_engine_test.cc',
+            'test/reactive_action_executor_test.cc',
+            'test/reactive_action_scheduler_test.cc',
+            'test/reactive_action_slot_runner_test.cc',
+            'test/reactive_controller_feedback_midi_cache_test.cc',
+            'test/reactive_marker_crossing_detector_test.cc',
+            'test/reactive_midi_map_test.cc',
+            'test/reactive_region_crossing_detector_test.cc',
+            'test/reactive_rhythm_chance_source_test.cc',
+            'test/reactive_rhythm_insertion_plan_test.cc',
+            'test/reactive_rhythm_luaproc_harness_test.cc',
+            'test/reactive_rhythm_luaproc_plugininsert_test.cc',
+            'test/reactive_rhythm_route_inserter_test.cc',
+            'test/reactive_rhythm_test.cc',
+            'test/reactive_rhythm_midi_byte_adapter_test.cc',
+            'test/reactive_rhythm_midi_buffer_adapter_test.cc',
+            'test/reactive_rhythm_midi_adapter_test.cc',
+            'test/reactive_rhythm_step_source_test.cc',
+            'test/reactive_session_target_rhythm_insert_test.cc',
+            'test/reactive_session_target_test.cc',
             'test/control_surfaces_test.cc',
             'test/mtdm_test.cc',
             'test/sha1_test.cc',

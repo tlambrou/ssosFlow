@@ -198,6 +198,8 @@ ARDOUR_UI::set_session (Session *s)
 	_session->StateSaved.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::update_path_label, this), gui_context());
 	_session->RecordStateChanged.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::record_state_changed, this), gui_context());
 	_session->TransportStateChange.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::map_transport_state, this), gui_context());
+	_session->PositionChanged.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::reset_reactive_marker_crossing_detector, this, _1), gui_context());
+	_session->PositionChanged.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::reset_reactive_region_crossing_detector, this, _1), gui_context());
 	_session->DirtyChanged.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::session_dirty_changed, this), gui_context());
 	_session->LatencyUpdated.connect (_session_connections, MISSING_INVALIDATOR, std::bind (&ARDOUR_UI::session_latency_updated, this, _1), gui_context());
 

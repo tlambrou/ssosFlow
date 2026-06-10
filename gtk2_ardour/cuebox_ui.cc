@@ -389,6 +389,9 @@ CueBoxUI::set_all_quantization (Temporal::BBT_Offset const& q, uint64_t idx)
 void
 CueBoxUI::trigger_cue_row (uint64_t n)
 {
+	if (ARDOUR_UI::instance ()) {
+		ARDOUR_UI::instance ()->trigger_reactive_scene_event (static_cast<int> (n));
+	}
 	_session->trigger_cue_row (n);
 }
 

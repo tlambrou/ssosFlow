@@ -23,6 +23,7 @@
 #define ardour_generic_midi_control_protocol_h
 
 #include <list>
+#include <vector>
 
 #define ABSTRACT_UI_EXPORTS
 #include "pbd/abstract_ui.h"
@@ -30,6 +31,8 @@
 
 #include "ardour/types.h"
 #include "ardour/port.h"
+#include "ardour/reactive_action_slot_runner.h"
+#include "ardour/reactive_controller_feedback_midi_cache.h"
 
 #include "control_protocol/control_protocol.h"
 
@@ -50,6 +53,7 @@ namespace MIDI {
 class MIDIControllable;
 class MIDIFunction;
 class MIDIAction;
+class MIDIReactiveAction;
 
 struct GenericMIDIRequest : public BaseUI::BaseRequestObject {
 public:
@@ -147,6 +151,7 @@ private:
 	bool  do_feedback;
 	void _send_feedback ();
 	void  send_feedback ();
+	void set_reactive_feedback_midi_messages (std::vector<ARDOUR::ReactiveControllerFeedbackMidiMessage>);
 
 	typedef std::list<MIDIControllable*> MIDIControllables;
 	MIDIControllables controllables;
@@ -156,6 +161,12 @@ private:
 
 	typedef std::list<MIDIAction*> MIDIActions;
 	MIDIActions actions;
+
+	typedef std::list<MIDIReactiveAction*> MIDIReactiveActions;
+	MIDIReactiveActions reactive_actions;
+
+	std::vector<ARDOUR::ReactiveControllerFeedbackBinding> reactive_feedback_bindings;
+	ARDOUR::ReactiveControllerFeedbackMidiCache reactive_feedback_cache;
 
 	struct MIDIPendingControllable {
 		MIDIControllable* mc;
@@ -180,6 +191,8 @@ private:
 	MIDIControllable* create_binding (const XMLNode&);
 	MIDIFunction* create_function (const XMLNode&);
 	MIDIAction* create_action (const XMLNode&);
+	MIDIReactiveAction* create_reactive_action (const XMLNode&);
+	bool create_reactive_feedback_binding (const XMLNode&, ARDOUR::ReactiveControllerFeedbackBinding&);
 
 	void reset_controllables ();
 

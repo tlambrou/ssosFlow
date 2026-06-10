@@ -17,7 +17,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <cstring>
+#include <vector>
 #include <vamp-hostsdk/PluginLoader.h>
+
+#include "evoral/Note.h"
 
 #include "pbd/basename.h"
 #include "pbd/compose.h"
@@ -29,16 +32,27 @@
 #include "ardour/audiofilesource.h"
 #include "ardour/audiosource.h"
 #include "ardour/internal_send.h"
+#include "ardour/location.h"
 #include "ardour/lua_api.h"
 #include "ardour/luaproc.h"
 #include "ardour/luascripting.h"
+#include "ardour/midi_model.h"
+#include "ardour/midi_region.h"
+#include "ardour/midi_playlist.h"
+#include "ardour/midi_source.h"
+#include "ardour/midi_track.h"
+#include "ardour/playlist.h"
 #include "ardour/plugin.h"
 #include "ardour/plugin_insert.h"
 #include "ardour/plugin_manager.h"
 #include "ardour/readable.h"
+#include "ardour/region.h"
 #include "ardour/region_factory.h"
+#include "ardour/route.h"
+#include "ardour/session.h"
 #include "ardour/simple_export.h"
 #include "ardour/source_factory.h"
+#include "ardour/triggerbox.h"
 #include "ardour/uri_map.h"
 
 #include "LuaBridge/LuaBridge.h"
@@ -48,6 +62,101 @@
 using namespace ARDOUR;
 using namespace PBD;
 using namespace std;
+
+namespace {
+
+struct LuaTriggerNoteSpec {
+	Temporal::Beats start;
+	Temporal::Beats length;
+	int channel = 0;
+	int note = 0;
+	int velocity = 0;
+};
+
+static bool
+valid_trigger_note_spec (LuaTriggerNoteSpec const& note)
+{
+	return note.start.to_ticks () >= 0 && note.length.to_ticks () > 0 &&
+		note.channel >= 0 && note.channel <= 15 &&
+		note.note >= 0 && note.note <= 127 &&
+		note.velocity > 0 && note.velocity <= 127;
+}
+
+static bool
+ensure_session_midi_trigger_region_with_note_specs (
+	Session* session,
+	string const& route_name,
+	int slot,
+	string const& region_name,
+	Temporal::timecnt_t const& length,
+	vector<LuaTriggerNoteSpec> const& notes)
+{
+	if (!session || route_name.empty () || region_name.empty () || slot < 0 || !length.is_positive () || notes.empty ()) {
+		return false;
+	}
+
+	for (vector<LuaTriggerNoteSpec>::const_iterator note = notes.begin (); note != notes.end (); ++note) {
+		if (!valid_trigger_note_spec (*note)) {
+			return false;
+		}
+	}
+
+	shared_ptr<Route> route = session->route_by_name (route_name);
+	shared_ptr<MidiTrack> midi_track = dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track || !route->triggerbox ()) {
+		return false;
+	}
+
+	shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
+	TriggerPtr trigger = triggerbox->trigger (slot);
+	if (!trigger) {
+		return false;
+	}
+
+	if (trigger->the_region ()) {
+		return true;
+	}
+
+	shared_ptr<MidiSource> source;
+	try {
+		source = session->create_midi_source_for_session (region_name);
+	} catch (...) {
+		return false;
+	}
+	if (!source) {
+		return false;
+	}
+
+	PropertyList plist;
+	plist.add (Properties::start, Temporal::timepos_t (0));
+	plist.add (Properties::length, length);
+	plist.add (Properties::name, region_name);
+	plist.add (Properties::layer, 0);
+	plist.add (Properties::opaque, true);
+
+	shared_ptr<Region> region = RegionFactory::create (dynamic_pointer_cast<Source> (source), plist, true);
+	shared_ptr<MidiRegion> midi_region = dynamic_pointer_cast<MidiRegion> (region);
+	if (!midi_region || !midi_region->model ()) {
+		return false;
+	}
+
+	MidiModel::NoteDiffCommand* command = midi_region->model ()->new_note_diff_command ("seed reactive demo trigger notes");
+	for (vector<LuaTriggerNoteSpec>::const_iterator note = notes.begin (); note != notes.end (); ++note) {
+		command->add (shared_ptr<Evoral::Note<Temporal::Beats> > (
+			new Evoral::Note<Temporal::Beats> (
+				static_cast<uint8_t> (note->channel),
+				note->start,
+				note->length,
+				static_cast<uint8_t> (note->note),
+				static_cast<uint8_t> (note->velocity))));
+	}
+	midi_region->model ()->apply_diff_command_only (command);
+	delete command;
+
+	return triggerbox->set_region_for_setup (slot, region);
+}
+
+} // anonymous namespace
 
 int
 ARDOUR::LuaAPI::datatype_ctor_null (lua_State *L)
@@ -867,6 +976,207 @@ ARDOUR::LuaAPI::build_filename (lua_State *L)
 
 	luabridge::Stack<std::string>::push (L, Glib::build_filename (elem));
 	return 1;
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_marker (Session* session, const std::string& name, Temporal::timepos_t const& position)
+{
+	if (!session || name.empty () || position.is_negative ()) {
+		return false;
+	}
+
+	Locations* locations = session->locations ();
+	if (!locations) {
+		return false;
+	}
+
+	Locations::LocationList const& list = locations->list ();
+	for (Locations::LocationList::const_iterator location = list.begin (); location != list.end (); ++location) {
+		if (*location && (*location)->is_mark () && !(*location)->is_hidden () && (*location)->name () == name) {
+			return true;
+		}
+	}
+
+	locations->add (new Location (*session, position, position, name, Location::IsMark), false);
+	return true;
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_region (
+	Session* session,
+	const std::string& route_name,
+	const std::string& region_name,
+	Temporal::timepos_t const& position,
+	Temporal::timecnt_t const& length)
+{
+	if (!session || route_name.empty () || region_name.empty () || position.is_negative () || !length.is_positive ()) {
+		return false;
+	}
+
+	std::shared_ptr<Route> route = session->route_by_name (route_name);
+	std::shared_ptr<MidiTrack> midi_track = std::dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track) {
+		return false;
+	}
+
+	std::shared_ptr<Playlist> playlist = midi_track->playlist ();
+	if (!playlist) {
+		return false;
+	}
+
+	bool exists = false;
+	playlist->foreach_region ([&exists, &region_name] (std::shared_ptr<Region> region) {
+		if (region && !region->hidden () && region->name () == region_name) {
+			exists = true;
+		}
+	});
+	if (exists) {
+		return true;
+	}
+
+	std::shared_ptr<MidiSource> source;
+	try {
+		source = session->create_midi_source_for_session (region_name);
+	} catch (...) {
+		return false;
+	}
+	if (!source) {
+		return false;
+	}
+
+	PropertyList plist;
+	plist.add (Properties::start, Temporal::timepos_t (0));
+	plist.add (Properties::length, length);
+	plist.add (Properties::name, region_name);
+	plist.add (Properties::layer, 0);
+	plist.add (Properties::opaque, true);
+
+	std::shared_ptr<Region> region = RegionFactory::create (std::dynamic_pointer_cast<Source> (source), plist, true);
+	if (!region) {
+		return false;
+	}
+
+	playlist->add_region (region, position);
+	return true;
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_trigger_region (
+	Session* session,
+	const std::string& route_name,
+	int slot,
+	const std::string& region_name,
+	Temporal::timecnt_t const& length)
+{
+	if (!session || route_name.empty () || region_name.empty () || slot < 0 || !length.is_positive ()) {
+		return false;
+	}
+
+	std::shared_ptr<Route> route = session->route_by_name (route_name);
+	std::shared_ptr<MidiTrack> midi_track = std::dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track || !route->triggerbox ()) {
+		return false;
+	}
+
+	std::shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
+	TriggerPtr trigger = triggerbox->trigger (slot);
+	if (!trigger) {
+		return false;
+	}
+
+	if (trigger->the_region ()) {
+		return true;
+	}
+
+	std::shared_ptr<MidiSource> source;
+	try {
+		source = session->create_midi_source_for_session (region_name);
+	} catch (...) {
+		return false;
+	}
+	if (!source) {
+		return false;
+	}
+
+	PropertyList plist;
+	plist.add (Properties::start, Temporal::timepos_t (0));
+	plist.add (Properties::length, length);
+	plist.add (Properties::name, region_name);
+	plist.add (Properties::layer, 0);
+	plist.add (Properties::opaque, true);
+
+	std::shared_ptr<Region> region = RegionFactory::create (std::dynamic_pointer_cast<Source> (source), plist, true);
+	if (!region) {
+		return false;
+	}
+
+	return triggerbox->set_region_for_setup (slot, region);
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_trigger_region_with_note (
+	Session* session,
+	const std::string& route_name,
+	int slot,
+	const std::string& region_name,
+	Temporal::timecnt_t const& length,
+	Temporal::Beats const& note_start,
+	Temporal::Beats const& note_length,
+	int channel,
+	int note,
+	int velocity)
+{
+	LuaTriggerNoteSpec note_spec;
+	note_spec.start = note_start;
+	note_spec.length = note_length;
+	note_spec.channel = channel;
+	note_spec.note = note;
+	note_spec.velocity = velocity;
+
+	vector<LuaTriggerNoteSpec> notes;
+	notes.push_back (note_spec);
+	return ensure_session_midi_trigger_region_with_note_specs (session, route_name, slot, region_name, length, notes);
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_trigger_region_with_notes (
+	Session* session,
+	const std::string& route_name,
+	int slot,
+	const std::string& region_name,
+	Temporal::timecnt_t const& length,
+	luabridge::LuaRef notes_table)
+{
+	if (!notes_table.isTable ()) {
+		return false;
+	}
+
+	vector<LuaTriggerNoteSpec> notes;
+	try {
+		for (luabridge::Iterator i (notes_table); !i.isNil (); ++i) {
+			luabridge::LuaRef entry = i.value ();
+			if (!entry.isTable () ||
+			    entry["start"].isNil () ||
+			    entry["length"].isNil () ||
+			    !entry["channel"].isNumber () ||
+			    !entry["note"].isNumber () ||
+			    !entry["velocity"].isNumber ()) {
+				return false;
+			}
+
+			LuaTriggerNoteSpec note;
+			note.start = entry["start"].cast<Temporal::Beats> ();
+			note.length = entry["length"].cast<Temporal::Beats> ();
+			note.channel = entry["channel"].cast<int> ();
+			note.note = entry["note"].cast<int> ();
+			note.velocity = entry["velocity"].cast<int> ();
+			notes.push_back (note);
+		}
+	} catch (luabridge::LuaException const&) {
+		return false;
+	}
+
+	return ensure_session_midi_trigger_region_with_note_specs (session, route_name, slot, region_name, length, notes);
 }
 
 luabridge::LuaRef::Proxy&

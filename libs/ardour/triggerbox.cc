@@ -4517,6 +4517,50 @@ TriggerBox::set_from_selection (uint32_t slot, std::shared_ptr<Region> region)
 	all_triggers[slot]->set_region (region);
 }
 
+bool
+TriggerBox::set_region_for_setup (uint32_t slot, std::shared_ptr<Region> region)
+{
+	bool empty_changed = false;
+
+	{
+		PBD::RWLock::WriterLock lm (trigger_lock);
+
+		if (slot >= all_triggers.size()) {
+			return false;
+		}
+
+		bool const was_playable = all_triggers[slot]->playable ();
+
+		/* Non-realtime setup path for session templates and tests. This keeps
+		   seeded clips deterministic without waiting for the process thread. */
+		all_triggers[slot]->set_region (region, false);
+
+		bool const is_playable = all_triggers[slot]->playable ();
+		if (was_playable != is_playable) {
+			if (is_playable) {
+				if (_active_slots == 0) {
+					empty_changed = true;
+				}
+				_active_slots++;
+			} else {
+				if (_active_slots) {
+					_active_slots--;
+				}
+				if (_active_slots == 0) {
+					empty_changed = true;
+				}
+			}
+		}
+	}
+
+	TriggerSwapped (slot); /* EMIT SIGNAL */
+	if (empty_changed) {
+		EmptyStatusChanged (); /* EMIT SIGNAL */
+	}
+
+	return true;
+}
+
 void
 TriggerBox::set_from_path (uint32_t slot, std::string const & path)
 {

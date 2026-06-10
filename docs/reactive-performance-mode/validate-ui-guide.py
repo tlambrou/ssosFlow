@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+
+from html.parser import HTMLParser
+from pathlib import Path
+import sys
+
+
+ROOT = Path(__file__).resolve().parents[2]
+GUIDE = ROOT / "docs" / "reactive-performance-mode" / "ui-guide"
+INDEX = GUIDE / "index.html"
+DEMO = ROOT / "docs" / "reactive-performance-mode" / "demo-session.md"
+
+REQUIRED_ASSETS = {
+    "assets/local-launch.svg",
+    "assets/audio-midi-setup.svg",
+    "assets/controller-smoke-check.svg",
+    "assets/new-session-template.svg",
+    "assets/reactive-session-open.svg",
+    "assets/midi-map.svg",
+    "assets/action-status.svg",
+    "assets/reactive-performance-panel.svg",
+}
+
+REQUIRED_SECTIONS = {
+    "launch",
+    "audio-midi",
+    "template",
+    "session",
+    "midi",
+    "status",
+    "panel",
+    "smoke",
+}
+
+REQUIRED_CONTROLS = {
+    "guide-progress",
+    "reset-checklist",
+    "screenshot-viewer",
+    "screenshot-viewer-image",
+    "screenshot-viewer-title",
+    "close-screenshot-viewer",
+}
+
+REQUIRED_SCREENSHOT_ALTS = {
+    "Local Launch",
+    "Audio/MIDI Setup",
+    "New Session",
+    "Reactive session",
+    "Generic MIDI",
+    "Action document status",
+    "Reactive Performance panel",
+    "Controller smoke check",
+}
+
+REQUIRED_COPY = {
+    "Guided Demo Path",
+    "Open Locally",
+    "docs/reactive-performance-mode/ui-guide/index.html",
+    "python3 docs/reactive-performance-mode/validate-ui-guide.py",
+    "Screenshot Walkthrough",
+    "Keyboard Walkthrough",
+    "Use the arrow keys to move between steps",
+    "View full size",
+    "Scene State",
+    "MIDI Input",
+    "Macro Snapshots",
+    "source=bytes",
+    "matches=1",
+    "speed=0.00 record=off loop=off locate=idle",
+    "Track State",
+    "route id",
+    "selected/unselected state",
+}
+
+
+class GuideParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.local_refs = []
+        self.ids = set()
+        self.image_alts = {}
+        self.image_classes = {}
+        self.screenshot_titles = {}
+        self.figure_classes = []
+        self.step_targets = set()
+        self.screenshot_buttons = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if "id" in attrs:
+            self.ids.add(attrs["id"])
+        if "data-step-target" in attrs:
+            self.step_targets.add(attrs["data-step-target"])
+        for key in ("href", "src"):
+            value = attrs.get(key)
+            if value and value.startswith("./"):
+                self.local_refs.append(value[2:])
+        if tag == "img" and attrs.get("src"):
+            src = attrs["src"].removeprefix("./")
+            self.image_alts[src] = attrs.get("alt", "")
+            self.image_classes[src] = set(attrs.get("class", "").split())
+            self.screenshot_titles[src] = attrs.get("data-screenshot-title", "")
+        if tag == "figure":
+            self.figure_classes.append(set(attrs.get("class", "").split()))
+        if tag == "button" and "data-screenshot-src" in attrs:
+            self.screenshot_buttons.append(attrs["data-screenshot-src"].removeprefix("./"))
+
+
+def fail(message):
+    print(f"ui-guide validation failed: {message}", file=sys.stderr)
+    return 1
+
+
+def main():
+    if not INDEX.exists():
+        return fail(f"missing {INDEX.relative_to(ROOT)}")
+    text = INDEX.read_text(encoding="utf-8")
+    parser = GuideParser()
+    parser.feed(text)
+
+    missing_sections = sorted(REQUIRED_SECTIONS - parser.ids)
+    if missing_sections:
+        return fail(f"missing guide sections: {', '.join(missing_sections)}")
+
+    missing_controls = sorted(REQUIRED_CONTROLS - parser.ids)
+    if missing_controls:
+        return fail(f"missing guide controls: {', '.join(missing_controls)}")
+
+    missing_step_targets = sorted(REQUIRED_SECTIONS - parser.step_targets)
+    if missing_step_targets:
+        return fail(f"missing step navigation targets: {', '.join(missing_step_targets)}")
+
+    missing_assets = sorted(asset for asset in REQUIRED_ASSETS if not (GUIDE / asset).exists())
+    if missing_assets:
+        return fail(f"missing required assets: {', '.join(missing_assets)}")
+
+    missing_refs = sorted(ref for ref in parser.local_refs if not (GUIDE / ref).exists())
+    if missing_refs:
+        return fail(f"broken local references: {', '.join(missing_refs)}")
+
+    missing_alt = sorted(asset for asset in REQUIRED_ASSETS if not parser.image_alts.get(asset))
+    if missing_alt:
+        return fail(f"missing image alt text: {', '.join(missing_alt)}")
+
+    missing_screenshot_class = sorted(
+        asset for asset in REQUIRED_ASSETS if "ui-screenshot" not in parser.image_classes.get(asset, set())
+    )
+    if missing_screenshot_class:
+        return fail(f"missing ui-screenshot class: {', '.join(missing_screenshot_class)}")
+
+    missing_screenshot_titles = sorted(asset for asset in REQUIRED_ASSETS if not parser.screenshot_titles.get(asset))
+    if missing_screenshot_titles:
+        return fail(f"missing screenshot viewer titles: {', '.join(missing_screenshot_titles)}")
+
+    missing_screenshot_buttons = sorted(asset for asset in REQUIRED_ASSETS if asset not in parser.screenshot_buttons)
+    if missing_screenshot_buttons:
+        return fail(f"missing screenshot viewer buttons: {', '.join(missing_screenshot_buttons)}")
+
+    screenshot_cards = sum(1 for classes in parser.figure_classes if "screenshot-card" in classes)
+    if screenshot_cards < len(REQUIRED_ASSETS):
+        return fail(f"expected {len(REQUIRED_ASSETS)} screenshot cards, found {screenshot_cards}")
+
+    missing_alt_terms = sorted(term for term in REQUIRED_SCREENSHOT_ALTS if term not in " ".join(parser.image_alts.values()))
+    if missing_alt_terms:
+        return fail(f"screenshot alt text missing terms: {', '.join(missing_alt_terms)}")
+
+    missing_copy = sorted(term for term in REQUIRED_COPY if term not in text)
+    if missing_copy:
+        return fail(f"missing required copy: {', '.join(missing_copy)}")
+
+    demo_text = DEMO.read_text(encoding="utf-8")
+    if "ui-guide/index.html" not in demo_text:
+        return fail("demo-session.md does not link to ui-guide/index.html")
+
+    print("ui-guide validation passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

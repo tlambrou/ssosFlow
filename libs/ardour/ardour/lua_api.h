@@ -255,6 +255,76 @@ namespace ARDOUR { namespace LuaAPI {
 	int build_filename (lua_State *lua);
 
 	/**
+	 * Ensure a visible session marker exists at the given position.
+	 *
+	 * If a visible marker with the same name already exists, no new marker is
+	 * created. Intended for non-realtime setup scripts and SessionInit helpers.
+	 */
+	bool ensure_session_marker (ARDOUR::Session* session, const std::string& name, Temporal::timepos_t const& position);
+
+	/**
+	 * Ensure a visible MIDI region exists on the named route playlist.
+	 *
+	 * If a visible region with the same name already exists on that route, no
+	 * new region is created. Intended for non-realtime setup scripts and
+	 * SessionInit helpers.
+	 */
+	bool ensure_session_midi_region (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		const std::string& region_name,
+		Temporal::timepos_t const& position,
+		Temporal::timecnt_t const& length);
+
+	/**
+	 * Ensure a MIDI TriggerBox slot on the named route has a region.
+	 *
+	 * If the slot already has a region, it is left untouched. Intended for
+	 * non-realtime setup scripts and SessionInit helpers that seed demo cue
+	 * content without overwriting user clips.
+	 */
+	bool ensure_session_midi_trigger_region (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		int slot,
+		const std::string& region_name,
+		Temporal::timecnt_t const& length);
+
+	/**
+	 * Ensure an empty MIDI TriggerBox slot has a region with one note.
+	 *
+	 * If the slot already has any region, it is left untouched. Intended for
+	 * non-realtime setup scripts and SessionInit helpers that seed first demo
+	 * cue content without overwriting user clips.
+	 */
+	bool ensure_session_midi_trigger_region_with_note (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		int slot,
+		const std::string& region_name,
+		Temporal::timecnt_t const& length,
+		Temporal::Beats const& note_start,
+		Temporal::Beats const& note_length,
+		int channel,
+		int note,
+		int velocity);
+
+	/**
+	 * Ensure an empty MIDI TriggerBox slot has a region with multiple notes.
+	 *
+	 * If the slot already has any region, it is left untouched. Notes are
+	 * provided as a Lua table whose entries contain start, length, channel,
+	 * note, and velocity fields.
+	 */
+	bool ensure_session_midi_trigger_region_with_notes (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		int slot,
+		const std::string& region_name,
+		Temporal::timecnt_t const& length,
+		luabridge::LuaRef notes);
+
+	/**
 	 * Generic conversion from audio sample count to timecode.
 	 * (TimecodeType, sample-rate, sample-pos)
 	 */

@@ -37,6 +37,7 @@
 #include "cuebox_ui.h"
 #include "fitted_canvas_widget.h"
 #include "midi_trigger_properties_box.h"
+#include "reactive_performance_panel.h"
 #include "route_processor_selection.h"
 #include "selection_properties_box.h"
 #include "trigger_clip_picker.h"
@@ -113,6 +114,8 @@ private:
 
 	Gtkmm2ext::Bindings* bindings;
 
+	Gtk::VBox                 _main_packer;
+	ReactivePerformancePanel _reactive_performance_panel;
 	Gtk::HBox                 _strip_group_box;
 	Gtk::ScrolledWindow       _strip_scroller;
 	Gtk::HBox                 _strip_packer;
@@ -151,4 +154,3 @@ private:
 	sigc::connection         _fast_screen_update_connection;
 	int                       clip_editor_column;
 };
-

@@ -260,6 +260,7 @@ gtk2_ardour_sources = [
         'rec_info_box.cc',
         'recorder_group_tabs.cc',
         'recorder_ui.cc',
+        'reactive_performance_panel.cc',
         'region_editor.cc',
         'region_editor_window.cc',
         'region_fx_line.cc',

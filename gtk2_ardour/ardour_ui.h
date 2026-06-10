@@ -36,6 +36,7 @@
 
 #include <list>
 #include <cmath>
+#include <vector>
 
 #include "pbd/xml++.h"
 #include <ytkmm/box.h>
@@ -65,6 +66,10 @@
 #include "ardour/types.h"
 #include "ardour/utils.h"
 #include "ardour/plugin.h"
+#include "ardour/reactive_action_document_loader.h"
+#include "ardour/reactive_marker_crossing_detector.h"
+#include "ardour/reactive_region_crossing_detector.h"
+#include "ardour/reactive_action_slot_runner.h"
 #include "ardour/session_handle.h"
 #include "ardour/system_exec.h"
 
@@ -269,6 +274,7 @@ public:
 	   selection, etc) should connect to and handle this.
 	*/
 	PBD::Signal<void()> Escape;
+	PBD::Signal<void()> ReactivePerformanceChanged;
 
 	PublicEditor&	  the_editor() { return *editor;}
 	Mixer_UI* the_mixer() { return mixer; }
@@ -309,6 +315,19 @@ public:
 
 	void trigger_slot (int c, int r);
 	void trigger_cue_row (int r);
+	void trigger_reactive_action (int slot);
+	void trigger_reactive_midi_bytes (std::vector<unsigned char> message);
+	bool trigger_reactive_scene_event (int scene);
+	bool poll_reactive_performance_queue ();
+	void toggle_reactive_performance_mode ();
+	void reload_reactive_action_document ();
+	void show_reactive_action_document_status ();
+	std::vector<ARDOUR::ReactivePerformanceControlSummary> reactive_performance_control_summary (size_t max_slots);
+	std::string reactive_performance_panel_summary (size_t max_items);
+	bool reactive_performance_enabled () const;
+	void set_reactive_controller_feedback_bindings (std::vector<ARDOUR::ReactiveControllerFeedbackBinding>);
+	void update_reactive_controller_feedback ();
+	void reactive_performance_changed ();
 	void stop_all_cues (bool immediately);
 	void stop_cues (int c, bool immediately);
 
@@ -645,6 +664,20 @@ private:
 	void connect_dependents_to_session (ARDOUR::Session *);
 	void we_have_dependents ();
 	void setup_action_tooltips ();
+	bool ensure_reactive_action_document ();
+	bool load_reactive_action_document (bool report_success);
+	bool reload_reactive_action_document_from_disk (bool report_success);
+	Temporal::BBT_Time reactive_performance_bbt_now () const;
+	bool poll_reactive_performance_markers ();
+	bool poll_reactive_performance_regions ();
+	void reset_reactive_marker_crossing_detector (ARDOUR::samplepos_t);
+	void reset_reactive_region_crossing_detector (ARDOUR::samplepos_t);
+	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
+	ARDOUR::ReactiveMarkerCrossingDetector _reactive_marker_crossing_detector;
+	ARDOUR::ReactiveRegionCrossingDetector _reactive_region_crossing_detector;
+	ARDOUR::ReactiveActionDocumentLoadResult _reactive_action_document_load_result;
+	std::string _reactive_action_document_session_path;
+	std::vector<ARDOUR::ReactiveControllerFeedbackBinding> _reactive_controller_feedback_bindings;
 
 	void setup_session_options ();
 
@@ -873,4 +906,3 @@ private:
 
 	PBD::ScopedConnectionList clock_state_connection;
 };
-

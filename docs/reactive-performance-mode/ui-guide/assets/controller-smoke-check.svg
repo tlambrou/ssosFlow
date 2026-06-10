@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1054" height="706" viewBox="0 0 1054 706" role="img" aria-labelledby="title desc">
+  <title id="title">Controller smoke check</title>
+  <desc id="desc">Screenshot-style controller checklist showing the expected Reactive Performance MIDI bindings and feedback.</desc>
+  <rect width="1054" height="706" rx="18" fill="#101416"/>
+  <rect x="2" y="2" width="1050" height="702" rx="18" fill="#20262a" stroke="#4b5257" stroke-width="2"/>
+  <circle cx="34" cy="34" r="12" fill="#ff6257"/>
+  <circle cx="66" cy="34" r="12" fill="#ffbd2e"/>
+  <circle cx="98" cy="34" r="12" fill="#28c840"/>
+  <text x="128" y="42" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Reactive Performance Controller Smoke Check</text>
+  <rect x="54" y="94" width="470" height="520" rx="14" fill="#151a1e" stroke="#39444a"/>
+  <text x="86" y="142" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Channel 10 pads</text>
+  <g font-family="Arial, sans-serif" font-size="18" font-weight="700">
+    <rect x="86" y="178" width="88" height="82" rx="10" fill="#1f6b77" stroke="#50bfd5"/><text x="116" y="226" fill="#ffffff">36</text>
+    <rect x="194" y="178" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="224" y="226" fill="#ffffff">37</text>
+    <rect x="302" y="178" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="332" y="226" fill="#ffffff">38</text>
+    <rect x="410" y="178" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="440" y="226" fill="#ffffff">39</text>
+    <rect x="86" y="282" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="116" y="330" fill="#ffffff">40</text>
+    <rect x="194" y="282" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="224" y="330" fill="#ffffff">41</text>
+    <rect x="302" y="282" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="332" y="330" fill="#ffffff">42</text>
+    <rect x="410" y="282" width="88" height="82" rx="10" fill="#25323a" stroke="#506068"/><text x="440" y="330" fill="#ffffff">43</text>
+    <rect x="86" y="420" width="88" height="82" rx="10" fill="#5a5125" stroke="#d5bc50"/><text x="116" y="468" fill="#ffffff">44</text>
+    <rect x="194" y="420" width="88" height="82" rx="10" fill="#5a5125" stroke="#d5bc50"/><text x="224" y="468" fill="#ffffff">45</text>
+    <rect x="302" y="420" width="88" height="82" rx="10" fill="#70352f" stroke="#ff6c5f"/><text x="332" y="468" fill="#ffffff">47</text>
+  </g>
+  <text x="92" y="546" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">36-43 actions | 44 status | 45 reload | 47 mode</text>
+  <rect x="562" y="94" width="438" height="520" rx="8" fill="#111619" stroke="#39444a"/>
+  <text x="596" y="142" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Expected feedback</text>
+  <rect x="596" y="178" width="370" height="64" rx="6" fill="#20282c" stroke="#39444a"/>
+  <text x="620" y="216" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Note 36</text>
+  <text x="724" y="216" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">demo.cue.reset, C minor</text>
+  <rect x="596" y="264" width="370" height="64" rx="6" fill="#20282c" stroke="#39444a"/>
+  <text x="620" y="302" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Note 39</text>
+  <text x="724" y="302" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">rotation and V chord</text>
+  <rect x="596" y="350" width="370" height="64" rx="6" fill="#20282c" stroke="#39444a"/>
+  <text x="620" y="388" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">CC 22</text>
+  <text x="724" y="388" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">density, probability, macros</text>
+  <rect x="596" y="436" width="370" height="64" rx="6" fill="#20282c" stroke="#39444a"/>
+  <text x="620" y="474" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Queue</text>
+  <text x="724" y="474" fill="#eef3f2" font-family="Arial, sans-serif" font-size="19">preview before release</text>
+  <rect x="596" y="532" width="370" height="42" rx="21" fill="#1d5e33" stroke="#7cc36f"/>
+  <text x="692" y="560" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">Smoke pass: ready to demo</text>
+</svg>

@@ -26,5 +26,11 @@ class ControlSurfacesTest : public TestNeedingSession
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
+	void setUp () override;
+	void tearDown () override;
+
 	void instantiateAndTeardownTest ();
+
+private:
+	bool _saved_auto_enable_surfaces;
 };

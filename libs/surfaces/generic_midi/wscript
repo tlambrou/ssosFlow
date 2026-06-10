@@ -17,6 +17,7 @@ def build(bld):
             midicontrollable.cc
             midifunction.cc
             midiaction.cc
+            midireactiveaction.cc
     '''
     obj.export_includes = ['.']
     obj.defines      = [ 'PACKAGE="ardour_genericmidi"' ]

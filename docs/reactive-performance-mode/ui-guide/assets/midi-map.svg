@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1054" height="706" viewBox="0 0 1054 706" role="img" aria-labelledby="title desc">
+  <title id="title">Generic MIDI mapping</title>
+  <desc id="desc">Screenshot-style panel showing Generic MIDI enabled with Reactive Performance MVP map selected.</desc>
+  <rect width="1054" height="706" rx="18" fill="#111416"/>
+  <rect x="2" y="2" width="1050" height="702" rx="18" fill="#2a2e31" stroke="#4b5257" stroke-width="2"/>
+  <circle cx="34" cy="34" r="12" fill="#ff6257"/>
+  <circle cx="66" cy="34" r="12" fill="#ffbd2e"/>
+  <circle cx="98" cy="34" r="12" fill="#28c840"/>
+  <text x="128" y="42" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Control Surfaces</text>
+  <rect x="42" y="86" width="320" height="560" rx="6" fill="#171d20" stroke="#39444a"/>
+  <text x="66" y="126" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">Available surfaces</text>
+  <rect x="62" y="156" width="280" height="58" rx="5" fill="#50bfd5"/>
+  <text x="86" y="193" fill="#071015" font-family="Arial, sans-serif" font-size="23" font-weight="700">Generic MIDI</text>
+  <rect x="62" y="232" width="280" height="58" rx="5" fill="#283036"/>
+  <text x="86" y="269" fill="#cbd3d1" font-family="Arial, sans-serif" font-size="21">Open Sound Control</text>
+  <rect x="62" y="308" width="280" height="58" rx="5" fill="#283036"/>
+  <text x="86" y="345" fill="#cbd3d1" font-family="Arial, sans-serif" font-size="21">Mackie</text>
+  <rect x="406" y="86" width="606" height="560" rx="6" fill="#20262a" stroke="#39444a"/>
+  <text x="438" y="132" fill="#eef3f2" font-family="Arial, sans-serif" font-size="26" font-weight="700">Generic MIDI</text>
+  <rect x="438" y="164" width="128" height="38" rx="19" fill="#265e32" stroke="#7cc36f"/>
+  <circle cx="462" cy="183" r="10" fill="#7cc36f"/>
+  <text x="482" y="190" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">Enabled</text>
+  <text x="438" y="250" fill="#eef3f2" font-family="Arial, sans-serif" font-size="21">MIDI map</text>
+  <rect x="438" y="268" width="520" height="50" rx="5" fill="#111517" stroke="#506068"/>
+  <text x="458" y="301" fill="#ffffff" font-family="Arial, sans-serif" font-size="23">Reactive Performance MVP</text>
+  <path d="M930 286 l8 8 l8-8" fill="none" stroke="#aab4b0" stroke-width="3"/>
+  <text x="438" y="368" fill="#eef3f2" font-family="Arial, sans-serif" font-size="21">Demo bindings</text>
+  <rect x="438" y="386" width="520" height="188" rx="5" fill="#111517" stroke="#39444a"/>
+  <text x="462" y="420" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 notes 36-43</text>
+  <text x="690" y="420" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Trigger reactive slots</text>
+  <text x="462" y="456" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 note 44</text>
+  <text x="690" y="456" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Show action status</text>
+  <text x="462" y="492" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 note 45</text>
+  <text x="690" y="492" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Reload document</text>
+  <text x="462" y="528" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 10 note 47</text>
+  <text x="690" y="528" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Toggle mode</text>
+  <text x="462" y="564" fill="#50bfd5" font-family="Arial, sans-serif" font-size="18" font-weight="700">Ch 1 CC 22</text>
+  <text x="690" y="564" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">Density probability macro</text>
+</svg>

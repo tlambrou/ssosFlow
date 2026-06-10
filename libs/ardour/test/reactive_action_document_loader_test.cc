@@ -1,0 +1,325 @@
+#include "reactive_action_document_loader_test.h"
+
+#include "ardour/reactive_action_document_loader.h"
+#include "ardour/reactive_action_slot_runner.h"
+
+#include <fstream>
+#include <string>
+#include <vector>
+
+#include <glib.h>
+#include <glibmm/miscutils.h>
+
+#include "pbd/gstdio_compat.h"
+
+CPPUNIT_TEST_SUITE_REGISTRATION (ReactiveActionDocumentLoaderTest);
+
+using namespace ARDOUR;
+
+namespace {
+
+class TemporaryDirectory {
+public:
+	explicit TemporaryDirectory (std::string const& prefix)
+	{
+		GError* error = 0;
+		char* tmp = g_dir_make_tmp (prefix.c_str (), &error);
+		if (!tmp) {
+			std::string message = error ? error->message : "unknown temporary directory error";
+			if (error) {
+				g_error_free (error);
+			}
+			CPPUNIT_FAIL ("could not create temporary directory: " + message);
+		}
+
+		_path = tmp;
+		g_free (tmp);
+	}
+
+	~TemporaryDirectory ()
+	{
+		if (!_path.empty ()) {
+			g_remove (Glib::build_filename (_path, ReactiveActionDocumentLoader::document_filename ()).c_str ());
+			g_rmdir (_path.c_str ());
+		}
+	}
+
+	std::string const& path () const
+	{
+		return _path;
+	}
+
+private:
+	std::string _path;
+};
+
+static std::string
+action_source (std::string const& name, int cue)
+{
+	return
+		"ACTION " + name + "\n"
+		"DO cue " + std::to_string (cue) + "\n"
+		"END\n";
+}
+
+static void
+write_file (std::string const& path, std::string const& content)
+{
+	std::ofstream out (path.c_str ());
+	CPPUNIT_ASSERT (out.good ());
+	out << content;
+	out.close ();
+	CPPUNIT_ASSERT (out.good ());
+}
+
+static std::string
+packaged_demo_dir ()
+{
+	std::vector<std::string> roots;
+	std::string const current_dir = Glib::get_current_dir ();
+	std::string const source_dir = Glib::path_get_dirname (__FILE__);
+
+	roots.push_back (current_dir);
+	roots.push_back (Glib::build_filename (current_dir, source_dir, "..", "..", ".."));
+	roots.push_back (Glib::build_filename (current_dir, "..", source_dir, "..", "..", ".."));
+
+	if (g_path_is_absolute (source_dir.c_str ())) {
+		roots.push_back (Glib::build_filename (source_dir, "..", "..", ".."));
+	}
+
+	for (std::vector<std::string>::const_iterator r = roots.begin (); r != roots.end (); ++r) {
+		std::string const demo_dir = Glib::build_filename (*r, "examples", "reactive-performance-mvp");
+		std::string const action_path = ReactiveActionDocumentLoader::session_document_path (demo_dir);
+		if (g_file_test (action_path.c_str (), G_FILE_TEST_IS_REGULAR)) {
+			return demo_dir;
+		}
+	}
+
+	CPPUNIT_FAIL ("could not locate examples/reactive-performance-mvp/reactive-actions.txt");
+	return std::string ();
+}
+
+} // namespace
+
+void
+ReactiveActionDocumentLoaderTest::preferSessionDocumentOverUserDocument ()
+{
+	TemporaryDirectory session_dir ("reactive-session-XXXXXX");
+	TemporaryDirectory user_dir ("reactive-user-XXXXXX");
+	ReactiveActionSlotRunner runner;
+	ReactiveActionDocumentLoadResult result;
+
+	write_file (ReactiveActionDocumentLoader::session_document_path (session_dir.path ()), action_source ("session.first", 1));
+	write_file (ReactiveActionDocumentLoader::user_document_path (user_dir.path ()), action_source ("user.first", 2));
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		session_dir.path (),
+		user_dir.path (),
+		action_source ("fallback.first", 7),
+		result));
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
+	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (session_dir.path ()), result.path);
+	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("session.first"), runner.action_name (0));
+}
+
+void
+ReactiveActionDocumentLoaderTest::loadUserDocumentWhenSessionDocumentMissing ()
+{
+	TemporaryDirectory session_dir ("reactive-session-XXXXXX");
+	TemporaryDirectory user_dir ("reactive-user-XXXXXX");
+	ReactiveActionSlotRunner runner;
+	ReactiveActionDocumentLoadResult result;
+
+	write_file (ReactiveActionDocumentLoader::user_document_path (user_dir.path ()), action_source ("user.first", 2));
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		session_dir.path (),
+		user_dir.path (),
+		action_source ("fallback.first", 7),
+		result));
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("user"), result.source);
+	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::user_document_path (user_dir.path ()), result.path);
+	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("user.first"), runner.action_name (0));
+}
+
+void
+ReactiveActionDocumentLoaderTest::useFallbackSeedWhenNoDocumentFileExists ()
+{
+	TemporaryDirectory session_dir ("reactive-session-XXXXXX");
+	TemporaryDirectory user_dir ("reactive-user-XXXXXX");
+	ReactiveActionSlotRunner runner;
+	ReactiveActionDocumentLoadResult result;
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		session_dir.path (),
+		user_dir.path (),
+		action_source ("fallback.first", 7),
+		result));
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("fallback"), result.source);
+	CPPUNIT_ASSERT (result.path.empty ());
+	CPPUNIT_ASSERT_EQUAL (true, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("fallback.first"), runner.action_name (0));
+}
+
+void
+ReactiveActionDocumentLoaderTest::reportConfiguredDocumentParseFailureWithoutFallback ()
+{
+	TemporaryDirectory session_dir ("reactive-session-XXXXXX");
+	TemporaryDirectory user_dir ("reactive-user-XXXXXX");
+	ReactiveActionSlotRunner runner;
+	ReactiveActionDocumentLoadResult result;
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		session_dir.path (),
+		user_dir.path (),
+		action_source ("fallback.first", 7),
+		result));
+	CPPUNIT_ASSERT_EQUAL (std::string ("fallback.first"), runner.action_name (0));
+
+	write_file (
+		ReactiveActionDocumentLoader::session_document_path (session_dir.path ()),
+		"ACTION broken\n"
+		"DO warp now\n"
+		"END\n");
+
+	CPPUNIT_ASSERT_EQUAL (false, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		session_dir.path (),
+		user_dir.path (),
+		action_source ("fallback.first", 7),
+		result));
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
+	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (session_dir.path ()), result.path);
+	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), result.action_count);
+	CPPUNIT_ASSERT (result.error.find ("unknown command") != std::string::npos);
+	CPPUNIT_ASSERT (result.error.find (result.path) != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (false, runner.loaded ());
+}
+
+void
+ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
+{
+	ReactiveActionSlotRunner runner;
+	ReactiveActionDocumentLoadResult result;
+	std::string const demo_dir = packaged_demo_dir ();
+
+	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
+		runner,
+		demo_dir,
+		std::string (),
+		action_source ("fallback.first", 7),
+		result));
+
+	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
+	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (demo_dir), result.path);
+	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
+	CPPUNIT_ASSERT_EQUAL (size_t (12), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (12), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.reset"), runner.action_name (0));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.tighten"), runner.action_name (1));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.sparse"), runner.action_name (2));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.rotate"), runner.action_name (3));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.play.when.stopped"), runner.action_name (4));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.cue.when.rolling"), runner.action_name (5));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.stop.when.rolling"), runner.action_name (6));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.mark.stopped"), runner.action_name (7));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.filter.sweep"), runner.action_name (8));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.marker.breakdown"), runner.action_name (9));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.region.breakdown.loop"), runner.action_name (10));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.scene.drop"), runner.action_name (11));
+
+	ReactiveActionPreviewSummary const preview = runner.preview_marker_event (ReactiveMarkerEvent::named ("Breakdown"));
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.marker.breakdown"), preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("marker Breakdown"), preview.primary_trigger);
+
+	ReactiveActionPreviewSummary const region_preview = runner.preview_region_event (ReactiveRegionEvent::named ("Breakdown Loop"));
+	CPPUNIT_ASSERT_EQUAL (true, region_preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.region.breakdown.loop"), region_preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("region Breakdown Loop"), region_preview.primary_trigger);
+
+	ReactiveActionPreviewSummary const scene_preview = runner.preview_scene_event (ReactiveSceneEvent::numbered (3));
+	CPPUNIT_ASSERT_EQUAL (true, scene_preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.scene.drop"), scene_preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("scene 3"), scene_preview.primary_trigger);
+}
+
+void
+ReactiveActionDocumentLoaderTest::describeLoadStatusForConfiguredAndFallbackDocuments ()
+{
+	ReactiveActionDocumentLoadResult session_result;
+	session_result.ok = true;
+	session_result.source = "session";
+	session_result.path = "/tmp/set/reactive-actions.txt";
+	session_result.action_count = 3;
+
+	CPPUNIT_ASSERT_EQUAL (
+		std::string ("Loaded session reactive action document: /tmp/set/reactive-actions.txt"),
+		ReactiveActionDocumentLoader::describe_load_result (session_result));
+
+	ReactiveActionDocumentLoadResult fallback_result;
+	fallback_result.ok = true;
+	fallback_result.source = "fallback";
+	fallback_result.used_fallback = true;
+	fallback_result.action_count = 8;
+
+	CPPUNIT_ASSERT_EQUAL (
+		std::string ("Loaded built-in Reactive Performance MVP fallback"),
+		ReactiveActionDocumentLoader::describe_load_result (fallback_result));
+}
+
+void
+ReactiveActionDocumentLoaderTest::formatDocumentStatusWithActionCountAndErrors ()
+{
+	ReactiveActionDocumentLoadResult loaded;
+	loaded.ok = true;
+	loaded.source = "session";
+	loaded.path = "/tmp/set/reactive-actions.txt";
+	loaded.action_count = 3;
+
+	std::string status = ReactiveActionDocumentLoader::format_status (loaded);
+	CPPUNIT_ASSERT (status.find ("Source: session") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Path: /tmp/set/reactive-actions.txt") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Actions: 3") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Error:") == std::string::npos);
+
+	ReactiveActionDocumentLoadResult failed;
+	failed.ok = false;
+	failed.source = "session";
+	failed.path = "/tmp/set/reactive-actions.txt";
+	failed.error = "/tmp/set/reactive-actions.txt: line 2: unknown command";
+
+	status = ReactiveActionDocumentLoader::format_status (failed);
+	CPPUNIT_ASSERT (status.find ("Source: session") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Path: /tmp/set/reactive-actions.txt") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Actions: 0") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Error: /tmp/set/reactive-actions.txt: line 2: unknown command") != std::string::npos);
+
+	ReactiveActionDocumentLoadResult fallback;
+	fallback.ok = true;
+	fallback.source = "fallback";
+	fallback.used_fallback = true;
+	fallback.action_count = 8;
+
+	status = ReactiveActionDocumentLoader::format_status (fallback);
+	CPPUNIT_ASSERT (status.find ("Source: fallback") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Path: built-in MVP fallback") != std::string::npos);
+	CPPUNIT_ASSERT (status.find ("Actions: 8") != std::string::npos);
+}

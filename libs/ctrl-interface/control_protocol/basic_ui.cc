@@ -45,6 +45,9 @@ using namespace ARDOUR;
 using namespace Temporal;
 
 PBD::Signal<void(std::string,std::string)> BasicUI::AccessAction;
+PBD::Signal<void(std::vector<unsigned char>)> BasicUI::ReactiveMidiBytes;
+PBD::Signal<void(std::vector<ReactiveControllerFeedbackBinding>)> BasicUI::ReactiveFeedbackBindingsChanged;
+PBD::Signal<void(std::vector<ReactiveControllerFeedbackMidiMessage>)> BasicUI::ReactiveFeedbackMidiMessagesChanged;
 
 BasicUI::BasicUI (Session& s)
 	: session (&s),
@@ -82,6 +85,17 @@ BasicUI::access_action ( std::string action_path )
 	std::string item = action_path.substr( split_at + 1 );
 
 	AccessAction( group, item );
+}
+
+void
+BasicUI::reactive_midi_bytes (unsigned char const* bytes, size_t size)
+{
+	if (!bytes || size == 0) {
+		ReactiveMidiBytes (std::vector<unsigned char> ());
+		return;
+	}
+
+	ReactiveMidiBytes (std::vector<unsigned char> (bytes, bytes + size));
 }
 
 void

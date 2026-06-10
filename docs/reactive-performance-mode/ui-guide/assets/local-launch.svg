@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1054" height="650" viewBox="0 0 1054 650" role="img" aria-labelledby="title desc">
+  <title id="title">Local launch command</title>
+  <desc id="desc">Screenshot-style terminal showing the local ardev command for the Reactive Performance MVP template.</desc>
+  <rect width="1054" height="650" rx="18" fill="#101416"/>
+  <rect x="2" y="2" width="1050" height="646" rx="18" fill="#20262a" stroke="#4b5257" stroke-width="2"/>
+  <circle cx="34" cy="34" r="12" fill="#ff6257"/>
+  <circle cx="66" cy="34" r="12" fill="#ffbd2e"/>
+  <circle cx="98" cy="34" r="12" fill="#28c840"/>
+  <text x="128" y="42" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Terminal - ssosFlow local demo</text>
+  <rect x="48" y="86" width="958" height="506" rx="8" fill="#0b0f11" stroke="#39444a"/>
+  <text x="82" y="140" fill="#50bfd5" font-family="Menlo, Consolas, monospace" font-size="22">tassos@mac ssosFlow %</text>
+  <text x="380" y="140" fill="#eef3f2" font-family="Menlo, Consolas, monospace" font-size="22">python3 ./waf build --target=ardour-9.7.37</text>
+  <text x="82" y="196" fill="#7cc36f" font-family="Menlo, Consolas, monospace" font-size="22">Build complete</text>
+  <text x="82" y="270" fill="#50bfd5" font-family="Menlo, Consolas, monospace" font-size="22">tassos@mac ssosFlow %</text>
+  <text x="380" y="270" fill="#eef3f2" font-family="Menlo, Consolas, monospace" font-size="22">./gtk2_ardour/ardev --new /tmp/ssosflow-demo/reactive-mvp-cua \</text>
+  <text x="380" y="306" fill="#eef3f2" font-family="Menlo, Consolas, monospace" font-size="22">  --template "Reactive Performance MVP"</text>
+  <rect x="82" y="356" width="850" height="92" rx="6" fill="#111619" stroke="#50bfd5"/>
+  <text x="108" y="394" fill="#eef3f2" font-family="Arial, sans-serif" font-size="24" font-weight="700">Expected result</text>
+  <text x="108" y="428" fill="#aab4b0" font-family="Arial, sans-serif" font-size="20">Ardour opens Audio/MIDI Setup, then creates the demo session from SessionInit.</text>
+  <text x="82" y="524" fill="#aab4b0" font-family="Menlo, Consolas, monospace" font-size="20">No server needed for this guide: open docs/reactive-performance-mode/ui-guide/index.html</text>
+</svg>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ArdourMIDIBindings version="1.0.0" name="Reactive Performance MVP" manufacturer="Generic">
+
+<!--
+  Reactive Performance Mode MVP bridge map.
+
+  This binds an eight-pad performance row to the first Reactive action slots,
+  plus three utility buttons for status/action-document reload/mode toggle and live
+  document-level note/CC trigger examples.
+  With no session-local or user reactive-actions.txt, the built-in MVP fallback
+  uses pad 0 to insert/reset the rhythm prototype on controller route 0 and
+  uses later pads to launch cue rows while mutating rhythm density, chance,
+  priority mode, or rotation.
+-->
+
+	<DeviceInfo bank-size="8" motorised="no"/>
+
+	<Binding channel="10" note="36" action="Reactive/trigger-action-0" momentary="yes"/>
+	<Binding channel="10" note="37" action="Reactive/trigger-action-1" momentary="yes"/>
+	<Binding channel="10" note="38" action="Reactive/trigger-action-2" momentary="yes"/>
+	<Binding channel="10" note="39" action="Reactive/trigger-action-3" momentary="yes"/>
+	<Binding channel="10" note="40" action="Reactive/trigger-action-4" momentary="yes"/>
+	<Binding channel="10" note="41" action="Reactive/trigger-action-5" momentary="yes"/>
+	<Binding channel="10" note="42" action="Reactive/trigger-action-6" momentary="yes"/>
+	<Binding channel="10" note="43" action="Reactive/trigger-action-7" momentary="yes"/>
+
+	<!-- Feedback output bindings for the same eight pad LEDs; actual output-port writes are wired in a later slice. -->
+	<Binding channel="10" note="36" reactive="feedback" slot="0"/>
+	<Binding channel="10" note="37" reactive="feedback" slot="1"/>
+	<Binding channel="10" note="38" reactive="feedback" slot="2"/>
+	<Binding channel="10" note="39" reactive="feedback" slot="3"/>
+	<Binding channel="10" note="40" reactive="feedback" slot="4"/>
+	<Binding channel="10" note="41" reactive="feedback" slot="5"/>
+	<Binding channel="10" note="42" reactive="feedback" slot="6"/>
+	<Binding channel="10" note="43" reactive="feedback" slot="7"/>
+
+	<Binding channel="10" note="44" action="Reactive/show-action-document-status" momentary="yes"/>
+	<Binding channel="10" note="45" action="Reactive/reload-action-document" momentary="yes"/>
+	<Binding channel="10" note="47" action="Reactive/toggle-performance-mode" momentary="yes"/>
+
+	<!-- Live document-level TRIGGER midi examples; CC 22 can drive DO macro <name> midi-value. -->
+	<Binding channel="10" note="46" reactive="trigger" momentary="yes"/>
+	<Binding channel="1" ctl="22" reactive="trigger"/>
+
+</ArdourMIDIBindings>

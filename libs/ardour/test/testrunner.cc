@@ -10,6 +10,7 @@
 
 #include "pbd/debug.h"
 #include "ardour/ardour.h"
+#include "ardour/rc_configuration.h"
 #include "temporal/types.h"
 #include "test_ui.h"
 
@@ -46,6 +47,10 @@ main(int argc, char* argv[])
 	}
 
 	CPPUNIT_ASSERT (ARDOUR::init (true, localedir));
+	/* Unit tests load and destroy many sessions in one process; keep automatic
+	 * surface probing out of those asynchronous setup/teardown paths.
+	 */
+	ARDOUR::Config->set_auto_enable_surfaces (false);
 
 	Temporal::reset();
 

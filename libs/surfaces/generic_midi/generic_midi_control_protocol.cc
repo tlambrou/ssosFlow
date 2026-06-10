@@ -64,10 +64,13 @@
 #include "ardour/debug.h"
 #include "ardour/well_known_enum.h"
 
+#include "control_protocol/basic_ui.h"
+
 #include "generic_midi_control_protocol.h"
 #include "midicontrollable.h"
 #include "midifunction.h"
 #include "midiaction.h"
+#include "midireactiveaction.h"
 
 #include "pbd/abstract_ui.inc.cc" // instantiate template
 
@@ -131,6 +134,7 @@ GenericMidiControlProtocol::GenericMidiControlProtocol (Session& s, std::string 
 
 	Controllable::StartLearning.connect_same_thread (*this, std::bind (&GenericMidiControlProtocol::start_learning, this, _1));
 	Controllable::StopLearning.connect_same_thread (*this, std::bind (&GenericMidiControlProtocol::stop_learning, this, _1));
+	BasicUI::ReactiveFeedbackMidiMessagesChanged.connect (*this, MISSING_INVALIDATOR, std::bind (&GenericMidiControlProtocol::set_reactive_feedback_midi_messages, this, _1), this);
 
 	/* this signal is emitted by the process() callback, and if
 	 * send_feedback() is going to do anything, it should do it in the
@@ -260,6 +264,14 @@ GenericMidiControlProtocol::drop_all ()
 		delete *i;
 	}
 	actions.clear ();
+
+	for (MIDIReactiveActions::iterator i = reactive_actions.begin(); i != reactive_actions.end(); ++i) {
+		delete *i;
+	}
+	reactive_actions.clear ();
+	reactive_feedback_bindings.clear ();
+	reactive_feedback_cache.clear ();
+	BasicUI::ReactiveFeedbackBindingsChanged (reactive_feedback_bindings);
 }
 
 void
@@ -388,6 +400,24 @@ GenericMidiControlProtocol::_send_feedback ()
 	MIDI::byte buf[bufsize];
 	int32_t bsize = bufsize;
 
+	class ReactiveFeedbackWriter {
+	public:
+		ReactiveFeedbackWriter (ARDOUR::AsyncMIDIPort* port)
+			: _port (port)
+		{}
+
+		void operator() (ReactiveControllerFeedbackMidiMessage const& message)
+		{
+			_port->write (&message.bytes[0], static_cast<int32_t> (message.bytes.size ()), 0);
+		}
+
+	private:
+		ARDOUR::AsyncMIDIPort* _port;
+	};
+
+	ReactiveFeedbackWriter reactive_writer (_output_port.get ());
+	reactive_feedback_cache.try_write_messages (reactive_writer);
+
 	/* XXX: due to bugs in some ALSA / JACK MIDI bridges, we have to do separate
 	   writes for each controllable here; if we send more than one MIDI message
 	   in a single jack_midi_event_write then some bridges will only pass the
@@ -405,6 +435,12 @@ GenericMidiControlProtocol::_send_feedback ()
 			_output_port->write (buf, (int32_t) (end - buf), 0);
 		}
 	}
+}
+
+void
+GenericMidiControlProtocol::set_reactive_feedback_midi_messages (std::vector<ReactiveControllerFeedbackMidiMessage> messages)
+{
+	reactive_feedback_cache.set_messages (messages);
 }
 
 bool
@@ -585,6 +621,21 @@ GenericMidiControlProtocol::check_used_event (int pos, int control_number)
 				DEBUG_TRACE (DEBUG::GenericMidi, "checking: found match, delete old binding.\n");
 				delete existingBinding;
 				iter = actions.erase (iter);
+			} else {
+				++iter;
+			}
+		} else {
+			++iter;
+		}
+	}
+
+	for (MIDIReactiveActions::iterator iter = reactive_actions.begin(); iter != reactive_actions.end();) {
+		MIDIReactiveAction* existingBinding = (*iter);
+		if ( (existingBinding->get_control_type() & 0xf0 ) == (pos & 0xf0) && (existingBinding->get_control_channel() & 0xf ) == channel ) {
+			if ( ((int) existingBinding->get_control_additional() == (int) value) || ((pos & 0xf0) == MIDI::pitchbend)) {
+				DEBUG_TRACE (DEBUG::GenericMidi, "checking: found match, delete old binding.\n");
+				delete existingBinding;
+				iter = reactive_actions.erase (iter);
 			} else {
 				++iter;
 			}
@@ -915,6 +966,21 @@ GenericMidiControlProtocol::load_bindings (const string& xmlpath)
 					functions.push_back (mf);
 				}
 
+			} else if (child->property ("reactive")) {
+				const XMLProperty* reactive = child->property (X_("reactive"));
+				if (reactive && reactive->value () == X_("feedback")) {
+					ReactiveControllerFeedbackBinding binding;
+					if (create_reactive_feedback_binding (*child, binding)) {
+						reactive_feedback_bindings.push_back (binding);
+					}
+				} else {
+					MIDIReactiveAction* mra;
+
+					if ((mra = create_reactive_action (*child)) != 0) {
+						reactive_actions.push_back (mra);
+					}
+				}
+
 			} else if (child->property ("action")) {
 				MIDIAction* ma;
 
@@ -928,6 +994,8 @@ GenericMidiControlProtocol::load_bindings (const string& xmlpath)
 	if ((prop = root->property ("name")) != 0) {
 		_current_binding = prop->value ();
 	}
+
+	BasicUI::ReactiveFeedbackBindingsChanged (reactive_feedback_bindings);
 
 	reset_controllables ();
 
@@ -1723,6 +1791,108 @@ GenericMidiControlProtocol::create_action (const XMLNode& node)
 	return ma;
 }
 
+bool
+GenericMidiControlProtocol::create_reactive_feedback_binding (const XMLNode& node, ReactiveControllerFeedbackBinding& binding)
+{
+	const XMLProperty* prop;
+	int intval;
+
+	if ((prop = node.property (X_("slot"))) == 0) {
+		warning << "Reactive MIDI feedback binding ignored - missing slot" << endmsg;
+		return false;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1 || intval < 0) {
+		warning << "Reactive MIDI feedback binding ignored - invalid slot" << endmsg;
+		return false;
+	}
+	binding.slot = static_cast<size_t> (intval);
+
+	if ((prop = node.property (X_("ctl"))) != 0) {
+		binding.type = ReactiveControllerFeedbackBinding::ControlChange;
+	} else if ((prop = node.property (X_("note"))) != 0) {
+		binding.type = ReactiveControllerFeedbackBinding::Note;
+	} else {
+		warning << "Reactive MIDI feedback binding ignored - unknown type" << endmsg;
+		return false;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1 || intval < 0 || intval > 127) {
+		warning << "Reactive MIDI feedback binding ignored - invalid note/CC number" << endmsg;
+		return false;
+	}
+	binding.number = intval;
+
+	if ((prop = node.property (X_("channel"))) == 0) {
+		warning << "Reactive MIDI feedback binding ignored - missing channel" << endmsg;
+		return false;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1 || intval < 1 || intval > 16) {
+		warning << "Reactive MIDI feedback binding ignored - invalid channel" << endmsg;
+		return false;
+	}
+	binding.channel = intval;
+
+	return true;
+}
+
+MIDIReactiveAction*
+GenericMidiControlProtocol::create_reactive_action (const XMLNode& node)
+{
+	const XMLProperty* prop;
+	int intval;
+	MIDI::byte detail = 0;
+	MIDI::channel_t channel = 0;
+	MIDI::eventType ev;
+
+	if ((prop = node.property (X_("ctl"))) != 0) {
+		ev = MIDI::controller;
+	} else if ((prop = node.property (X_("note"))) != 0) {
+		ev = MIDI::on;
+	} else {
+		warning << "Reactive MIDI binding ignored - unknown type" << endmsg;
+		return 0;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1) {
+		return 0;
+	}
+
+	detail = (MIDI::byte) intval;
+
+	if ((prop = node.property (X_("channel"))) == 0) {
+		return 0;
+	}
+
+	if (sscanf (prop->value().c_str(), "%d", &intval) != 1) {
+		return 0;
+	}
+
+	channel = (MIDI::channel_t) intval;
+	/* adjust channel to zero-based counting */
+	if (channel > 0) {
+		channel -= 1;
+	}
+
+	prop = node.property (X_("reactive"));
+	if (!prop || prop->value() != X_("trigger")) {
+		warning << "Reactive MIDI binding ignored - unknown reactive target" << endmsg;
+		return 0;
+	}
+
+	MIDIReactiveAction* mra = new MIDIReactiveAction (*_input_port->parser());
+
+	if (mra->init (*this, prop->value())) {
+		delete mra;
+		return 0;
+	}
+
+	mra->bind_midi (channel, ev, detail);
+
+	return mra;
+}
+
 void
 GenericMidiControlProtocol::set_current_bank (uint32_t b)
 {
@@ -1901,4 +2071,3 @@ GenericMidiControlProtocol::remove_rid_from_selection (int rid)
 	int id = rid + (_current_bank * _bank_size);
 	ControlProtocol::remove_rid_from_selection (id);
 }
-
