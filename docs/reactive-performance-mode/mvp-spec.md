@@ -214,7 +214,7 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, session state, track state, mixer scene state, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, latest MIDI Input readout, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, session state, track state, mixer scene state, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
@@ -614,6 +614,13 @@ Phase 5y adds the first mixer scene-state read model:
 - Rows include scene slot, display name, stored/empty validity, last-touched state, and a compact status string.
 - The formatted scene-state summary displays rows such as `2: Reactive Drop Snapshot - stored last-touched`, while sparse unset slots are shown as `Scene 1 - empty`.
 - The status dialog and Cue-page panel summary display this read-only section beside session and track state, so scene validity is visible without adding new mixer-scene mutation behavior.
+
+Phase 5z adds the first MIDI-input state read model:
+
+- `ReactiveActionSlotRunner` keeps a bounded summary of the latest supported note or CC input, including event type, channel, note/CC number, value or velocity, source (`event` or `bytes`), matched action count, and matched action name when available.
+- Supported unmatched note/CC events still update the read model so controller troubleshooting shows what Ardour last received.
+- Unsupported byte messages are reported through execution status but do not replace the last supported MIDI Input summary.
+- The status dialog and Cue-page panel summary display compact rows such as `MIDI Input: cc ch=1 cc=22 value=64 source=bytes matches=1 action=knob.live`.
 
 Phase 5f adds an explicit mode-arm toggle:
 

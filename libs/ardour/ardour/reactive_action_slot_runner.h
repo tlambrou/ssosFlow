@@ -98,6 +98,18 @@ struct LIBARDOUR_API ReactiveActionPreviewSummary {
 	std::vector<std::string> command_summaries;
 };
 
+struct LIBARDOUR_API ReactiveMidiInputSummary {
+	bool available = false;
+	std::string event_type;
+	int channel = 0;
+	int number = 0;
+	int value = 0;
+	bool from_bytes = false;
+	size_t matched_action_count = 0;
+	size_t matched_slot = 0;
+	std::string matched_action_name;
+};
+
 class LIBARDOUR_API ReactiveActionSlotRunner {
 public:
 	bool load_source (std::string const&, std::string& error);
@@ -143,12 +155,14 @@ public:
 	ReactiveExecutionResult release_due_queued_actions (Temporal::BBT_Time const& now, ReactiveActionTarget&);
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	ReactiveActionPreviewSummary const& next_action_preview () const { return _next_action_preview; }
+	ReactiveMidiInputSummary const& last_midi_input_summary () const { return _last_midi_input_summary; }
 	size_t queued_action_count () const { return _scheduler.queued_count (); }
 	std::vector<ReactiveQueuedActionSummary> queued_action_summary (size_t max_items, Temporal::BBT_Time const& now) const { return _scheduler.queued_action_summary (max_items, now); }
 	std::string format_last_execution_status () const;
 	std::string format_performance_mode_status () const;
 	std::string format_performance_control_summary (size_t max_slots) const;
 	std::string format_next_action_preview () const;
+	std::string format_midi_input_summary () const;
 	std::string format_queued_action_summary (size_t max_items, Temporal::BBT_Time const& now) const;
 	std::string format_panel_summary (size_t max_items) const;
 	std::string format_action_bank_summary (size_t max_slots) const;
@@ -165,6 +179,8 @@ private:
 	void refresh_transport_state ();
 	void clear_last_execution_status ();
 	void clear_next_action_preview ();
+	void clear_midi_input_summary ();
+	void record_midi_input_event (ReactiveMidiEvent const&, bool from_bytes, std::vector<ReactiveActionMatch> const&);
 	ReactiveControllerFeedbackSummary controller_feedback_summary_row (size_t slot) const;
 	ReactiveExecutionResult queue_plan (size_t slot, std::string const& primary_trigger, ReactiveActionPlan const&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
 	ReactiveExecutionResult record_execution_status (size_t slot, std::string const& action_name, ReactiveExecutionResult const& result);
@@ -173,6 +189,7 @@ private:
 	ReactiveActionScheduler _scheduler;
 	ReactiveActionSlotExecutionStatus _last_execution_status;
 	ReactiveActionPreviewSummary _next_action_preview;
+	ReactiveMidiInputSummary _last_midi_input_summary;
 	std::function<bool()> _transport_rolling_provider;
 	bool _loaded = false;
 	bool _performance_enabled = true;

@@ -3358,6 +3358,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			_reactive_action_slots.format_last_execution_status () +
 			"\n\n" +
+			_reactive_action_slots.format_midi_input_summary () +
+			"\n\n" +
 			_reactive_action_slots.format_performance_control_summary (8) +
 			"\n\n" +
 			_reactive_action_slots.format_next_action_preview () +
