@@ -12,6 +12,7 @@
 #include "ardour/region.h"
 #include "ardour/route.h"
 #include "ardour/session.h"
+#include "ardour/track.h"
 #include "ardour/triggerbox.h"
 
 #include "evoral/Parameter.h"
@@ -385,6 +386,27 @@ session_state_status (ReactiveSessionStateSummary const& row)
 	       << " sample=" << row.transport_sample
 	       << " routes=" << row.route_count
 	       << " trigger-routes=" << row.trigger_route_count;
+	return status.str ();
+}
+
+static std::string
+track_state_status (ReactiveTrackStateSummary const& row)
+{
+	std::ostringstream status;
+	status << (row.active ? "active" : "inactive")
+	       << " " << (row.muted ? "muted" : "unmuted")
+	       << " " << (row.soloed ? "soloed" : "unsoloed")
+	       << " ";
+
+	if (!row.record_enable_available) {
+		status << "rec=-";
+	} else if (row.record_enabled) {
+		status << "rec";
+	} else {
+		status << "rec-off";
+	}
+
+	status << " gain=" << format_decimal_value (row.gain);
 	return status.str ();
 }
 
@@ -774,6 +796,61 @@ ReactiveSessionTarget::format_session_state_summary () const
 	}
 
 	return "Session State: " + summary.status;
+}
+
+std::vector<ReactiveTrackStateSummary>
+ReactiveSessionTarget::track_state_summary (size_t max_routes) const
+{
+	std::vector<ReactiveTrackStateSummary> summary;
+	if (!_session || max_routes == 0) {
+		return summary;
+	}
+
+	summary.reserve (max_routes);
+	for (size_t slot = 0; slot < max_routes; ++slot) {
+		std::shared_ptr<Route> route = _session->get_remote_nth_route (static_cast<PresentationInfo::order_t> (slot));
+		if (!route) {
+			break;
+		}
+
+		ReactiveTrackStateSummary row;
+		row.slot = slot;
+		row.route_name = route->name ();
+		row.active = route->active ();
+		row.muted = route->muted ();
+		row.soloed = route->soloed ();
+		if (route->gain_control ()) {
+			row.gain = route->gain_control ()->get_value ();
+		}
+
+		std::shared_ptr<Track> track = std::dynamic_pointer_cast<Track> (route);
+		if (track && track->rec_enable_control ()) {
+			row.record_enable_available = true;
+			row.record_enabled = track->rec_enable_control ()->get_value ();
+		}
+
+		row.status = track_state_status (row);
+		summary.push_back (row);
+	}
+
+	return summary;
+}
+
+std::string
+ReactiveSessionTarget::format_track_state_summary (size_t max_routes) const
+{
+	std::vector<ReactiveTrackStateSummary> const summary = track_state_summary (max_routes);
+	if (summary.empty ()) {
+		return "Track State: none";
+	}
+
+	std::ostringstream text;
+	text << "Track State:";
+	for (std::vector<ReactiveTrackStateSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->route_name << " - " << i->status;
+	}
+
+	return text.str ();
 }
 
 void
