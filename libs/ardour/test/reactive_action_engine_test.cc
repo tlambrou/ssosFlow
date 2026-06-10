@@ -609,6 +609,101 @@ ReactiveActionEngineTest::rejectMissingMacroSnapshotRecallWithoutChangingLastAct
 }
 
 void
+ReactiveActionEngineTest::morphBetweenMacroSnapshots ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION store.verse\n"
+		"DO macro filter 0.20\n"
+		"DO macro resonance 0.80\n"
+		"DO macro snapshot store verse\n"
+		"END\n"
+		"ACTION store.chorus\n"
+		"DO macro filter 0.80\n"
+		"DO macro resonance 0.20\n"
+		"DO macro snapshot store chorus\n"
+		"END\n"
+		"ACTION morph.half\n"
+		"DO macro morph verse chorus amount 0.50 ramp 0|2|0\n"
+		"END\n");
+
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.verse").ok);
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.chorus").ok);
+	ReactiveActionPlan morphed = engine.trigger_action ("morph.half");
+
+	CPPUNIT_ASSERT_EQUAL (true, morphed.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), morphed.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, morphed.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), morphed.commands[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.50, morphed.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (2, morphed.commands[0].ramp.beats);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, morphed.commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("resonance"), morphed.commands[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.50, morphed.commands[1].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (2, morphed.commands[1].ramp.beats);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.50, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.50, engine.macro_value ("resonance"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("morph.half"), engine.last_action ());
+}
+
+void
+ReactiveActionEngineTest::morphBetweenMacroSnapshotsWithMidiValue ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION store.a\n"
+		"DO macro filter 0.00\n"
+		"DO macro snapshot store a\n"
+		"END\n"
+		"ACTION store.b\n"
+		"DO macro filter 1.00\n"
+		"DO macro snapshot store b\n"
+		"END\n"
+		"ACTION morph.live\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro morph a b amount midi-value\n"
+		"END\n");
+
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.a").ok);
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.b").ok);
+	ReactiveMidiEvent event = ReactiveMidiEvent::control_change (1, 22, 64);
+	ReactiveActionPlan morphed = engine.trigger_action ("morph.live", &event);
+
+	CPPUNIT_ASSERT_EQUAL (true, morphed.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), morphed.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::Macro, morphed.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), morphed.commands[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, morphed.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (64.0 / 127.0, engine.macro_value ("filter"), 0.0001);
+}
+
+void
+ReactiveActionEngineTest::rejectMacroMorphWithoutSharedSnapshotValues ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION store.empty\n"
+		"DO macro snapshot store empty\n"
+		"END\n"
+		"ACTION store.b\n"
+		"DO macro resonance 0.80\n"
+		"DO macro snapshot store b\n"
+		"END\n"
+		"ACTION morph.empty\n"
+		"DO macro filter 0.90\n"
+		"DO macro morph empty b amount 0.50\n"
+		"END\n");
+
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.empty").ok);
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.b").ok);
+	ReactiveActionPlan morphed = engine.trigger_action ("morph.empty");
+
+	CPPUNIT_ASSERT_EQUAL (false, morphed.ok);
+	CPPUNIT_ASSERT (morphed.error.find ("no shared macro values") != std::string::npos);
+	CPPUNIT_ASSERT (morphed.commands.empty ());
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, engine.macro_value ("filter"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, engine.macro_value ("resonance"), 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("store.b"), engine.last_action ());
+}
+
+void
 ReactiveActionEngineTest::blockUnmetStateConditionWithoutMutatingState ()
 {
 	ReactiveActionEngine engine = engine_from_source (

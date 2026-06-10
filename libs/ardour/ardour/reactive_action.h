@@ -47,6 +47,7 @@ struct LIBARDOUR_API ReactiveCommand {
 		Macro,
 		MacroSnapshotStore,
 		MacroSnapshotRecall,
+		MacroMorph,
 		State,
 		Harmony,
 		Rhythm,

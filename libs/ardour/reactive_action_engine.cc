@@ -82,7 +82,7 @@ normalized_midi_value (ReactiveMidiEvent const& event)
 static ReactiveCommand
 resolve_command_value (ReactiveCommand const& command, ReactiveMidiEvent const* event)
 {
-	if ((command.type != ReactiveCommand::Macro && command.type != ReactiveCommand::RhythmRoute) ||
+	if ((command.type != ReactiveCommand::Macro && command.type != ReactiveCommand::MacroMorph && command.type != ReactiveCommand::RhythmRoute) ||
 	    command.value_source != ReactiveCommand::MidiEventValue ||
 	    !event) {
 		return command;
@@ -91,6 +91,37 @@ resolve_command_value (ReactiveCommand const& command, ReactiveMidiEvent const* 
 	ReactiveCommand resolved = command;
 	resolved.value = normalized_midi_value (*event);
 	return resolved;
+}
+
+static bool
+append_macro_morph_commands (std::map<std::string, double> const& from, std::map<std::string, double> const& to, ReactiveCommand const& resolved, std::vector<ReactiveCommand>& output, std::map<std::string, double>* macros, std::string& error)
+{
+	bool found_shared_value = false;
+
+	for (std::map<std::string, double>::const_iterator value = from.begin (); value != from.end (); ++value) {
+		std::map<std::string, double>::const_iterator target = to.find (value->first);
+		if (target == to.end ()) {
+			continue;
+		}
+
+		ReactiveCommand macro;
+		macro.type = ReactiveCommand::Macro;
+		macro.name = value->first;
+		macro.value = value->second + ((target->second - value->second) * resolved.value);
+		macro.ramp = resolved.ramp;
+		output.push_back (macro);
+		if (macros) {
+			(*macros)[macro.name] = macro.value;
+		}
+		found_shared_value = true;
+	}
+
+	if (!found_shared_value) {
+		error = "no shared macro values between macro snapshots '" + resolved.name + "' and '" + resolved.text + "'";
+		return false;
+	}
+
+	return true;
 }
 
 } // namespace
@@ -478,6 +509,25 @@ ReactiveActionEngine::preview_plan_commands (std::vector<ReactiveCommand> const&
 			}
 			continue;
 		}
+		if (resolved.type == ReactiveCommand::MacroMorph) {
+			std::map<std::string, MacroSnapshot>::const_iterator from = _macro_snapshots.find (resolved.name);
+			if (from == _macro_snapshots.end ()) {
+				error = "unknown macro snapshot '" + resolved.name + "'";
+				output.clear ();
+				return false;
+			}
+			std::map<std::string, MacroSnapshot>::const_iterator to = _macro_snapshots.find (resolved.text);
+			if (to == _macro_snapshots.end ()) {
+				error = "unknown macro snapshot '" + resolved.text + "'";
+				output.clear ();
+				return false;
+			}
+			if (!append_macro_morph_commands (from->second, to->second, resolved, output, 0, error)) {
+				output.clear ();
+				return false;
+			}
+			continue;
+		}
 		output.push_back (resolved);
 	}
 
@@ -554,6 +604,25 @@ ReactiveActionEngine::trigger_plan_commands (std::vector<ReactiveCommand> const&
 				macro.ramp = resolved.ramp;
 				macros[macro.name] = macro.value;
 				planned.push_back (macro);
+			}
+			continue;
+		}
+		if (resolved.type == ReactiveCommand::MacroMorph) {
+			std::map<std::string, MacroSnapshot>::const_iterator from = macro_snapshots.find (resolved.name);
+			if (from == macro_snapshots.end ()) {
+				error = "unknown macro snapshot '" + resolved.name + "'";
+				output.clear ();
+				return false;
+			}
+			std::map<std::string, MacroSnapshot>::const_iterator to = macro_snapshots.find (resolved.text);
+			if (to == macro_snapshots.end ()) {
+				error = "unknown macro snapshot '" + resolved.text + "'";
+				output.clear ();
+				return false;
+			}
+			if (!append_macro_morph_commands (from->second, to->second, resolved, planned, &macros, error)) {
+				output.clear ();
+				return false;
 			}
 			continue;
 		}
