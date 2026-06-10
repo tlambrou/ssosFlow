@@ -211,7 +211,9 @@ The backend runner can now execute a loaded document from a parsed `ReactiveMidi
 
 `ReactiveActionSlotRunner::execute_midi_bytes(...)` now provides the backend bridge from raw controller bytes to executable actions. It preserves the missing-document failure path, maps supported byte messages through `ReactiveMidiEvent::from_midi_bytes(...)`, delegates supported messages to `execute_midi_event(...)`, and records unsupported byte messages in the same last-execution status model.
 
-The backend runner can also execute loaded documents from a named `ReactiveMarkerEvent`. It matches exact `TRIGGER marker <name>` triggers through `ReactiveActionEngine::match_marker_event(...)`, uses the first matching action in document order, supports preview/status reporting, and can queue nonzero-quantized marker actions through the same scheduler path as manual slots and MIDI triggers. Live Session/Location marker crossing detection remains a follow-up adapter; this slice only adds the safe backend event model.
+The backend runner can also execute loaded documents from a named `ReactiveMarkerEvent`. It matches exact `TRIGGER marker <name>` triggers through `ReactiveActionEngine::match_marker_event(...)`, uses the first matching action in document order, supports preview/status reporting, and can queue nonzero-quantized marker actions through the same scheduler path as manual slots and MIDI triggers.
+
+Live Ardour marker triggers are bridged by a narrow `Session`/`Location` adapter in GTK/session space. The adapter observes visible named location markers, detects forward transport crossings, resets on stop, locate, or backward movement, skips markers that have no matching reactive action, and delegates matched hits to the same marker runner API. It intentionally rides the existing Reactive Performance panel/queue poll loop for the MVP; native sample-accurate `SessionEvent` scheduling remains future work.
 
 Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needed one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance.
 
@@ -455,7 +457,14 @@ Phase 4i adds backend marker-trigger execution:
 - Match exact `TRIGGER marker <name>` declarations in document order without affecting MIDI matching.
 - Preview and execute the first matching marker action through `ReactiveActionSlotRunner`.
 - Queue nonzero-quantized marker actions using the same TempoMap-backed scheduler path and queued-action summaries.
-- Keep live Ardour `Session`/`Location` marker-crossing detection as a separate non-realtime adapter.
+
+Phase 4j bridges live Ardour markers to that backend path:
+
+- Detect forward crossings of visible named `Session` location markers from the GTK/session poll path.
+- Reset the detector when transport stops, moves backward, locates, reloads the action document, or toggles Reactive Performance Mode.
+- Delegate matching crossings to `ReactiveActionSlotRunner::execute_or_queue_marker_event(...)` so quantized marker actions reuse the existing scheduler.
+- Skip unmatched timeline markers so ordinary session markers do not produce noisy reactive failures.
+- Keep marker scanning, document lookup, and action planning outside realtime audio callbacks; exact sample-accurate native scheduling remains a later `SessionEvent` design.
 
 Phase 5: add minimal Reactive Performance UI panel.
 
