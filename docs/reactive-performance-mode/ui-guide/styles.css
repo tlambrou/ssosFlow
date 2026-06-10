@@ -316,12 +316,32 @@ figure {
   margin: 0;
 }
 
-figure img {
+.screenshot-card {
+  position: relative;
+  padding: 12px;
+  border: 1px solid #48535a;
+  border-radius: 8px;
+  background: #0e1316;
+}
+
+.screenshot-label {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #20262b;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ui-screenshot {
   display: block;
   width: 100%;
   height: auto;
   border: 1px solid #48535a;
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--panel-2);
 }
 

@@ -31,6 +31,20 @@ REQUIRED_CONTROLS = {
     "reset-checklist",
 }
 
+REQUIRED_SCREENSHOT_ALTS = {
+    "Audio/MIDI Setup",
+    "New Session",
+    "Reactive session",
+    "Generic MIDI",
+    "Action document status",
+}
+
+REQUIRED_COPY = {
+    "Open Locally",
+    "docs/reactive-performance-mode/ui-guide/index.html",
+    "Screenshot Walkthrough",
+}
+
 
 class GuideParser(HTMLParser):
     def __init__(self):
@@ -38,6 +52,8 @@ class GuideParser(HTMLParser):
         self.local_refs = []
         self.ids = set()
         self.image_alts = {}
+        self.image_classes = {}
+        self.figure_classes = []
         self.step_targets = set()
 
     def handle_starttag(self, tag, attrs):
@@ -52,6 +68,9 @@ class GuideParser(HTMLParser):
                 self.local_refs.append(value[2:])
         if tag == "img" and attrs.get("src"):
             self.image_alts[attrs["src"].removeprefix("./")] = attrs.get("alt", "")
+            self.image_classes[attrs["src"].removeprefix("./")] = set(attrs.get("class", "").split())
+        if tag == "figure":
+            self.figure_classes.append(set(attrs.get("class", "").split()))
 
 
 def fail(message):
@@ -89,6 +108,24 @@ def main():
     missing_alt = sorted(asset for asset in REQUIRED_ASSETS if not parser.image_alts.get(asset))
     if missing_alt:
         return fail(f"missing image alt text: {', '.join(missing_alt)}")
+
+    missing_screenshot_class = sorted(
+        asset for asset in REQUIRED_ASSETS if "ui-screenshot" not in parser.image_classes.get(asset, set())
+    )
+    if missing_screenshot_class:
+        return fail(f"missing ui-screenshot class: {', '.join(missing_screenshot_class)}")
+
+    screenshot_cards = sum(1 for classes in parser.figure_classes if "screenshot-card" in classes)
+    if screenshot_cards < len(REQUIRED_ASSETS):
+        return fail(f"expected {len(REQUIRED_ASSETS)} screenshot cards, found {screenshot_cards}")
+
+    missing_alt_terms = sorted(term for term in REQUIRED_SCREENSHOT_ALTS if term not in " ".join(parser.image_alts.values()))
+    if missing_alt_terms:
+        return fail(f"screenshot alt text missing terms: {', '.join(missing_alt_terms)}")
+
+    missing_copy = sorted(term for term in REQUIRED_COPY if term not in text)
+    if missing_copy:
+        return fail(f"missing required copy: {', '.join(missing_copy)}")
 
     demo_text = DEMO.read_text(encoding="utf-8")
     if "ui-guide/index.html" not in demo_text:
