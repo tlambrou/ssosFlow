@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include <glib.h>
 #include <glibmm/miscutils.h>
@@ -69,6 +70,33 @@ write_file (std::string const& path, std::string const& content)
 	out << content;
 	out.close ();
 	CPPUNIT_ASSERT (out.good ());
+}
+
+static std::string
+packaged_demo_dir ()
+{
+	std::vector<std::string> roots;
+	std::string const current_dir = Glib::get_current_dir ();
+	std::string const source_dir = Glib::path_get_dirname (__FILE__);
+
+	roots.push_back (current_dir);
+	roots.push_back (Glib::build_filename (current_dir, source_dir, "..", "..", ".."));
+	roots.push_back (Glib::build_filename (current_dir, "..", source_dir, "..", "..", ".."));
+
+	if (g_path_is_absolute (source_dir.c_str ())) {
+		roots.push_back (Glib::build_filename (source_dir, "..", "..", ".."));
+	}
+
+	for (std::vector<std::string>::const_iterator r = roots.begin (); r != roots.end (); ++r) {
+		std::string const demo_dir = Glib::build_filename (*r, "examples", "reactive-performance-mvp");
+		std::string const action_path = ReactiveActionDocumentLoader::session_document_path (demo_dir);
+		if (g_file_test (action_path.c_str (), G_FILE_TEST_IS_REGULAR)) {
+			return demo_dir;
+		}
+	}
+
+	CPPUNIT_FAIL ("could not locate examples/reactive-performance-mvp/reactive-actions.txt");
+	return std::string ();
 }
 
 } // namespace
@@ -190,7 +218,7 @@ ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
 {
 	ReactiveActionSlotRunner runner;
 	ReactiveActionDocumentLoadResult result;
-	std::string const demo_dir = Glib::build_filename ("examples", "reactive-performance-mvp");
+	std::string const demo_dir = packaged_demo_dir ();
 
 	CPPUNIT_ASSERT_EQUAL (true, ReactiveActionDocumentLoader::load_from_paths (
 		runner,
@@ -202,8 +230,8 @@ ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("session"), result.source);
 	CPPUNIT_ASSERT_EQUAL (ReactiveActionDocumentLoader::session_document_path (demo_dir), result.path);
 	CPPUNIT_ASSERT_EQUAL (false, result.used_fallback);
-	CPPUNIT_ASSERT_EQUAL (size_t (11), result.action_count);
-	CPPUNIT_ASSERT_EQUAL (size_t (11), runner.action_count ());
+	CPPUNIT_ASSERT_EQUAL (size_t (12), result.action_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (12), runner.action_count ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.reset"), runner.action_name (0));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.tighten"), runner.action_name (1));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.sparse"), runner.action_name (2));
@@ -215,6 +243,7 @@ ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.filter.sweep"), runner.action_name (8));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.marker.breakdown"), runner.action_name (9));
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.region.breakdown.loop"), runner.action_name (10));
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.scene.drop"), runner.action_name (11));
 
 	ReactiveActionPreviewSummary const preview = runner.preview_marker_event (ReactiveMarkerEvent::named ("Breakdown"));
 	CPPUNIT_ASSERT_EQUAL (true, preview.available);
@@ -225,6 +254,11 @@ ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads ()
 	CPPUNIT_ASSERT_EQUAL (true, region_preview.available);
 	CPPUNIT_ASSERT_EQUAL (std::string ("demo.region.breakdown.loop"), region_preview.action_name);
 	CPPUNIT_ASSERT_EQUAL (std::string ("region Breakdown Loop"), region_preview.primary_trigger);
+
+	ReactiveActionPreviewSummary const scene_preview = runner.preview_scene_event (ReactiveSceneEvent::numbered (3));
+	CPPUNIT_ASSERT_EQUAL (true, scene_preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("demo.scene.drop"), scene_preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("scene 3"), scene_preview.primary_trigger);
 }
 
 void

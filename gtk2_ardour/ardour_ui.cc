@@ -3224,6 +3224,7 @@ ARDOUR_UI::trigger_cue_row (int r)
 		return;
 	}
 
+	trigger_reactive_scene_event (r);
 	_basic_ui->trigger_cue_row (r);
 }
 
@@ -3548,6 +3549,38 @@ ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
 		warning << string_compose (_("Reactive MIDI trigger failed: %1"), result.error) << endmsg;
 	}
 	reactive_performance_changed ();
+}
+
+bool
+ARDOUR_UI::trigger_reactive_scene_event (int scene)
+{
+	if (!_session || scene < 0) {
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		return false;
+	}
+
+	ReactiveSceneEvent const event = ReactiveSceneEvent::numbered (scene);
+	ReactiveActionPreviewSummary const preview = _reactive_action_slots.preview_scene_event (event);
+	if (!preview.available) {
+		return false;
+	}
+
+	bool const performance_enabled = _reactive_action_slots.performance_enabled ();
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+	ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_scene_event (
+		event,
+		target,
+		*tmap,
+		reactive_performance_bbt_now ());
+	if (!result.ok && performance_enabled) {
+		warning << string_compose (_("Reactive scene trigger %1 failed: %2"), scene, result.error) << endmsg;
+	}
+	reactive_performance_changed ();
+	return result.ok;
 }
 
 bool

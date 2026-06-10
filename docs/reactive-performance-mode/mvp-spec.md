@@ -229,9 +229,9 @@ The backend runner can also execute loaded documents from a named `ReactiveMarke
 
 Live Ardour marker triggers are bridged by a narrow `Session`/`Location` adapter in GTK/session space. The adapter observes visible named location markers, detects forward transport crossings, resets on stop, locate, or backward movement, skips markers that have no matching reactive action, and delegates matched hits to the same marker runner API. It intentionally rides the existing Reactive Performance panel/queue poll loop for the MVP; native sample-accurate `SessionEvent` scheduling remains future work.
 
-The backend runner can now execute loaded documents from a numbered `ReactiveSceneEvent`. It parses `TRIGGER scene <index>` with a non-negative scene index, matches exact scene indexes through `ReactiveActionEngine::match_scene_event(...)`, reports readable `scene <index>` labels for previews, status, and queued summaries, and can execute or queue matching actions through the same scheduler path as manual slots, MIDI triggers, and marker triggers. This is backend scene-trigger support only; live Ardour Cue/scene row adapter wiring remains a follow-up.
+The backend runner can now execute loaded documents from a numbered `ReactiveSceneEvent`. It parses `TRIGGER scene <index>` with a non-negative scene index, matches exact scene indexes through `ReactiveActionEngine::match_scene_event(...)`, reports readable `scene <index>` labels for previews, status, and queued summaries, and can execute or queue matching actions through the same scheduler path as manual slots, MIDI triggers, and marker triggers. A narrow GTK/Cue-page adapter now emits scene events for Cue-row launches without modifying `Session::trigger_cue_row(...)`; lower-level BasicUI/control-surface/session observation remains a follow-up.
 
-The backend runner can now execute loaded documents from a named `ReactiveRegionEvent`. It parses `TRIGGER region <name>` while preserving multi-word names, matches exact region names through `ReactiveActionEngine::match_region_event(...)`, reports readable `region <name>` labels for previews, status, and queued summaries, and can execute or queue matching actions through the same scheduler path as manual slots, MIDI triggers, marker triggers, and scene triggers. This is backend region-trigger support only; live Ardour region/playlist adapter wiring remains a follow-up.
+The backend runner can now execute loaded documents from a named `ReactiveRegionEvent`. It parses `TRIGGER region <name>` while preserving multi-word names, matches exact region names through `ReactiveActionEngine::match_region_event(...)`, reports readable `region <name>` labels for previews, status, and queued summaries, and can execute or queue matching actions through the same scheduler path as manual slots, MIDI triggers, marker triggers, and scene triggers. A narrow GTK/session adapter now observes active track playlists for named, non-hidden region crossings; native sample-accurate scheduling remains a follow-up.
 
 Live Ardour region triggers are bridged by a narrow track-playlist adapter in GTK/session space. The adapter observes named, non-hidden regions on active track playlists, detects forward crossings of their timeline start positions, resets on stop, locate, or backward movement, skips regions that have no matching reactive action, and delegates matched hits to the same region runner API. It intentionally rides the existing Reactive Performance panel/queue poll loop for the MVP; native sample-accurate `SessionEvent` scheduling remains future work.
 
@@ -492,7 +492,7 @@ Phase 4k adds backend scene-trigger execution:
 - Represent scene hits as numbered `ReactiveSceneEvent` values.
 - Match exact scene-index triggers in document order without affecting MIDI or marker matching.
 - Preview, execute, and quantize/queue the first matching scene action through `ReactiveActionSlotRunner`.
-- Keep live Ardour Cue row, mixer-scene, or TriggerBox adapter wiring as follow-up work so this slice remains backend-first and non-realtime.
+- Keep lower-level mixer-scene, TriggerBox, BasicUI/control-surface, and native session observation as follow-up work; the first live adapter is the GTK/Cue-page row launch path.
 
 Phase 4l adds backend region-trigger execution:
 
@@ -509,6 +509,14 @@ Phase 4m bridges live Ardour timeline regions to that backend path:
 - Delegate matching crossings to `ReactiveActionSlotRunner::execute_or_queue_region_event(...)` so quantized region actions reuse the existing scheduler.
 - Skip unmatched regions so ordinary session regions do not produce noisy reactive failures.
 - Keep playlist scanning, document lookup, and action planning outside realtime audio callbacks; exact sample-accurate native scheduling remains a later `SessionEvent` design.
+
+Phase 4n bridges Cue-page launches to the scene backend path:
+
+- Emit `ReactiveSceneEvent::numbered(row)` when Cue rows are launched through `ARDOUR_UI::trigger_cue_row(...)` or the Cue-page row-click path.
+- Preview first and skip unmatched rows quietly so ordinary Cue-page launches do not produce reactive failures.
+- Delegate matched rows to `ReactiveActionSlotRunner::execute_or_queue_scene_event(...)` with the existing TempoMap-backed scheduler.
+- Preserve the normal cue launch even when Reactive Performance Mode is disabled, no action document is loaded, no scene trigger matches, or the reactive action fails.
+- Keep `Session::trigger_cue_row(...)` unchanged so reactive `DO cue` commands do not feed back into scene triggers; broader BasicUI/control-surface/session observation remains follow-up work.
 
 Phase 5: add minimal Reactive Performance UI panel.
 
@@ -725,6 +733,13 @@ Phase 7j adds region-trigger demo coverage:
 - The action uses existing safe commands to insert the rhythm processor if needed, adjust route 0 density/chance, set the `filter` macro, update harmony/state read models, and launch cue row 3.
 - The `Reactive Performance MVP` SessionInit template embeds matching content, and automated tests require the packaged document to expose a `region Breakdown Loop` preview.
 - The example README and demo guide include a smoke check for creating or crossing the named region and confirming panel/status read-model changes.
+
+Phase 7k adds scene-trigger demo coverage:
+
+- `examples/reactive-performance-mvp/reactive-actions.txt` includes `demo.scene.drop`, triggered by Cue row 3 through `TRIGGER scene 3`.
+- The action uses existing safe commands to insert the rhythm processor if needed, adjust route 0 density/chance/rotation, set the `filter` macro, and update harmony/state read models while leaving the normal Cue-page launch path responsible for launching the row.
+- The `Reactive Performance MVP` SessionInit template embeds matching content, and automated tests require the packaged document to expose a `scene 3` preview.
+- The example README and demo guide include a smoke check for launching Cue row 3 and confirming panel/status read-model changes.
 
 ## Acceptance Tests
 
