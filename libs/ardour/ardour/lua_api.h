@@ -255,6 +255,14 @@ namespace ARDOUR { namespace LuaAPI {
 	int build_filename (lua_State *lua);
 
 	/**
+	 * Ensure a visible session marker exists at the given position.
+	 *
+	 * If a visible marker with the same name already exists, no new marker is
+	 * created. Intended for non-realtime setup scripts and SessionInit helpers.
+	 */
+	bool ensure_session_marker (ARDOUR::Session* session, const std::string& name, Temporal::timepos_t const& position);
+
+	/**
 	 * Generic conversion from audio sample count to timecode.
 	 * (TimecodeType, sample-rate, sample-pos)
 	 */

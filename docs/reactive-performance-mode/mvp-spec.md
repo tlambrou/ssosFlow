@@ -741,6 +741,14 @@ Phase 7k adds scene-trigger demo coverage:
 - The `Reactive Performance MVP` SessionInit template embeds matching content, and automated tests require the packaged document to expose a `scene 3` preview.
 - The example README and demo guide include a smoke check for launching Cue row 3 and confirming panel/status read-model changes.
 
+Phase 7l seeds the first timeline landmark in the repeatable template:
+
+- `ARDOUR.LuaAPI.ensure_session_marker(...)` provides a non-realtime setup helper for SessionInit and other Lua scripts to create a visible named session marker without exposing direct `Location` ownership to Lua.
+- The helper returns false for invalid inputs, creates the marker when missing, and avoids duplicate visible markers by name.
+- `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed a visible `Breakdown` marker for `demo.marker.breakdown` while preserving the three trigger-visible MIDI lanes and existing action-document install behavior.
+- `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's marker request in the fake-session harness.
+- A full `.ardour` session archive with generated clip/cue content remains a later demo-production step.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, route-scoped rhythm `midi-value`, and harmony commands/conditions.

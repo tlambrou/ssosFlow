@@ -147,6 +147,16 @@ local function install_demo_action_document ()
 	file:close ()
 end
 
+local function seed_demo_markers ()
+	local sample_rate = 48000
+	local session_sample_rate = Session:nominal_sample_rate ()
+	if session_sample_rate and session_sample_rate > 0 then
+		sample_rate = session_sample_rate
+	end
+
+	ARDOUR.LuaAPI.ensure_session_marker (Session, "Breakdown", Temporal.timepos_t (sample_rate * 16))
+end
+
 function factory () return function ()
 	local group = ARDOUR.RouteGroup ()
 	local input = ARDOUR.ChanCount (ARDOUR.DataType ("midi"), 1)
@@ -195,6 +205,7 @@ function factory () return function ()
 		false,
 		true)
 
+	seed_demo_markers ()
 	install_demo_action_document ()
 
 	Session:save_state ("")

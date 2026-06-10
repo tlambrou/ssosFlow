@@ -29,6 +29,7 @@
 #include "ardour/audiofilesource.h"
 #include "ardour/audiosource.h"
 #include "ardour/internal_send.h"
+#include "ardour/location.h"
 #include "ardour/lua_api.h"
 #include "ardour/luaproc.h"
 #include "ardour/luascripting.h"
@@ -867,6 +868,29 @@ ARDOUR::LuaAPI::build_filename (lua_State *L)
 
 	luabridge::Stack<std::string>::push (L, Glib::build_filename (elem));
 	return 1;
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_marker (Session* session, const std::string& name, Temporal::timepos_t const& position)
+{
+	if (!session || name.empty () || position.is_negative ()) {
+		return false;
+	}
+
+	Locations* locations = session->locations ();
+	if (!locations) {
+		return false;
+	}
+
+	Locations::LocationList const& list = locations->list ();
+	for (Locations::LocationList::const_iterator location = list.begin (); location != list.end (); ++location) {
+		if (*location && (*location)->is_mark () && !(*location)->is_hidden () && (*location)->name () == name) {
+			return true;
+		}
+	}
+
+	locations->add (new Location (*session, position, position, name, Location::IsMark), false);
+	return true;
 }
 
 luabridge::LuaRef::Proxy&
