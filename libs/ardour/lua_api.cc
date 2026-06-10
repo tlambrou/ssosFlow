@@ -47,6 +47,7 @@
 #include "ardour/session.h"
 #include "ardour/simple_export.h"
 #include "ardour/source_factory.h"
+#include "ardour/triggerbox.h"
 #include "ardour/uri_map.h"
 
 #include "LuaBridge/LuaBridge.h"
@@ -957,6 +958,59 @@ ARDOUR::LuaAPI::ensure_session_midi_region (
 
 	playlist->add_region (region, position);
 	return true;
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_trigger_region (
+	Session* session,
+	const std::string& route_name,
+	int slot,
+	const std::string& region_name,
+	Temporal::timecnt_t const& length)
+{
+	if (!session || route_name.empty () || region_name.empty () || slot < 0 || !length.is_positive ()) {
+		return false;
+	}
+
+	std::shared_ptr<Route> route = session->route_by_name (route_name);
+	std::shared_ptr<MidiTrack> midi_track = std::dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track || !route->triggerbox ()) {
+		return false;
+	}
+
+	std::shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
+	TriggerPtr trigger = triggerbox->trigger (slot);
+	if (!trigger) {
+		return false;
+	}
+
+	if (trigger->the_region ()) {
+		return true;
+	}
+
+	std::shared_ptr<MidiSource> source;
+	try {
+		source = session->create_midi_source_for_session (region_name);
+	} catch (...) {
+		return false;
+	}
+	if (!source) {
+		return false;
+	}
+
+	PropertyList plist;
+	plist.add (Properties::start, Temporal::timepos_t (0));
+	plist.add (Properties::length, length);
+	plist.add (Properties::name, region_name);
+	plist.add (Properties::layer, 0);
+	plist.add (Properties::opaque, true);
+
+	std::shared_ptr<Region> region = RegionFactory::create (std::dynamic_pointer_cast<Source> (source), plist, true);
+	if (!region) {
+		return false;
+	}
+
+	return triggerbox->set_region_for_setup (slot, region);
 }
 
 luabridge::LuaRef::Proxy&

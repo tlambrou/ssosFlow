@@ -12,6 +12,7 @@ class LuaScriptTest : public TestNeedingSession
 	CPPUNIT_TEST (reactive_performance_session_init_tolerates_unavailable_file_io_test);
 	CPPUNIT_TEST (reactive_performance_lua_api_ensures_session_marker_test);
 	CPPUNIT_TEST (reactive_performance_lua_api_ensures_midi_region_test);
+	CPPUNIT_TEST (reactive_performance_lua_api_ensures_midi_trigger_region_test);
 	CPPUNIT_TEST (dsp_script_test);
 	CPPUNIT_TEST (reactive_rhythm_luaproc_script_test);
 	CPPUNIT_TEST_SUITE_END ();
@@ -24,6 +25,7 @@ public:
 	void reactive_performance_session_init_tolerates_unavailable_file_io_test ();
 	void reactive_performance_lua_api_ensures_session_marker_test ();
 	void reactive_performance_lua_api_ensures_midi_region_test ();
+	void reactive_performance_lua_api_ensures_midi_trigger_region_test ();
 	void dsp_script_test ();
 	void reactive_rhythm_luaproc_script_test ();
 };

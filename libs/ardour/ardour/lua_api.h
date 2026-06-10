@@ -277,6 +277,20 @@ namespace ARDOUR { namespace LuaAPI {
 		Temporal::timecnt_t const& length);
 
 	/**
+	 * Ensure a MIDI TriggerBox slot on the named route has a region.
+	 *
+	 * If the slot already has a region, it is left untouched. Intended for
+	 * non-realtime setup scripts and SessionInit helpers that seed demo cue
+	 * content without overwriting user clips.
+	 */
+	bool ensure_session_midi_trigger_region (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		int slot,
+		const std::string& region_name,
+		Temporal::timecnt_t const& length);
+
+	/**
 	 * Generic conversion from audio sample count to timecode.
 	 * (TimecodeType, sample-rate, sample-pos)
 	 */
