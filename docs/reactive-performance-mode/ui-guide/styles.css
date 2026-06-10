@@ -16,6 +16,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-padding-top: 178px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -170,6 +174,87 @@ code {
   color: #f6ca63;
 }
 
+.guide-tools {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(17, 22, 25, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.progress-panel {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.progress-panel h2 {
+  margin-bottom: 0;
+}
+
+.progress-readout {
+  display: grid;
+  min-width: min(320px, 100%);
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+progress {
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #0b0f11;
+}
+
+progress::-webkit-progress-bar {
+  background: #0b0f11;
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+}
+
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+}
+
+.step-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.step-nav button {
+  min-height: 38px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.step-nav button:hover,
+.step-nav button:focus-visible,
+.doc-link:hover,
+.doc-link:focus-visible,
+.command button:hover,
+.command button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.secondary-action {
+  margin-left: auto;
+  color: var(--muted);
+}
+
 .steps {
   display: grid;
   gap: 24px;
@@ -181,10 +266,16 @@ code {
   grid-template-columns: minmax(260px, 0.75fr) minmax(360px, 1.25fr);
   gap: 20px;
   align-items: start;
+  scroll-margin-top: 178px;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
+}
+
+.step.is-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(80, 191, 213, 0.35);
 }
 
 .step-number {
@@ -266,5 +357,14 @@ figcaption {
 
   .doc-link {
     width: fit-content;
+  }
+
+  .progress-panel {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .secondary-action {
+    margin-left: 0;
   }
 }

@@ -26,6 +26,11 @@ REQUIRED_SECTIONS = {
     "status",
 }
 
+REQUIRED_CONTROLS = {
+    "guide-progress",
+    "reset-checklist",
+}
+
 
 class GuideParser(HTMLParser):
     def __init__(self):
@@ -33,11 +38,14 @@ class GuideParser(HTMLParser):
         self.local_refs = []
         self.ids = set()
         self.image_alts = {}
+        self.step_targets = set()
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if "id" in attrs:
             self.ids.add(attrs["id"])
+        if "data-step-target" in attrs:
+            self.step_targets.add(attrs["data-step-target"])
         for key in ("href", "src"):
             value = attrs.get(key)
             if value and value.startswith("./"):
@@ -61,6 +69,14 @@ def main():
     missing_sections = sorted(REQUIRED_SECTIONS - parser.ids)
     if missing_sections:
         return fail(f"missing guide sections: {', '.join(missing_sections)}")
+
+    missing_controls = sorted(REQUIRED_CONTROLS - parser.ids)
+    if missing_controls:
+        return fail(f"missing guide controls: {', '.join(missing_controls)}")
+
+    missing_step_targets = sorted(REQUIRED_SECTIONS - parser.step_targets)
+    if missing_step_targets:
+        return fail(f"missing step navigation targets: {', '.join(missing_step_targets)}")
 
     missing_assets = sorted(asset for asset in REQUIRED_ASSETS if not (GUIDE / asset).exists())
     if missing_assets:

@@ -58,6 +58,27 @@
         <p>The panels below are screenshot-style reconstructions from observed Ardour UI states and checked source files. They are meant to guide the exact UI flow, not replace a fresh screen capture from your machine.</p>
       </section>
 
+      <section class="guide-tools" aria-labelledby="guide-tools-title">
+        <div class="progress-panel">
+          <div>
+            <span class="label">Walkthrough</span>
+            <h2 id="guide-tools-title">Follow The UI Steps</h2>
+          </div>
+          <div class="progress-readout">
+            <span id="progress-text">0 of 0 checks complete</span>
+            <progress id="guide-progress" max="1" value="0">0%</progress>
+          </div>
+        </div>
+        <nav class="step-nav" aria-label="Reactive Performance MVP UI steps">
+          <button type="button" data-step-target="audio-midi">Audio/MIDI</button>
+          <button type="button" data-step-target="template">Template</button>
+          <button type="button" data-step-target="session">Landmarks</button>
+          <button type="button" data-step-target="midi">MIDI Map</button>
+          <button type="button" data-step-target="status">Status</button>
+          <button id="reset-checklist" class="secondary-action" type="button">Reset</button>
+        </nav>
+      </section>
+
       <section class="steps" aria-label="Walkthrough steps">
         <article class="step" id="audio-midi">
           <div class="step-copy">
