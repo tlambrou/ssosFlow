@@ -732,7 +732,7 @@ Phase 7j adds region-trigger demo coverage:
 - `examples/reactive-performance-mvp/reactive-actions.txt` includes `demo.region.breakdown.loop`, triggered by a non-hidden timeline region named `Breakdown Loop`.
 - The action uses existing safe commands to insert the rhythm processor if needed, adjust route 0 density/chance, set the `filter` macro, update harmony/state read models, and launch cue row 3.
 - The `Reactive Performance MVP` SessionInit template embeds matching content, and automated tests require the packaged document to expose a `region Breakdown Loop` preview.
-- The example README and demo guide include a smoke check for creating or crossing the named region and confirming panel/status read-model changes.
+- The example README and demo guide include a smoke check for crossing the named region and confirming panel/status read-model changes.
 
 Phase 7k adds scene-trigger demo coverage:
 
@@ -748,6 +748,14 @@ Phase 7l seeds the first timeline landmark in the repeatable template:
 - `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed a visible `Breakdown` marker for `demo.marker.breakdown` while preserving the three trigger-visible MIDI lanes and existing action-document install behavior.
 - `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's marker request in the fake-session harness.
 - A full `.ardour` session archive with generated clip/cue content remains a later demo-production step.
+
+Phase 7m seeds the first region-trigger landmark in the repeatable template:
+
+- `ARDOUR.LuaAPI.ensure_session_midi_region(...)` provides a non-realtime setup helper for SessionInit and other Lua scripts to create a named, visible MIDI region on a named MIDI route playlist without exposing direct source/region ownership to Lua.
+- The helper returns false for invalid inputs, missing routes, non-MIDI routes, or unavailable playlists; creates the region when missing; and avoids duplicate visible regions by name on the target route.
+- `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed a non-hidden `Breakdown Loop` timeline region on `Reactive Rhythm Lane` for `demo.region.breakdown.loop`, preserving the three trigger-visible MIDI lanes, `Breakdown` marker, and existing action-document install behavior.
+- `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's region request in the fake-session harness.
+- This is a timeline landmark, not generated musical clip content; a full `.ardour` session archive with generated trigger clips/cue contents remains a later demo-production step.
 
 ## Acceptance Tests
 
