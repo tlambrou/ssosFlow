@@ -19,6 +19,13 @@ const progress = document.querySelector("#guide-progress");
 const progressText = document.querySelector("#progress-text");
 const reset = document.querySelector("#reset-checklist");
 const storageKey = "ssosflow-reactive-ui-guide-checks";
+const steps = Array.from(document.querySelectorAll(".step"));
+const viewer = document.querySelector("#screenshot-viewer");
+const viewerImage = document.querySelector("#screenshot-viewer-image");
+const viewerTitle = document.querySelector("#screenshot-viewer-title");
+const viewerClose = document.querySelector("#close-screenshot-viewer");
+let currentStepIndex = 0;
+let lastScreenshotButton = null;
 
 function readStoredChecks() {
   try {
@@ -48,12 +55,54 @@ function updateProgress() {
   }
 }
 
-function setCurrentStep(step) {
+function setCurrentStep(step, options = {}) {
   document.querySelectorAll(".step.is-current").forEach((active) => {
     active.classList.remove("is-current");
   });
   if (step) {
     step.classList.add("is-current");
+    const index = steps.indexOf(step);
+    if (index >= 0) {
+      currentStepIndex = index;
+    }
+    if (options.scroll) {
+      step.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+}
+
+function moveStep(offset) {
+  if (!steps.length) {
+    return;
+  }
+  const nextIndex = Math.min(Math.max(currentStepIndex + offset, 0), steps.length - 1);
+  setCurrentStep(steps[nextIndex], { scroll: true });
+}
+
+function openScreenshot(button) {
+  if (!viewer || !viewerImage || !viewerTitle) {
+    return;
+  }
+  const src = button.getAttribute("data-screenshot-src") || "";
+  const title = button.getAttribute("data-screenshot-title") || "Screenshot";
+  lastScreenshotButton = button;
+  viewerImage.src = src;
+  viewerImage.alt = `${title} full-size screenshot`;
+  viewerTitle.textContent = title;
+  viewer.hidden = false;
+  if (viewerClose) {
+    viewerClose.focus();
+  }
+}
+
+function closeScreenshot() {
+  if (!viewer || !viewerImage) {
+    return;
+  }
+  viewer.hidden = true;
+  viewerImage.removeAttribute("src");
+  if (lastScreenshotButton) {
+    lastScreenshotButton.focus();
   }
 }
 
@@ -72,9 +121,46 @@ document.querySelectorAll("[data-step-target]").forEach((button) => {
     if (!step) {
       return;
     }
-    setCurrentStep(step);
-    step.scrollIntoView({ behavior: "smooth", block: "start" });
+    setCurrentStep(step, { scroll: true });
   });
+});
+
+document.querySelectorAll("[data-screenshot-src]").forEach((button) => {
+  button.addEventListener("click", () => {
+    openScreenshot(button);
+  });
+});
+
+if (viewerClose) {
+  viewerClose.addEventListener("click", closeScreenshot);
+}
+
+if (viewer) {
+  viewer.addEventListener("click", (event) => {
+    if (event.target === viewer) {
+      closeScreenshot();
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  const viewerOpen = viewer && !viewer.hidden;
+  if (event.key === "Escape" && viewerOpen) {
+    event.preventDefault();
+    closeScreenshot();
+    return;
+  }
+  if (viewerOpen) {
+    return;
+  }
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    event.preventDefault();
+    moveStep(1);
+  }
+  if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    event.preventDefault();
+    moveStep(-1);
+  }
 });
 
 if (reset) {
@@ -88,3 +174,4 @@ if (reset) {
 }
 
 updateProgress();
+setCurrentStep(steps[0]);
