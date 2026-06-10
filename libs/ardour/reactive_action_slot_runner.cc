@@ -517,6 +517,16 @@ ReactiveActionSlotRunner::macro_bank_summary (size_t max_slots) const
 	return summary;
 }
 
+std::vector<ReactiveMacroSnapshotSummary>
+ReactiveActionSlotRunner::macro_snapshot_summary (size_t max_snapshots, size_t max_values) const
+{
+	if (!_loaded || max_snapshots == 0) {
+		return std::vector<ReactiveMacroSnapshotSummary> ();
+	}
+
+	return _engine.macro_snapshot_summary (max_snapshots, max_values);
+}
+
 std::vector<ReactiveStateSlotSummary>
 ReactiveActionSlotRunner::state_bank_summary (size_t max_slots) const
 {
@@ -1648,6 +1658,27 @@ ReactiveActionSlotRunner::format_panel_summary (size_t max_items) const
 		}
 	}
 
+	std::vector<ReactiveMacroSnapshotSummary> const snapshots = macro_snapshot_summary (max_items, max_items);
+	text << "\nMacro Snapshots:";
+	if (snapshots.empty ()) {
+		text << " none";
+	} else {
+		for (std::vector<ReactiveMacroSnapshotSummary>::const_iterator i = snapshots.begin (); i != snapshots.end (); ++i) {
+			text << (i == snapshots.begin () ? " " : ", ") << i->name << "[";
+			if (i->values.empty ()) {
+				text << i->value_count << " values";
+			} else {
+				for (std::vector<ReactiveMacroSnapshotValueSummary>::const_iterator value = i->values.begin (); value != i->values.end (); ++value) {
+					text << (value == i->values.begin () ? "" : ", ") << value->name << "=" << value->value;
+				}
+				if (i->value_count > i->values.size ()) {
+					text << ", ...";
+				}
+			}
+			text << "]";
+		}
+	}
+
 	std::vector<ReactiveStateSlotSummary> const states = state_bank_summary (max_items);
 	text << "\nStates:";
 	if (states.empty ()) {
@@ -1665,6 +1696,37 @@ ReactiveActionSlotRunner::format_panel_summary (size_t max_items) const
 	} else {
 		for (std::vector<ReactiveHarmonySlotSummary>::const_iterator i = harmony.begin (); i != harmony.end (); ++i) {
 			text << (i == harmony.begin () ? " " : ", ") << i->name << "=" << i->value;
+		}
+	}
+
+	return text.str ();
+}
+
+std::string
+ReactiveActionSlotRunner::format_macro_snapshot_summary (size_t max_snapshots, size_t max_values) const
+{
+	std::vector<ReactiveMacroSnapshotSummary> const summary = macro_snapshot_summary (max_snapshots, max_values);
+
+	if (summary.empty ()) {
+		return "Macro snapshots: none";
+	}
+
+	std::ostringstream text;
+	text << "Macro snapshots:";
+	for (std::vector<ReactiveMacroSnapshotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->slot << ": " << i->name << " - " << i->value_count << " value";
+		if (i->value_count != 1) {
+			text << "s";
+		}
+		if (!i->values.empty ()) {
+			text << " (";
+			for (std::vector<ReactiveMacroSnapshotValueSummary>::const_iterator value = i->values.begin (); value != i->values.end (); ++value) {
+				text << (value == i->values.begin () ? "" : ", ") << value->name << "=" << value->value;
+			}
+			if (i->value_count > i->values.size ()) {
+				text << ", ...";
+			}
+			text << ")";
 		}
 	}
 

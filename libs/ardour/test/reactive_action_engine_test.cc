@@ -608,6 +608,50 @@ ReactiveActionEngineTest::storeAndRecallMacroSnapshotValues ()
 }
 
 void
+ReactiveActionEngineTest::summarizeMacroSnapshotMetadata ()
+{
+	ReactiveActionEngine engine = engine_from_source (
+		"ACTION store.verse\n"
+		"DO macro filter 0.25\n"
+		"DO macro resonance 0.70\n"
+		"DO macro snapshot store verse\n"
+		"END\n"
+		"ACTION store.chorus\n"
+		"DO macro drive 0.33\n"
+		"DO macro filter 0.80\n"
+		"DO macro resonance 0.20\n"
+		"DO macro snapshot store chorus\n"
+		"END\n");
+
+	CPPUNIT_ASSERT (engine.macro_snapshot_summary (8, 2).empty ());
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.verse").ok);
+	CPPUNIT_ASSERT_EQUAL (true, engine.trigger_action ("store.chorus").ok);
+
+	std::vector<ReactiveMacroSnapshotSummary> const summary = engine.macro_snapshot_summary (8, 2);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("verse"), summary[0].name);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].value_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].values.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), summary[0].values[0].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, summary[0].values[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (std::string ("resonance"), summary[0].values[1].name);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.70, summary[0].values[1].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chorus"), summary[1].name);
+	CPPUNIT_ASSERT_EQUAL (size_t (3), summary[1].value_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[1].values.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("drive"), summary[1].values[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("filter"), summary[1].values[1].name);
+
+	std::vector<ReactiveMacroSnapshotSummary> const bounded = engine.macro_snapshot_summary (1, 1);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), bounded.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("verse"), bounded[0].name);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), bounded[0].value_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), bounded[0].values.size ());
+}
+
+void
 ReactiveActionEngineTest::rejectMissingMacroSnapshotRecallWithoutChangingLastAction ()
 {
 	ReactiveActionEngine engine = engine_from_source (

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
   <title id="title">Cue-page Reactive Performance panel</title>
-  <desc id="desc">Screenshot-style Cue page with the Reactive Performance panel showing mode, slots, MIDI Input, macros, states, track route id, selected state, routing, and queued action preview.</desc>
+  <desc id="desc">Screenshot-style Cue page with the Reactive Performance panel showing mode, slots, MIDI Input, macros, Macro Snapshots, states, track route id, selected state, routing, and queued action preview.</desc>
   <rect width="1200" height="760" fill="#15191c"/>
   <rect x="0" y="0" width="1200" height="54" fill="#23282b"/>
   <circle cx="28" cy="27" r="10" fill="#ff6257"/>
@@ -41,9 +41,9 @@
     <text x="464" y="264" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">drop</text>
   </g>
   <rect x="598" y="194" width="268" height="114" rx="6" fill="#20282c" stroke="#39444a"/>
-  <text x="622" y="226" fill="#50bfd5" font-family="Arial, sans-serif" font-size="17" font-weight="700">Macro bank</text>
-  <text x="622" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">filter 0.55 | texture 0.40</text>
-  <text x="622" y="286" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">space 0.70</text>
+  <text x="622" y="226" fill="#50bfd5" font-family="Arial, sans-serif" font-size="17" font-weight="700">Macros + snapshots</text>
+  <text x="622" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="16">filter 0.55 | texture 0.40</text>
+  <text x="622" y="286" fill="#eef3f2" font-family="Arial, sans-serif" font-size="15">Macro Snapshots: verse[2]</text>
   <rect x="890" y="194" width="268" height="114" rx="6" fill="#20282c" stroke="#39444a"/>
   <text x="914" y="226" fill="#50bfd5" font-family="Arial, sans-serif" font-size="17" font-weight="700">MIDI Input + state</text>
   <text x="914" y="258" fill="#eef3f2" font-family="Arial, sans-serif" font-size="15">cc 22 value 64 source=bytes</text>

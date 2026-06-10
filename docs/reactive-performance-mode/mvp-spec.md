@@ -214,9 +214,11 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, latest MIDI Input readout, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, session state, track state, mixer scene state, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, latest MIDI Input readout, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, session state, track state, mixer scene state, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, stored Macro Snapshots with bounded macro/value previews, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
+
+Macro Snapshot rows are created at execution time by `DO macro snapshot store ...` commands. They are listed in first-store order and expose a bounded count plus value preview so performers can confirm recall/morph targets without exposing mutable engine internals.
 
 State-bank rows are discovered from `DO state ...` commands in the loaded action document. Names are listed once in first-seen document order, default to an empty value before execution, and reflect the latest values written by executed state commands.
 
@@ -622,6 +624,13 @@ Phase 5z adds the first MIDI-input state read model:
 - Unsupported byte messages are reported through execution status but do not replace the last supported MIDI Input summary.
 - The status dialog and Cue-page panel summary display compact rows such as `MIDI Input: cc ch=1 cc=22 value=64 source=bytes matches=1 action=knob.live`.
 
+Phase 5aa adds visible Macro Snapshot state:
+
+- `ReactiveActionEngine::macro_snapshot_summary(...)` exposes bounded snapshot metadata without returning mutable snapshot maps.
+- Rows include snapshot slot, name, stored macro-value count, and a bounded list of macro/value previews.
+- Snapshot rows are ordered by first successful store, recall and morph actions leave them visible, and `load_document(...)`/`clear()` reset stale snapshot state.
+- The status dialog and Cue-page panel summary display rows such as `Macro Snapshots: verse[filter=0.25, resonance=0.7], chorus[drive=0.33, filter=0.8, ...]`.
+
 Phase 5f adds an explicit mode-arm toggle:
 
 - `ReactiveActionSlotRunner` exposes enabled/disabled state and a compact status string for the status panel.
@@ -655,7 +664,7 @@ Phase 5j adds controller-driven panel refresh feedback:
 - `ReactiveActionSlotRunner::performance_control_summary(...)` prefixes the latest attempted slot's large-control label with `> ` after manual or MIDI-triggered execution, giving the panel a compact performance feedback marker.
 - `ARDOUR_UI::ReactivePerformanceChanged` is emitted after Reactive slot execution, MIDI-byte execution, mode toggles, and document reloads.
 - `ReactivePerformancePanel` observes that signal on the GUI context, so controller-triggered Reactive actions refresh the Cue-page controls without a mouse interaction.
-- The Cue-page panel now also shows a compact live read-model summary for next action preview, macros, user states, and first controller-facing routing rows, while the existing status dialog remains the detailed/debug view.
+- The Cue-page panel now also shows a compact live read-model summary for next action preview, macros, Macro Snapshots, user states, and first controller-facing routing rows, while the existing status dialog remains the detailed/debug view.
 - Controller LED byte generation and output-port wiring remain follow-up work at this phase.
 
 Phase 5k adds the first controller-feedback read model:
@@ -844,7 +853,7 @@ Phase 7p makes the generated demo clips more musical without committing session 
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, macro snapshot/morph syntax, route-scoped rhythm `midi-value`, TriggerBox follow-probability commands, and harmony commands/conditions.
-- Engine tests cover action lookup, chain state, literal and event-derived macro state, macro snapshot recall, literal and MIDI-derived macro morphs, harmony state and conditions, route-scoped rhythm event values, TriggerBox follow-probability event values, and quantization calculation against a fixed TempoMap.
+- Engine tests cover action lookup, chain state, literal and event-derived macro state, macro snapshot recall and metadata summaries, literal and MIDI-derived macro morphs, harmony state and conditions, route-scoped rhythm event values, TriggerBox follow-probability event values, and quantization calculation against a fixed TempoMap.
 - Scheduler tests cover queued-action summaries with bounded command details, including TriggerBox follow-probability details, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, formatted queued command details, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, route-scoped rhythm value dispatch, and TriggerBox follow-probability dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
