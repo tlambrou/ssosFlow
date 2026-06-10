@@ -4,6 +4,8 @@
 
 #include "ardour/audio_track.h"
 #include "ardour/audioengine.h"
+#include "ardour/location.h"
+#include "ardour/luabindings.h"
 #include "ardour/luascripting.h"
 #include "ardour/lua_script_params.h"
 #include "ardour/plugin_manager.h"
@@ -73,6 +75,26 @@ write_file (std::string const& path, std::string const& content)
 	out.close ();
 }
 
+static size_t
+count_named_markers (Session& session, std::string const& name)
+{
+	size_t count = 0;
+
+	Locations const* locations = session.locations ();
+	if (!locations) {
+		return count;
+	}
+
+	Locations::LocationList const& list = locations->list ();
+	for (Locations::LocationList::const_iterator location = list.begin (); location != list.end (); ++location) {
+		if (*location && (*location)->is_mark () && !(*location)->is_hidden () && (*location)->name () == name) {
+			++count;
+		}
+	}
+
+	return count;
+}
+
 static std::string
 reactive_template_path ()
 {
@@ -96,6 +118,7 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 	lua.do_command (
 		"function ardour (entry) ardour_metadata = entry end\n"
 		"created_tracks = {}\n"
+		"created_markers = {}\n"
 		"saved = false\n"
 		"ARDOUR = {\n"
 		"  LuaAPI = {\n"
@@ -106,6 +129,10 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"        if i == 1 then path = part else path = path .. '/' .. part end\n"
 		"      end\n"
 		"      return path\n"
+		"    end,\n"
+		"    ensure_session_marker = function (session, name, position)\n"
+		"      table.insert (created_markers, { name = name, position = position })\n"
+		"      return true\n"
 		"    end\n"
 		"  },\n"
 		"  DataType = function (name) return { name = name } end,\n"
@@ -115,9 +142,15 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"  PresentationInfo = { max_order = 0 },\n"
 		"  TrackMode = { Normal = 0 }\n"
 		"}\n"
+		"Temporal = {\n"
+		"  timepos_t = function (samples)\n"
+		"    return { samples = function () return samples end }\n"
+		"  end\n"
+		"}\n"
 		"Session = {\n"
 		"  path = function () return " + lua_literal (session_path) + " end,\n"
 		"  name = function () return 'Reactive Template Test' end,\n"
+		"  nominal_sample_rate = function () return 48000 end,\n"
 		"  new_midi_track = function (...)\n"
 		"    local name = select (9, ...)\n"
 		"    local trigger_visible = select (13, ...)\n"
@@ -143,6 +176,9 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[1].trigger_visible == true, 'expected rhythm lane to be trigger visible')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[2].trigger_visible == true, 'expected harmony lane to be trigger visible')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_tracks[3].trigger_visible == true, 'expected macro lane to be trigger visible')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (#created_markers == 1, 'expected one seeded marker')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_markers[1].name == 'Breakdown', 'expected Breakdown marker')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_markers[1].position:samples () > 0, 'expected positive marker position')"));
 	int const save_type = lua.do_command ("assert (saved == true, 'expected template to save session')");
 	CPPUNIT_ASSERT_EQUAL (0, save_type);
 }
@@ -257,6 +293,23 @@ LuaScriptTest::reactive_performance_session_init_tolerates_unavailable_file_io_t
 
 	std::string const generated_path = Glib::build_filename (session_dir.path (), "reactive-actions.txt");
 	CPPUNIT_ASSERT_EQUAL (false, Glib::file_test (generated_path, Glib::FILE_TEST_EXISTS));
+}
+
+void
+LuaScriptTest::reactive_performance_lua_api_ensures_session_marker_test ()
+{
+	LuaState lua (false, false);
+	LuaBindings::stddef (lua.getState ());
+	LuaBindings::common (lua.getState ());
+	LuaBindings::non_rt (lua.getState ());
+	LuaBindings::set_session (lua.getState (), _session);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (0), count_named_markers (*_session, "Breakdown"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_marker (Session, 'Breakdown', Temporal.timepos_t (48000)) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_markers (*_session, "Breakdown"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_marker (Session, 'Breakdown', Temporal.timepos_t (96000)) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_markers (*_session, "Breakdown"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_marker (Session, '', Temporal.timepos_t (48000)) == false)"));
 }
 
 void
