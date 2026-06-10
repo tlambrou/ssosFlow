@@ -190,13 +190,34 @@ local function seed_demo_trigger_clips ()
 	local clip_length = Temporal.timecnt_t (sample_rate * 4)
 	local note_start = Temporal.Beats.from_double (0)
 	local note_length = Temporal.Beats.from_double (1)
+	local function seed_note (note, velocity)
+		return {
+			start = note_start,
+			length = note_length,
+			channel = 0,
+			note = note,
+			velocity = velocity
+		}
+	end
 
 	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Rhythm Lane", 0, "Reactive Cue 0 Reset", clip_length, note_start, note_length, 0, 36, 100)
 	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Rhythm Lane", 1, "Reactive Cue 1 Tighten", clip_length, note_start, note_length, 0, 38, 100)
 	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Rhythm Lane", 2, "Reactive Cue 2 Sparse", clip_length, note_start, note_length, 0, 41, 100)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Harmony Lane", 0, "Reactive Harmony i", clip_length, note_start, note_length, 0, 48, 96)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Macro Lane", 0, "Reactive Macro Filter", clip_length, note_start, note_length, 0, 60, 88)
-	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, "Reactive Macro Lane", 1, "Reactive Macro Texture", clip_length, note_start, note_length, 0, 67, 88)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, "Reactive Harmony Lane", 0, "Reactive Harmony i", clip_length, {
+		seed_note (48, 96),
+		seed_note (51, 90),
+		seed_note (55, 90)
+	})
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, "Reactive Macro Lane", 0, "Reactive Macro Filter", clip_length, {
+		seed_note (60, 88),
+		seed_note (64, 82),
+		seed_note (67, 82)
+	})
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, "Reactive Macro Lane", 1, "Reactive Macro Texture", clip_length, {
+		seed_note (67, 88),
+		seed_note (72, 82),
+		seed_note (74, 82)
+	})
 end
 
 function factory () return function ()

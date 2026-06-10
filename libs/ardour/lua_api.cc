@@ -17,6 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <cstring>
+#include <vector>
 #include <vamp-hostsdk/PluginLoader.h>
 
 #include "evoral/Note.h"
@@ -61,6 +62,101 @@
 using namespace ARDOUR;
 using namespace PBD;
 using namespace std;
+
+namespace {
+
+struct LuaTriggerNoteSpec {
+	Temporal::Beats start;
+	Temporal::Beats length;
+	int channel = 0;
+	int note = 0;
+	int velocity = 0;
+};
+
+static bool
+valid_trigger_note_spec (LuaTriggerNoteSpec const& note)
+{
+	return note.start.to_ticks () >= 0 && note.length.to_ticks () > 0 &&
+		note.channel >= 0 && note.channel <= 15 &&
+		note.note >= 0 && note.note <= 127 &&
+		note.velocity > 0 && note.velocity <= 127;
+}
+
+static bool
+ensure_session_midi_trigger_region_with_note_specs (
+	Session* session,
+	string const& route_name,
+	int slot,
+	string const& region_name,
+	Temporal::timecnt_t const& length,
+	vector<LuaTriggerNoteSpec> const& notes)
+{
+	if (!session || route_name.empty () || region_name.empty () || slot < 0 || !length.is_positive () || notes.empty ()) {
+		return false;
+	}
+
+	for (vector<LuaTriggerNoteSpec>::const_iterator note = notes.begin (); note != notes.end (); ++note) {
+		if (!valid_trigger_note_spec (*note)) {
+			return false;
+		}
+	}
+
+	shared_ptr<Route> route = session->route_by_name (route_name);
+	shared_ptr<MidiTrack> midi_track = dynamic_pointer_cast<MidiTrack> (route);
+	if (!midi_track || !route->triggerbox ()) {
+		return false;
+	}
+
+	shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
+	TriggerPtr trigger = triggerbox->trigger (slot);
+	if (!trigger) {
+		return false;
+	}
+
+	if (trigger->the_region ()) {
+		return true;
+	}
+
+	shared_ptr<MidiSource> source;
+	try {
+		source = session->create_midi_source_for_session (region_name);
+	} catch (...) {
+		return false;
+	}
+	if (!source) {
+		return false;
+	}
+
+	PropertyList plist;
+	plist.add (Properties::start, Temporal::timepos_t (0));
+	plist.add (Properties::length, length);
+	plist.add (Properties::name, region_name);
+	plist.add (Properties::layer, 0);
+	plist.add (Properties::opaque, true);
+
+	shared_ptr<Region> region = RegionFactory::create (dynamic_pointer_cast<Source> (source), plist, true);
+	shared_ptr<MidiRegion> midi_region = dynamic_pointer_cast<MidiRegion> (region);
+	if (!midi_region || !midi_region->model ()) {
+		return false;
+	}
+
+	MidiModel::NoteDiffCommand* command = midi_region->model ()->new_note_diff_command ("seed reactive demo trigger notes");
+	for (vector<LuaTriggerNoteSpec>::const_iterator note = notes.begin (); note != notes.end (); ++note) {
+		command->add (shared_ptr<Evoral::Note<Temporal::Beats> > (
+			new Evoral::Note<Temporal::Beats> (
+				static_cast<uint8_t> (note->channel),
+				note->start,
+				note->length,
+				static_cast<uint8_t> (note->note),
+				static_cast<uint8_t> (note->velocity))));
+	}
+	midi_region->model ()->apply_diff_command_only (command);
+	delete command;
+
+	return triggerbox->set_region_for_setup (slot, region);
+}
+
+} // anonymous namespace
 
 int
 ARDOUR::LuaAPI::datatype_ctor_null (lua_State *L)
@@ -1030,58 +1126,57 @@ ARDOUR::LuaAPI::ensure_session_midi_trigger_region_with_note (
 	int note,
 	int velocity)
 {
-	if (!session || route_name.empty () || region_name.empty () || slot < 0 || !length.is_positive () ||
-	    note_start.to_ticks () < 0 || note_length.to_ticks () <= 0 ||
-	    channel < 0 || channel > 15 || note < 0 || note > 127 || velocity <= 0 || velocity > 127) {
+	LuaTriggerNoteSpec note_spec;
+	note_spec.start = note_start;
+	note_spec.length = note_length;
+	note_spec.channel = channel;
+	note_spec.note = note;
+	note_spec.velocity = velocity;
+
+	vector<LuaTriggerNoteSpec> notes;
+	notes.push_back (note_spec);
+	return ensure_session_midi_trigger_region_with_note_specs (session, route_name, slot, region_name, length, notes);
+}
+
+bool
+ARDOUR::LuaAPI::ensure_session_midi_trigger_region_with_notes (
+	Session* session,
+	const std::string& route_name,
+	int slot,
+	const std::string& region_name,
+	Temporal::timecnt_t const& length,
+	luabridge::LuaRef notes_table)
+{
+	if (!notes_table.isTable ()) {
 		return false;
 	}
 
-	std::shared_ptr<Route> route = session->route_by_name (route_name);
-	std::shared_ptr<MidiTrack> midi_track = std::dynamic_pointer_cast<MidiTrack> (route);
-	if (!midi_track || !route->triggerbox ()) {
-		return false;
-	}
-
-	std::shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
-	TriggerPtr trigger = triggerbox->trigger (slot);
-	if (!trigger) {
-		return false;
-	}
-
-	if (trigger->the_region ()) {
-		return true;
-	}
-
-	std::shared_ptr<MidiSource> source;
+	vector<LuaTriggerNoteSpec> notes;
 	try {
-		source = session->create_midi_source_for_session (region_name);
-	} catch (...) {
+		for (luabridge::Iterator i (notes_table); !i.isNil (); ++i) {
+			luabridge::LuaRef entry = i.value ();
+			if (!entry.isTable () ||
+			    entry["start"].isNil () ||
+			    entry["length"].isNil () ||
+			    !entry["channel"].isNumber () ||
+			    !entry["note"].isNumber () ||
+			    !entry["velocity"].isNumber ()) {
+				return false;
+			}
+
+			LuaTriggerNoteSpec note;
+			note.start = entry["start"].cast<Temporal::Beats> ();
+			note.length = entry["length"].cast<Temporal::Beats> ();
+			note.channel = entry["channel"].cast<int> ();
+			note.note = entry["note"].cast<int> ();
+			note.velocity = entry["velocity"].cast<int> ();
+			notes.push_back (note);
+		}
+	} catch (luabridge::LuaException const&) {
 		return false;
 	}
-	if (!source) {
-		return false;
-	}
 
-	PropertyList plist;
-	plist.add (Properties::start, Temporal::timepos_t (0));
-	plist.add (Properties::length, length);
-	plist.add (Properties::name, region_name);
-	plist.add (Properties::layer, 0);
-	plist.add (Properties::opaque, true);
-
-	std::shared_ptr<Region> region = RegionFactory::create (std::dynamic_pointer_cast<Source> (source), plist, true);
-	std::shared_ptr<MidiRegion> midi_region = std::dynamic_pointer_cast<MidiRegion> (region);
-	if (!midi_region || !midi_region->model ()) {
-		return false;
-	}
-
-	MidiModel::NoteDiffCommand* command = midi_region->model ()->new_note_diff_command ("seed reactive demo trigger note");
-	command->add (std::shared_ptr<Evoral::Note<Temporal::Beats> > (
-		new Evoral::Note<Temporal::Beats> (static_cast<uint8_t> (channel), note_start, note_length, static_cast<uint8_t> (note), static_cast<uint8_t> (velocity))));
-	midi_region->model ()->apply_diff_command_only (command);
-	delete command;
-
-	return triggerbox->set_region_for_setup (slot, region);
+	return ensure_session_midi_trigger_region_with_note_specs (session, route_name, slot, region_name, length, notes);
 }
 
 luabridge::LuaRef::Proxy&

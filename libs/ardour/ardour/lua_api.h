@@ -310,6 +310,21 @@ namespace ARDOUR { namespace LuaAPI {
 		int velocity);
 
 	/**
+	 * Ensure an empty MIDI TriggerBox slot has a region with multiple notes.
+	 *
+	 * If the slot already has any region, it is left untouched. Notes are
+	 * provided as a Lua table whose entries contain start, length, channel,
+	 * note, and velocity fields.
+	 */
+	bool ensure_session_midi_trigger_region_with_notes (
+		ARDOUR::Session* session,
+		const std::string& route_name,
+		int slot,
+		const std::string& region_name,
+		Temporal::timecnt_t const& length,
+		luabridge::LuaRef notes);
+
+	/**
 	 * Generic conversion from audio sample count to timecode.
 	 * (TimecodeType, sample-rate, sample-pos)
 	 */
