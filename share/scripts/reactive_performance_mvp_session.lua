@@ -86,6 +86,18 @@ DO rhythm route 0 density midi-value
 DO macro filter midi-value ramp 0|1|0
 DO state macro filter
 END
+
+ACTION demo.marker.breakdown
+TRIGGER marker Breakdown
+QUANTIZE 1|0|0
+DO rhythm insert 0
+DO rhythm route 0 density 0.25
+DO rhythm route 0 chance 0.35
+DO macro filter 0.25 ramp 0|1|0
+DO harmony chord bVII
+DO state section breakdown
+DO cue 2
+END
 ]]
 
 local function install_demo_action_document ()
