@@ -1734,6 +1734,7 @@ ReactiveActionSlotRunnerTest::queueQuantizedSlotActionUntilDue ()
 	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_count);
 	CPPUNIT_ASSERT_EQUAL (false, summary[0].due);
 	CPPUNIT_ASSERT (runner.format_queued_action_summary (8, Temporal::BBT_Time (3, 3, 0)).find ("Queued actions:") != std::string::npos);
+	CPPUNIT_ASSERT (runner.format_queued_action_summary (8, Temporal::BBT_Time (3, 3, 0)).find ("Commands:\n    - cue row 2") != std::string::npos);
 
 	ReactiveActionSlotExecutionStatus status = runner.last_execution_status ();
 	CPPUNIT_ASSERT_EQUAL (true, status.attempted);

@@ -7,6 +7,7 @@ class ReactiveActionSchedulerTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE (ReactiveActionSchedulerTest);
 	CPPUNIT_TEST (queueActionReportsSummary);
+	CPPUNIT_TEST (queueActionSummaryPreservesResolvedCommandDetails);
 	CPPUNIT_TEST (popDueActionsInDeterministicOrder);
 	CPPUNIT_TEST (zeroQuantizeActionsAreImmediatelyDue);
 	CPPUNIT_TEST (clearRemovesQueuedActions);
@@ -14,6 +15,7 @@ class ReactiveActionSchedulerTest : public CppUnit::TestFixture
 
 public:
 	void queueActionReportsSummary ();
+	void queueActionSummaryPreservesResolvedCommandDetails ();
 	void popDueActionsInDeterministicOrder ();
 	void zeroQuantizeActionsAreImmediatelyDue ();
 	void clearRemovesQueuedActions ();

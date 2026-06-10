@@ -45,7 +45,8 @@ The bundled MVP map uses:
 8. Locate before the template-created `Breakdown` marker, or add a visible `Breakdown` marker in a manual existing-session setup, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
 9. Locate before the template-created `Breakdown Loop` region, or create, record, draw, or import a non-hidden region with that exact name in a manual existing-session setup, roll transport across it, and confirm the panel or status dialog reports `demo.region.breakdown.loop`, `section = region-breakdown`, `chord = i7`, `filter = 0.55`, and route 0 rhythm density/chance changes.
 10. Launch Cue row 3 from the Cue page and confirm the panel or status dialog reports `demo.scene.drop`, `section = scene-drop`, `chord = V7`, `filter = 0.70`, and route 0 rhythm density/chance/rotation changes while the normal cue launch still happens.
-11. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
+11. When a nonzero-quantized action is pending, confirm the panel or status dialog lists the queued action's command details before the action releases.
+12. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
 
 ## Current Limit
 

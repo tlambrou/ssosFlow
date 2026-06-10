@@ -31,6 +31,7 @@ struct LIBARDOUR_API ReactiveQueuedActionSummary {
 	std::string requested_at;
 	std::string due_at;
 	size_t command_count = 0;
+	std::vector<std::string> command_summaries;
 	bool due = false;
 };
 

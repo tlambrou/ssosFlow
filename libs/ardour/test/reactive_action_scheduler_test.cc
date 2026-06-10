@@ -17,6 +17,17 @@ cue_command (int row)
 	return command;
 }
 
+static ReactiveCommand
+macro_command (std::string const& name, double value, Temporal::BBT_Offset const& ramp)
+{
+	ReactiveCommand command;
+	command.type = ReactiveCommand::Macro;
+	command.name = name;
+	command.value = value;
+	command.ramp = ramp;
+	return command;
+}
+
 static ReactiveActionPlan
 plan (std::string const& name, Temporal::BBT_Offset const& quantize, int cue_row)
 {
@@ -57,7 +68,36 @@ ReactiveActionSchedulerTest::queueActionReportsSummary ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("3|2|0"), summary[0].requested_at);
 	CPPUNIT_ASSERT_EQUAL (std::string ("4|1|0"), summary[0].due_at);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[0].command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue row 0"), summary[0].command_summaries[0]);
 	CPPUNIT_ASSERT_EQUAL (false, summary[0].due);
+}
+
+void
+ReactiveActionSchedulerTest::queueActionSummaryPreservesResolvedCommandDetails ()
+{
+	ReactiveActionScheduler scheduler;
+	ReactiveActionPlan p;
+	p.ok = true;
+	p.action_name = "queued.morph";
+	p.quantize = Temporal::BBT_Offset (0, 1, 0);
+	p.commands.push_back (macro_command ("space", 0.522835, Temporal::BBT_Offset (0, 1, 0)));
+	p.commands.push_back (macro_command ("texture", 0.502362, Temporal::BBT_Offset (0, 1, 0)));
+
+	scheduler.queue_action (
+		8,
+		"MIDI cc ch=1 cc=22",
+		p,
+		Temporal::BBT_Time (1, 1, 120),
+		Temporal::BBT_Time (1, 2, 0));
+
+	std::vector<ReactiveQueuedActionSummary> const summary = scheduler.queued_action_summary (8, Temporal::BBT_Time (1, 1, 120));
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary[0].command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro space = 0.522835 ramp 0|1|0"), summary[0].command_summaries[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro texture = 0.502362 ramp 0|1|0"), summary[0].command_summaries[1]);
 }
 
 void
