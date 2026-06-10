@@ -43,6 +43,7 @@ REQUIRED_COPY = {
     "Open Locally",
     "docs/reactive-performance-mode/ui-guide/index.html",
     "Screenshot Walkthrough",
+    "Track State",
 }
 
 

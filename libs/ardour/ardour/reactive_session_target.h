@@ -49,6 +49,18 @@ struct LIBARDOUR_API ReactiveSessionStateSummary {
 	std::string status;
 };
 
+struct LIBARDOUR_API ReactiveTrackStateSummary {
+	size_t slot = 0;
+	std::string route_name;
+	bool active = false;
+	bool muted = false;
+	bool soloed = false;
+	bool record_enable_available = false;
+	bool record_enabled = false;
+	double gain = 0.0;
+	std::string status;
+};
+
 class LIBARDOUR_API ReactiveSessionTarget : public ReactiveActionTarget {
 public:
 	explicit ReactiveSessionTarget (Session&);
@@ -74,6 +86,8 @@ public:
 	std::string format_trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const;
 	ReactiveSessionStateSummary session_state_summary () const;
 	std::string format_session_state_summary () const;
+	std::vector<ReactiveTrackStateSummary> track_state_summary (size_t max_routes) const;
+	std::string format_track_state_summary (size_t max_routes) const;
 
 protected:
 	ReactiveSessionTarget ();

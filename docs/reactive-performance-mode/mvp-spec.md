@@ -214,7 +214,7 @@ The current `share/midi_maps/reactive-performance-mvp.map` binds notes 36 throug
 
 `Reactive/reload-action-document` clears the cached action document for the current session and reloads using the same lookup order. Successful reloads report whether the session file, user file, or built-in fallback was loaded. Failed reloads report the configured file path and parse/read error without silently falling back.
 
-`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
+`Reactive/show-action-document-status` opens the minimal Phase 5 status panel. It shows whether Reactive Performance Mode is enabled, the loaded source type, configured path or fallback label, action count, last load error, latest execution status, performance-control availability for the first eight slots, a latest-attempted slot marker, next-action preview, session state, track state, routing status for the first eight controller-facing routes, the first eight action slots in a controller-bank-style summary, the first eight macro slots with current values, and the first eight user-defined state slots with current values. The panel includes large trigger controls for the first eight slots, an Enable/Disable Mode control, and a Reload control that uses the same reload path as `Reactive/reload-action-document`.
 
 Macro-bank rows are discovered from `DO macro ...` commands in the loaded action document. Names are listed once in first-seen document order, default to `0.0` before execution, and reflect the latest values written by executed macro commands.
 
@@ -595,6 +595,13 @@ Phase 5v adds the first session/clock state read model:
 - The formatted session-state summary displays rows such as `stopped @ 1|1|0 tempo=120.00 meter=4/4 sample=0 routes=3 trigger-routes=3`.
 - The existing status dialog and Cue-page panel summary display this read-only section next to routing and trigger-slot state, giving performers live musical-clock context without adding realtime session mutation or a parallel transport model.
 
+Phase 5w adds the first track-state read model:
+
+- `ReactiveSessionTarget` exposes bounded `ReactiveTrackStateSummary` rows in the same controller-facing route order used by route-scoped rhythm actions.
+- Rows include route index, route name, active/inactive state, mute state, solo state, record-enable availability/state for real tracks, gain value, and a compact status string.
+- The formatted track-state summary displays rows such as `0: Reactive Rhythm Lane - active unmuted unsoloed rec-off gain=1.00` and uses `rec=-` for non-track routes.
+- The existing status dialog and Cue-page panel summary display this read-only section next to session state, routing, and trigger-slot state without adding new route-mutating commands.
+
 Phase 5f adds an explicit mode-arm toggle:
 
 - `ReactiveActionSlotRunner` exposes enabled/disabled state and a compact status string for the status panel.
@@ -821,7 +828,7 @@ Phase 7p makes the generated demo clips more musical without committing session 
 - Scheduler tests cover queued-action summaries with bounded command details, including TriggerBox follow-probability details, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, formatted queued command details, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, route-scoped rhythm value dispatch, and TriggerBox follow-probability dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
-- Session-target tests cover route-scoped rhythm insertion, parameter writes, TriggerBox follow-probability dispatch, missing-target errors, routing summaries with live rhythm parameter values, trigger-slot summaries for populated and empty slots, and session/clock state summaries.
+- Session-target tests cover route-scoped rhythm insertion, parameter writes, TriggerBox follow-probability dispatch, missing-target errors, routing summaries with live rhythm parameter values, trigger-slot summaries for populated and empty slots, session/clock state summaries, and track-state summaries.
 - Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
 - Lua template tests cover the repeatable demo session template, installed action-document drift, idempotent marker/region/TriggerBox helper behavior, and the 12 seeded demo trigger-clip notes.
 - Manual smoke test can trigger one cue row, one harmony-state update, and one CC-derived macro from a MIDI map.
