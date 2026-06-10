@@ -322,6 +322,12 @@ ReactiveActionEngine::match_scene_event (ReactiveSceneEvent const& event) const
 ReactiveActionPlan
 ReactiveActionEngine::preview_action (std::string const& name) const
 {
+	return preview_action (name, 0);
+}
+
+ReactiveActionPlan
+ReactiveActionEngine::preview_action (std::string const& name, ReactiveMidiEvent const* event) const
+{
 	ReactiveActionPlan plan;
 	std::vector<ReactiveAction> const& actions = _document.actions ();
 	ReactiveAction const* action = 0;
@@ -367,7 +373,7 @@ ReactiveActionEngine::preview_action (std::string const& name) const
 	}
 
 	std::vector<ReactiveCommand> raw_commands = plan.commands;
-	if (!preview_plan_commands (raw_commands, 0, plan.commands, plan.error)) {
+	if (!preview_plan_commands (raw_commands, event, plan.commands, plan.error)) {
 		plan.commands.clear ();
 		plan.ok = false;
 	}

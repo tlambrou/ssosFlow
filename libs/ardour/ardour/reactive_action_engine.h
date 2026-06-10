@@ -72,6 +72,7 @@ public:
 	std::vector<ReactiveActionMatch> match_scene_event (ReactiveSceneEvent const&) const;
 
 	ReactiveActionPlan preview_action (std::string const& name) const;
+	ReactiveActionPlan preview_action (std::string const& name, ReactiveMidiEvent const* event) const;
 	ReactiveActionPlan trigger_action (std::string const& name);
 	ReactiveActionPlan trigger_action (std::string const& name, ReactiveMidiEvent const* event);
 	void set_transport_rolling (bool rolling) { _transport_rolling = rolling; }

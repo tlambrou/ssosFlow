@@ -1333,6 +1333,8 @@ ReactiveActionSlotRunnerTest::previewSlotForPerformancePanelWithoutMutatingState
 	CPPUNIT_ASSERT_EQUAL (std::string ("1|0|0"), preview.quantize);
 	CPPUNIT_ASSERT_EQUAL (Temporal::BBT_Offset (1, 0, 0), preview.quantize_offset);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro filter = 0.25 ramp 0|0|0"), preview.command_summaries[0]);
 	CPPUNIT_ASSERT_EQUAL (std::string (), runner.last_action ());
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.0, runner.macro_value ("filter"), 0.0001);
 	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
@@ -1348,10 +1350,13 @@ ReactiveActionSlotRunnerTest::previewSlotForPerformancePanelWithoutMutatingState
 	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, runner.macro_value ("filter"), 0.0001);
 	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("Next action preview: slot 0 (build)") != std::string::npos);
 	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("sequential, quantize 1|0|0, 1 command") != std::string::npos);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("Commands:\n  - cue row 1") != std::string::npos);
 
 	preview = runner.preview_slot (0);
 	CPPUNIT_ASSERT_EQUAL (true, preview.available);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), preview.command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue row 1"), preview.command_summaries[0]);
 
 	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
 	CPPUNIT_ASSERT_EQUAL (size_t (2), target.calls.size ());
@@ -1388,6 +1393,9 @@ ReactiveActionSlotRunnerTest::previewMidiEventForPerformancePanel ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("all"), preview.chain_mode);
 	CPPUNIT_ASSERT_EQUAL (std::string ("0|1|0"), preview.quantize);
 	CPPUNIT_ASSERT_EQUAL (size_t (2), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), preview.command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue row 0"), preview.command_summaries[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("state section = intro"), preview.command_summaries[1]);
 	CPPUNIT_ASSERT_EQUAL (std::string (), runner.state_value ("section"));
 	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
 
@@ -1398,6 +1406,43 @@ ReactiveActionSlotRunnerTest::previewMidiEventForPerformancePanel ()
 	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("Next action preview: slot 0 (first)") != std::string::npos);
 	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("MIDI note ch=10 note=36") != std::string::npos);
 	CPPUNIT_ASSERT_EQUAL (std::string ("intro"), runner.state_value ("section"));
+}
+
+void
+ReactiveActionSlotRunnerTest::previewMidiEventUsesControllerValueForCommandDetails ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION seed.snapshots\n"
+		"DO macro texture 0.20\n"
+		"DO macro space 0.80\n"
+		"DO macro snapshot store texture_low\n"
+		"DO macro texture 0.80\n"
+		"DO macro space 0.25\n"
+		"DO macro snapshot store texture_high\n"
+		"END\n"
+		"ACTION morph.from.cc\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro morph texture_low texture_high amount midi-value ramp 0|1|0\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_slot (0, target).ok);
+
+	ReactiveActionPreviewSummary preview = runner.preview_midi_event (ReactiveMidiEvent::control_change (1, 22, 64));
+
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (std::string ("morph.from.cc"), preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), preview.command_summaries.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro space = 0.522835 ramp 0|1|0"), preview.command_summaries[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("macro texture = 0.502362 ramp 0|1|0"), preview.command_summaries[1]);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.80, runner.macro_value ("texture"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, runner.macro_value ("space"), 0.0001);
 }
 
 void
@@ -1555,6 +1600,7 @@ ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
 
 	std::string const formatted = runner.format_panel_summary (2);
 	CPPUNIT_ASSERT (formatted.find ("Next: slot 0 setup - all, q 0|0|0, 4 cmds") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("Commands: macro filter = 0.25 ramp 0|0|0, state section = intro") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("Macros: filter=0.25, resonance=0") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("States: section=intro, energy=") != std::string::npos);
 	CPPUNIT_ASSERT (formatted.find ("Harmony: key=C_minor, chord=") != std::string::npos);
