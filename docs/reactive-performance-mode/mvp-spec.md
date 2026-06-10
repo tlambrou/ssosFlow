@@ -582,6 +582,13 @@ Phase 5r makes that routing read model show live rhythm parameter values:
 - The formatted routing summary displays compact values such as `density=0.25 chance=0.50 priority=2 rotation=4`.
 - The existing status dialog and Cue-page panel summary inherit those values through `ReactiveSessionTarget::format_routing_summary(...)`, so controller-driven rhythm changes are visible without adding new UI ownership.
 
+Phase 5u adds the first trigger-slot/clip-state read model:
+
+- `ReactiveSessionTarget` summarizes bounded trigger-visible routes in Ardour's sorted trigger-track order, matching the controller-facing TriggerBox route order used by `Session::triggerbox_at(...)`.
+- `ReactiveTriggerSlotSummary` exposes route index, slot index, route name, trigger-region name when present, triggerbox presence, populated/empty state, playable state, follow probability, and a compact status label.
+- The formatted trigger-slot summary displays rows such as `0/0: Reactive Rhythm Lane - Reactive Cue 0 Reset playable follow=65%` and `0/1: Reactive Rhythm Lane - empty`.
+- The existing status dialog and Cue-page panel summary display this read-only section next to routing, so seeded demo clips and empty slots are visible without adding a new clip-grid implementation or mutating normal Ardour trigger behavior.
+
 Phase 5f adds an explicit mode-arm toggle:
 
 - `ReactiveActionSlotRunner` exposes enabled/disabled state and a compact status string for the status panel.
@@ -808,7 +815,7 @@ Phase 7p makes the generated demo clips more musical without committing session 
 - Scheduler tests cover queued-action summaries with bounded command details, including TriggerBox follow-probability details, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, formatted queued command details, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, route-scoped rhythm value dispatch, and TriggerBox follow-probability dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
-- Session-target tests cover route-scoped rhythm insertion, parameter writes, TriggerBox follow-probability dispatch, missing-target errors, and routing summaries with live rhythm parameter values.
+- Session-target tests cover route-scoped rhythm insertion, parameter writes, TriggerBox follow-probability dispatch, missing-target errors, routing summaries with live rhythm parameter values, and trigger-slot summaries for populated and empty slots.
 - Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
 - Lua template tests cover the repeatable demo session template, installed action-document drift, idempotent marker/region/TriggerBox helper behavior, and the 12 seeded demo trigger-clip notes.
 - Manual smoke test can trigger one cue row, one harmony-state update, and one CC-derived macro from a MIDI map.

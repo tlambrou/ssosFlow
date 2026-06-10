@@ -9,6 +9,7 @@
 #include "ardour/plugin.h"
 #include "ardour/plugin_insert.h"
 #include "ardour/reactive_rhythm_route_inserter.h"
+#include "ardour/region.h"
 #include "ardour/route.h"
 #include "ardour/session.h"
 #include "ardour/triggerbox.h"
@@ -279,6 +280,58 @@ reactive_rhythm_route_status (ReactiveRoutingSlotSummary const& row)
 	       << " chance=" << format_decimal_value (row.rhythm_chance)
 	       << " priority=" << format_integer_value (row.rhythm_priority)
 	       << " rotation=" << format_integer_value (row.rhythm_rotation);
+	return status.str ();
+}
+
+static std::vector<std::shared_ptr<Route> >
+trigger_visible_routes (Session const& session, size_t max_routes)
+{
+	std::vector<std::shared_ptr<Route> > routes;
+	if (max_routes == 0) {
+		return routes;
+	}
+
+	routes.reserve (max_routes);
+
+	StripableList stripables;
+	session.get_stripables (stripables);
+	stripables.sort (Stripable::Sorter ());
+
+	for (StripableList::const_iterator i = stripables.begin (); i != stripables.end (); ++i) {
+		std::shared_ptr<Route> route = std::dynamic_pointer_cast<Route> (*i);
+		if (!route || !route->triggerbox ()) {
+			continue;
+		}
+
+		if (!route->presentation_info ().trigger_track ()) {
+			continue;
+		}
+
+		routes.push_back (route);
+		if (routes.size () >= max_routes) {
+			break;
+		}
+	}
+
+	return routes;
+}
+
+static std::string
+trigger_slot_status (ReactiveTriggerSlotSummary const& row)
+{
+	if (!row.populated) {
+		return "empty";
+	}
+
+	std::ostringstream status;
+	if (!row.region_name.empty ()) {
+		status << row.region_name;
+	} else {
+		status << "loaded trigger";
+	}
+
+	status << (row.playable ? " playable" : " loaded")
+	       << " follow=" << row.follow_probability << "%";
 	return status.str ();
 }
 
@@ -566,6 +619,67 @@ ReactiveSessionTarget::format_routing_summary (size_t max_routes) const
 	text << "Routing:";
 	for (std::vector<ReactiveRoutingSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
 		text << "\n  " << i->slot << ": " << i->route_name << " - " << i->status;
+	}
+
+	return text.str ();
+}
+
+std::vector<ReactiveTriggerSlotSummary>
+ReactiveSessionTarget::trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const
+{
+	std::vector<ReactiveTriggerSlotSummary> summary;
+	if (!_session || max_routes == 0 || max_slots_per_route == 0) {
+		return summary;
+	}
+
+	std::vector<std::shared_ptr<Route> > const routes = trigger_visible_routes (*_session, max_routes);
+	summary.reserve (routes.size () * max_slots_per_route);
+
+	for (size_t route_index = 0; route_index < routes.size (); ++route_index) {
+		std::shared_ptr<Route> const& route = routes[route_index];
+		std::shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
+		if (!triggerbox) {
+			continue;
+		}
+
+		for (size_t slot = 0; slot < max_slots_per_route; ++slot) {
+			ReactiveTriggerSlotSummary row;
+			row.route = route_index;
+			row.slot = slot;
+			row.route_name = route->name ();
+			row.has_triggerbox = true;
+
+			TriggerPtr trigger = triggerbox->trigger (static_cast<TriggerBox::Triggers::size_type> (slot));
+			if (trigger) {
+				std::shared_ptr<Region> region = trigger->the_region ();
+				if (region) {
+					row.region_name = region->name ();
+				}
+				row.playable = trigger->playable ();
+				row.populated = region || row.playable;
+				row.follow_probability = trigger->follow_action_probability ();
+			}
+
+			row.status = trigger_slot_status (row);
+			summary.push_back (row);
+		}
+	}
+
+	return summary;
+}
+
+std::string
+ReactiveSessionTarget::format_trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const
+{
+	std::vector<ReactiveTriggerSlotSummary> const summary = trigger_slot_summary (max_routes, max_slots_per_route);
+	if (summary.empty ()) {
+		return "Trigger Slots: none";
+	}
+
+	std::ostringstream text;
+	text << "Trigger Slots:";
+	for (std::vector<ReactiveTriggerSlotSummary>::const_iterator i = summary.begin (); i != summary.end (); ++i) {
+		text << "\n  " << i->route << "/" << i->slot << ": " << i->route_name << " - " << i->status;
 	}
 
 	return text.str ();

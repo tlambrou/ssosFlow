@@ -6,6 +6,7 @@
 
 #include "ardour/automation_control.h"
 #include "ardour/chan_count.h"
+#include "ardour/lua_api.h"
 #include "ardour/midi_track.h"
 #include "ardour/plugin.h"
 #include "ardour/plugin_insert.h"
@@ -38,6 +39,27 @@ new_midi_route (Session& session)
 		PresentationInfo::max_order,
 		Normal,
 		false);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (1), tracks.size ());
+	return tracks.front ();
+}
+
+static std::shared_ptr<Route>
+new_trigger_visible_midi_route (Session& session, std::string const& name)
+{
+	std::list<std::shared_ptr<MidiTrack> > tracks = session.new_midi_track (
+		ChanCount (DataType::MIDI, 1),
+		ChanCount (DataType::MIDI, 1),
+		false,
+		PluginInfoPtr (),
+		nullptr,
+		std::shared_ptr<RouteGroup> (),
+		1,
+		name,
+		PresentationInfo::max_order,
+		Normal,
+		false,
+		true);
 
 	CPPUNIT_ASSERT_EQUAL (size_t (1), tracks.size ());
 	return tracks.front ();
@@ -281,4 +303,59 @@ ReactiveSessionTargetRhythmInsertTest::formatEmptyReactiveRhythmRoutingStatus ()
 	CPPUNIT_ASSERT (target.routing_summary (8).empty ());
 	CPPUNIT_ASSERT_EQUAL (std::string ("Routing: none"), target.format_routing_summary (8));
 	CPPUNIT_ASSERT_EQUAL (std::string ("Routing: none"), target.format_routing_summary (0));
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::summarizeReactiveTriggerSlotStatus ()
+{
+	std::shared_ptr<Route> route = new_trigger_visible_midi_route (*_session, "Reactive Trigger Lane");
+	ReactiveSessionTarget target (*_session);
+	std::string error;
+
+	CPPUNIT_ASSERT (ARDOUR::LuaAPI::ensure_session_midi_trigger_region (
+		_session,
+		"Reactive Trigger Lane",
+		0,
+		"Reactive Cue 0 Reset",
+		Temporal::timecnt_t (48000 * 4)));
+	CPPUNIT_ASSERT_EQUAL (true, target.trigger_probability (0, 0, 0.65, error));
+
+	std::vector<ReactiveTriggerSlotSummary> summary = target.trigger_slot_summary (4, 2);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].route);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (route->name (), summary[0].route_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Cue 0 Reset"), summary[0].region_name);
+	CPPUNIT_ASSERT_EQUAL (true, summary[0].has_triggerbox);
+	CPPUNIT_ASSERT_EQUAL (true, summary[0].populated);
+	CPPUNIT_ASSERT_EQUAL (true, summary[0].playable);
+	CPPUNIT_ASSERT_EQUAL (65, summary[0].follow_probability);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Cue 0 Reset playable follow=65%"), summary[0].status);
+
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[1].route);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary[1].slot);
+	CPPUNIT_ASSERT_EQUAL (route->name (), summary[1].route_name);
+	CPPUNIT_ASSERT (summary[1].region_name.empty ());
+	CPPUNIT_ASSERT_EQUAL (true, summary[1].has_triggerbox);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].populated);
+	CPPUNIT_ASSERT_EQUAL (false, summary[1].playable);
+	CPPUNIT_ASSERT_EQUAL (0, summary[1].follow_probability);
+	CPPUNIT_ASSERT_EQUAL (std::string ("empty"), summary[1].status);
+
+	std::string const formatted = target.format_trigger_slot_summary (4, 2);
+	CPPUNIT_ASSERT (formatted.find ("Trigger Slots:") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("0/0: Reactive Trigger Lane - Reactive Cue 0 Reset playable follow=65%") != std::string::npos);
+	CPPUNIT_ASSERT (formatted.find ("0/1: Reactive Trigger Lane - empty") != std::string::npos);
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::formatEmptyReactiveTriggerSlotStatus ()
+{
+	ReactiveSessionTarget target (*_session);
+
+	CPPUNIT_ASSERT (target.trigger_slot_summary (4, 4).empty ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Trigger Slots: none"), target.format_trigger_slot_summary (4, 4));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Trigger Slots: none"), target.format_trigger_slot_summary (0, 4));
+	CPPUNIT_ASSERT_EQUAL (std::string ("Trigger Slots: none"), target.format_trigger_slot_summary (4, 0));
 }
