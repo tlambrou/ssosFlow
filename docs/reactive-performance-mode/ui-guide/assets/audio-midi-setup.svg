@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1054" height="886" viewBox="0 0 1054 886" role="img" aria-labelledby="title desc">
+  <title id="title">Audio MIDI Setup dialog</title>
+  <desc id="desc">Screenshot-style panel showing Ardour Audio MIDI Setup with None Dummy selected and Start highlighted.</desc>
+  <rect width="1054" height="886" rx="18" fill="#111416"/>
+  <rect x="2" y="2" width="1050" height="882" rx="18" fill="#2a2d2f" stroke="#4b5257" stroke-width="2"/>
+  <circle cx="34" cy="34" r="12" fill="#ff6257"/>
+  <circle cx="66" cy="34" r="12" fill="#ffbd2e"/>
+  <circle cx="98" cy="34" r="12" fill="#28c840"/>
+  <text x="128" y="42" fill="#e9eeee" font-family="Arial, sans-serif" font-size="24" font-weight="700">Audio/MIDI Setup</text>
+  <rect x="48" y="112" width="958" height="650" rx="3" fill="#2f3335" stroke="#1f2223" stroke-width="3"/>
+  <text x="74" y="172" fill="#f3f6f5" font-family="Arial, sans-serif" font-size="24">Audio System:</text>
+  <rect x="414" y="140" width="270" height="50" rx="5" fill="#3b3f41" stroke="#242728"/>
+  <text x="430" y="173" fill="#f4f6f5" font-family="Arial, sans-serif" font-size="23">None (Dummy)</text>
+  <path d="M660 160 l8 8 l8-8" fill="none" stroke="#8f9799" stroke-width="3"/>
+  <text x="716" y="173" fill="#ef5b54" font-family="Arial, sans-serif" font-size="22" font-weight="700">Stopped</text>
+  <rect x="820" y="136" width="150" height="58" rx="9" fill="#55595d" stroke="#151719" stroke-width="3"/>
+  <text x="842" y="173" fill="#f6f7f6" font-family="Arial, sans-serif" font-size="22" font-weight="700">Autostart</text>
+  <circle cx="946" cy="164" r="8" fill="#38db5e"/>
+  <line x1="82" y1="226" x2="966" y2="226" stroke="#161819" stroke-width="3"/>
+  <text x="74" y="292" fill="#f3f6f5" font-family="Arial, sans-serif" font-size="24">Driver:</text>
+  <rect x="414" y="260" width="270" height="50" rx="5" fill="#3b3f41" stroke="#242728"/>
+  <text x="430" y="293" fill="#f4f6f5" font-family="Arial, sans-serif" font-size="23">Normal Speed</text>
+  <text x="74" y="352" fill="#f3f6f5" font-family="Arial, sans-serif" font-size="24">Device:</text>
+  <rect x="414" y="320" width="270" height="50" rx="5" fill="#373b3d" stroke="#242728"/>
+  <text x="74" y="412" fill="#f3f6f5" font-family="Arial, sans-serif" font-size="24">Sample Rate:</text>
+  <rect x="414" y="380" width="270" height="50" rx="5" fill="#3b3f41" stroke="#242728"/>
+  <text x="430" y="413" fill="#f4f6f5" font-family="Arial, sans-serif" font-size="23">48 kHz</text>
+  <text x="74" y="472" fill="#f3f6f5" font-family="Arial, sans-serif" font-size="24">Buffer Size:</text>
+  <rect x="414" y="440" width="270" height="50" rx="5" fill="#3b3f41" stroke="#242728"/>
+  <text x="430" y="473" fill="#f4f6f5" font-family="Arial, sans-serif" font-size="23">1024 samples</text>
+  <text x="708" y="473" fill="#f4f6f5" font-family="Arial, sans-serif" font-size="22">(21.3 ms)</text>
+  <line x1="82" y1="524" x2="966" y2="524" stroke="#161819" stroke-width="3"/>
+  <path d="M82 572 l10 10 l10-10" fill="none" stroke="#d6dcda" stroke-width="3"/>
+  <text x="112" y="582" fill="#dfe6e4" font-family="Arial, sans-serif" font-size="21">Hardware Monitoring</text>
+  <text x="74" y="638" fill="#f3f6f5" font-family="Arial, sans-serif" font-size="24">Record Monitoring Handled by:</text>
+  <rect x="414" y="606" width="270" height="50" rx="5" fill="#3b3f41" stroke="#242728"/>
+  <text x="430" y="639" fill="#f4f6f5" font-family="Arial, sans-serif" font-size="23">Audio Hardware</text>
+  <path d="M82 682 l8 10 l-8 10" fill="none" stroke="#d6dcda" stroke-width="3"/>
+  <text x="112" y="699" fill="#dfe6e4" font-family="Arial, sans-serif" font-size="21">Advanced Settings</text>
+  <rect x="854" y="804" width="166" height="54" rx="9" fill="#3b3f41" stroke="#f0f4f2" stroke-width="2"/>
+  <text x="904" y="839" fill="#ffffff" font-family="Arial, sans-serif" font-size="23" font-weight="700">Start</text>
+  <rect x="843" y="793" width="188" height="76" rx="12" fill="none" stroke="#50bfd5" stroke-width="5"/>
+</svg>
