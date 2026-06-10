@@ -233,6 +233,8 @@ The backend runner can now execute loaded documents from a numbered `ReactiveSce
 
 The backend runner can now execute loaded documents from a named `ReactiveRegionEvent`. It parses `TRIGGER region <name>` while preserving multi-word names, matches exact region names through `ReactiveActionEngine::match_region_event(...)`, reports readable `region <name>` labels for previews, status, and queued summaries, and can execute or queue matching actions through the same scheduler path as manual slots, MIDI triggers, marker triggers, and scene triggers. This is backend region-trigger support only; live Ardour region/playlist adapter wiring remains a follow-up.
 
+Live Ardour region triggers are bridged by a narrow track-playlist adapter in GTK/session space. The adapter observes named, non-hidden regions on active track playlists, detects forward crossings of their timeline start positions, resets on stop, locate, or backward movement, skips regions that have no matching reactive action, and delegates matched hits to the same region runner API. It intentionally rides the existing Reactive Performance panel/queue poll loop for the MVP; native sample-accurate `SessionEvent` scheduling remains future work.
+
 Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needed one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance.
 
 Phase 4f adds that live adapter path for Generic MIDI note-on and control-change bindings. A map entry can now use `reactive="trigger"` with `note` or `ctl`; the Generic MIDI surface reconstructs the 3-byte controller message on Ardour's existing MIDI/control-surface thread, emits it through `BasicUI`, and the GTK-side Reactive Performance entry point delegates to `ReactiveActionSlotRunner::execute_midi_bytes(...)`. The MVP map keeps notes 36 through 45 for fixed slot/status/reload actions and adds note 46 on channel 10 plus CC 22 on channel 1 as document-level trigger examples.
@@ -499,6 +501,14 @@ Phase 4l adds backend region-trigger execution:
 - Match exact region-name triggers in document order without affecting MIDI, marker, or scene matching.
 - Preview, execute, and quantize/queue the first matching region action through `ReactiveActionSlotRunner`.
 - Keep live Ardour region, playlist, or editor-selection adapter wiring as follow-up work so this slice remains backend-first and non-realtime.
+
+Phase 4m bridges live Ardour timeline regions to that backend path:
+
+- Represent named, non-hidden timeline regions as `ReactiveRegionObservation` values with start sample and route name/order metadata.
+- Detect forward crossings of region starts from the GTK/session poll path and reset on stop, locate, discontinuity, or backward movement.
+- Delegate matching crossings to `ReactiveActionSlotRunner::execute_or_queue_region_event(...)` so quantized region actions reuse the existing scheduler.
+- Skip unmatched regions so ordinary session regions do not produce noisy reactive failures.
+- Keep playlist scanning, document lookup, and action planning outside realtime audio callbacks; exact sample-accurate native scheduling remains a later `SessionEvent` design.
 
 Phase 5: add minimal Reactive Performance UI panel.
 

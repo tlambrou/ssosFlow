@@ -94,12 +94,14 @@
 #include "ardour/location.h"
 #include "ardour/monitor_control.h"
 #include "ardour/midi_track.h"
+#include "ardour/playlist.h"
 #include "ardour/port.h"
 #include "ardour/plugin_manager.h"
 #include "ardour/process_thread.h"
 #include "ardour/profile.h"
 #include "ardour/reactive_action_document_loader.h"
 #include "ardour/reactive_session_target.h"
+#include "ardour/region.h"
 #include "ardour/revision.h"
 #include "ardour/session_directory.h"
 #include "ardour/session_route.h"
@@ -234,6 +236,48 @@ reactive_marker_observations (Session& session)
 	}
 
 	return markers;
+}
+
+static vector<ReactiveRegionObservation>
+reactive_region_observations (Session& session)
+{
+	vector<ReactiveRegionObservation> observations;
+	std::shared_ptr<RouteList> tracks = session.get_tracks ();
+	if (!tracks) {
+		return observations;
+	}
+
+	size_t route_order = 0;
+	for (RouteList::const_iterator route = tracks->begin (); route != tracks->end (); ++route, ++route_order) {
+		std::shared_ptr<Track> track = std::dynamic_pointer_cast<Track> (*route);
+		if (!track) {
+			continue;
+		}
+
+		std::shared_ptr<Playlist> playlist = track->playlist ();
+		if (!playlist) {
+			continue;
+		}
+
+		std::shared_ptr<RegionList> regions = playlist->region_list ();
+		if (!regions) {
+			continue;
+		}
+
+		for (RegionList::const_iterator region = regions->begin (); region != regions->end (); ++region) {
+			if (!*region || (*region)->hidden () || (*region)->name ().empty ()) {
+				continue;
+			}
+
+			observations.push_back (ReactiveRegionObservation::at (
+				(*region)->name (),
+				(*region)->position_sample (),
+				track->name (),
+				route_order));
+		}
+	}
+
+	return observations;
 }
 
 } // namespace
@@ -3213,6 +3257,8 @@ ARDOUR_UI::load_reactive_action_document (bool report_success)
 		    load_result)) {
 		_reactive_action_document_load_result = load_result;
 		_reactive_action_document_session_path.clear ();
+		_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+		_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 		warning << string_compose (_("Could not load Reactive Performance action document: %1"), load_result.error) << endmsg;
 		return false;
 	}
@@ -3220,6 +3266,7 @@ ARDOUR_UI::load_reactive_action_document (bool report_success)
 	_reactive_action_document_load_result = load_result;
 	_reactive_action_document_session_path = session_path;
 	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 	if (report_success) {
 		info << ReactiveActionDocumentLoader::describe_load_result (load_result) << endmsg;
 	}
@@ -3238,6 +3285,7 @@ ARDOUR_UI::reload_reactive_action_document_from_disk (bool report_success)
 	_reactive_action_slots.clear ();
 	_reactive_action_document_session_path.clear ();
 	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 	return load_reactive_action_document (report_success);
 }
 
@@ -3264,6 +3312,7 @@ ARDOUR_UI::toggle_reactive_performance_mode ()
 {
 	_reactive_action_slots.set_performance_enabled (!_reactive_action_slots.performance_enabled ());
 	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
+	_reactive_region_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 	info << _reactive_action_slots.format_performance_mode_status () << endmsg;
 	reactive_performance_changed ();
 }
@@ -3505,6 +3554,7 @@ bool
 ARDOUR_UI::poll_reactive_performance_queue ()
 {
 	bool changed = poll_reactive_performance_markers ();
+	changed = poll_reactive_performance_regions () || changed;
 
 	if (!_session || _reactive_action_slots.queued_action_count () == 0) {
 		return changed;
@@ -3522,6 +3572,63 @@ ARDOUR_UI::poll_reactive_performance_queue ()
 
 	if (!result.ok) {
 		warning << string_compose (_("Reactive queued action release failed: %1"), result.error) << endmsg;
+	}
+
+	if (changed) {
+		reactive_performance_changed ();
+	}
+
+	return changed;
+}
+
+bool
+ARDOUR_UI::poll_reactive_performance_regions ()
+{
+	if (!_session) {
+		_reactive_region_crossing_detector.reset ();
+		return false;
+	}
+
+	if (!_reactive_action_slots.performance_enabled ()) {
+		_reactive_region_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		_reactive_region_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	vector<ReactiveRegionObservation> const regions = reactive_region_observations (*_session);
+	vector<ReactiveRegionCrossing> const crossings = _reactive_region_crossing_detector.poll (
+		_session->transport_sample (),
+		_session->transport_state_rolling (),
+		regions);
+
+	if (crossings.empty ()) {
+		return false;
+	}
+
+	bool changed = false;
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+
+	for (vector<ReactiveRegionCrossing>::const_iterator crossing = crossings.begin (); crossing != crossings.end (); ++crossing) {
+		ReactiveRegionEvent const event = ReactiveRegionEvent::named (crossing->name);
+		if (!_reactive_action_slots.preview_region_event (event).available) {
+			continue;
+		}
+
+		ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_region_event (
+			event,
+			target,
+			*tmap,
+			reactive_performance_bbt_now ());
+		changed = true;
+
+		if (!result.ok) {
+			warning << string_compose (_("Reactive region trigger '%1' on '%2' failed: %3"), crossing->name, crossing->route_name, result.error) << endmsg;
+		}
 	}
 
 	if (changed) {
@@ -3592,6 +3699,12 @@ void
 ARDOUR_UI::reset_reactive_marker_crossing_detector (samplepos_t sample)
 {
 	_reactive_marker_crossing_detector.reset (sample);
+}
+
+void
+ARDOUR_UI::reset_reactive_region_crossing_detector (samplepos_t sample)
+{
+	_reactive_region_crossing_detector.reset (sample);
 }
 
 void
