@@ -359,3 +359,44 @@ ReactiveSessionTargetRhythmInsertTest::formatEmptyReactiveTriggerSlotStatus ()
 	CPPUNIT_ASSERT_EQUAL (std::string ("Trigger Slots: none"), target.format_trigger_slot_summary (0, 4));
 	CPPUNIT_ASSERT_EQUAL (std::string ("Trigger Slots: none"), target.format_trigger_slot_summary (4, 0));
 }
+
+void
+ReactiveSessionTargetRhythmInsertTest::summarizeReactiveSessionClockState ()
+{
+	ReactiveSessionTarget target (*_session);
+
+	ReactiveSessionStateSummary const summary = target.session_state_summary ();
+
+	CPPUNIT_ASSERT_EQUAL (true, summary.session_loaded);
+	CPPUNIT_ASSERT_EQUAL (false, summary.transport_rolling);
+	CPPUNIT_ASSERT_EQUAL (Temporal::samplepos_t (0), summary.transport_sample);
+	CPPUNIT_ASSERT_EQUAL (1, summary.bbt.bars);
+	CPPUNIT_ASSERT_EQUAL (1, summary.bbt.beats);
+	CPPUNIT_ASSERT_EQUAL (0, summary.bbt.ticks);
+	CPPUNIT_ASSERT (summary.tempo_quarter_notes_per_minute > 0.0);
+	CPPUNIT_ASSERT (summary.meter_divisions_per_bar > 0);
+	CPPUNIT_ASSERT (summary.meter_note_value > 0);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary.route_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary.trigger_route_count);
+	CPPUNIT_ASSERT (summary.status.find ("stopped @ 1|1|0") != std::string::npos);
+	CPPUNIT_ASSERT (summary.status.find ("routes=0 trigger-routes=0") != std::string::npos);
+	CPPUNIT_ASSERT (target.format_session_state_summary ().find ("Session State: stopped @ 1|1|0") != std::string::npos);
+}
+
+void
+ReactiveSessionTargetRhythmInsertTest::sessionClockStateCountsTriggerVisibleRoutes ()
+{
+	std::shared_ptr<Route> ordinary_route = new_midi_route (*_session);
+	std::shared_ptr<Route> trigger_route = new_trigger_visible_midi_route (*_session, "Reactive Trigger Lane");
+	ReactiveSessionTarget target (*_session);
+
+	CPPUNIT_ASSERT (ordinary_route);
+	CPPUNIT_ASSERT (trigger_route);
+
+	ReactiveSessionStateSummary const summary = target.session_state_summary ();
+
+	CPPUNIT_ASSERT_EQUAL (size_t (2), summary.route_count);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.trigger_route_count);
+	CPPUNIT_ASSERT (summary.status.find ("routes=2 trigger-routes=1") != std::string::npos);
+	CPPUNIT_ASSERT (target.format_session_state_summary ().find ("routes=2 trigger-routes=1") != std::string::npos);
+}

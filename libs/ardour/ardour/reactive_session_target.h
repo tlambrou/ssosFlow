@@ -5,6 +5,8 @@
 
 #include "ardour/libardour_visibility.h"
 #include "ardour/reactive_action_executor.h"
+#include "temporal/bbt_time.h"
+#include "temporal/types.h"
 
 namespace ARDOUR {
 
@@ -34,6 +36,19 @@ struct LIBARDOUR_API ReactiveTriggerSlotSummary {
 	std::string status;
 };
 
+struct LIBARDOUR_API ReactiveSessionStateSummary {
+	bool session_loaded = false;
+	bool transport_rolling = false;
+	Temporal::samplepos_t transport_sample = 0;
+	Temporal::BBT_Time bbt;
+	double tempo_quarter_notes_per_minute = 0.0;
+	int meter_divisions_per_bar = 0;
+	int meter_note_value = 0;
+	size_t route_count = 0;
+	size_t trigger_route_count = 0;
+	std::string status;
+};
+
 class LIBARDOUR_API ReactiveSessionTarget : public ReactiveActionTarget {
 public:
 	explicit ReactiveSessionTarget (Session&);
@@ -57,6 +72,8 @@ public:
 	std::string format_routing_summary (size_t max_routes) const;
 	std::vector<ReactiveTriggerSlotSummary> trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const;
 	std::string format_trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const;
+	ReactiveSessionStateSummary session_state_summary () const;
+	std::string format_session_state_summary () const;
 
 protected:
 	ReactiveSessionTarget ();

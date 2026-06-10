@@ -1,6 +1,6 @@
 # Reactive Performance MVP Example
 
-Issue: #109, #154, #162, #166, #170, #184, #185, #188, #190, #192, #194.
+Issue: #109, #154, #162, #166, #170, #184, #185, #188, #190, #192, #194, #196.
 
 This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is the source-controlled action document that the bundled `Reactive Performance MVP` session-template script installs into new demo sessions alongside seeded `Breakdown` marker, `Breakdown Loop` region, and first Cue-page trigger clips with simple rhythm notes plus harmony/macro triads.
 
@@ -38,8 +38,8 @@ The bundled MVP map uses:
 ## Smoke Check
 
 1. Open `Reactive/show-action-document-status`.
-2. Confirm the action document source is `session`, twelve actions are loaded, and the Trigger Slots section shows seeded clips such as `Reactive Cue 0 Reset` plus empty slots.
-3. Trigger note 36 and confirm route 0 receives `Reactive Rhythm State MVP`, resets rhythm parameters, updates the harmony bank to `key = C_minor`, `scale = aeolian`, `chord = i`, keeps route 0 trigger slot 0 visible as `Reactive Cue 0 Reset playable`, and launches cue row 0 if it exists.
+2. Confirm the action document source is `session`, twelve actions are loaded, Session State shows stopped/rolling transport, BBT, tempo, meter, sample position, and route counts, and the Trigger Slots section shows seeded clips such as `Reactive Cue 0 Reset` plus empty slots.
+3. Trigger note 36 and confirm route 0 receives `Reactive Rhythm State MVP`, resets rhythm parameters, updates the harmony bank to `key = C_minor`, `scale = aeolian`, `chord = i`, keeps Session State and route counts visible, keeps route 0 trigger slot 0 visible as `Reactive Cue 0 Reset playable`, and launches cue row 0 if it exists.
 4. Trigger notes 37, 38, and 39 to change route 0 rhythm density, chance, priority, or rotation, and confirm the harmony bank moves through `iv`, `VI`, and `V`.
 5. While transport is stopped, trigger note 40 and confirm transport starts; while transport is rolling, trigger note 41 or live trigger note 46 and confirm cue row 4 launches if it exists.
 6. While transport is rolling, trigger note 42 and confirm transport stops; while stopped, trigger note 43 and confirm the state bank reports `transport = stopped-ready`.

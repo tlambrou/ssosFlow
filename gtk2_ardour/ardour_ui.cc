@@ -3364,6 +3364,8 @@ ARDOUR_UI::show_reactive_action_document_status ()
 			"\n\n" +
 			_reactive_action_slots.format_queued_action_summary (8, reactive_performance_bbt_now ()) +
 			"\n\n" +
+			target.format_session_state_summary () +
+			"\n\n" +
 			target.format_routing_summary (8) +
 			"\n\n" +
 			target.format_trigger_slot_summary (8, 4) +
@@ -3453,10 +3455,14 @@ ARDOUR_UI::reactive_performance_panel_summary (size_t max_items)
 
 	if (_session) {
 		ReactiveSessionTarget target (*_session);
+		summary += target.format_session_state_summary ();
+		summary += "\n";
 		summary += target.format_routing_summary (max_items);
 		summary += "\n";
 		summary += target.format_trigger_slot_summary (max_items, 2);
 	} else {
+		summary += "Session State: none";
+		summary += "\n";
 		summary += "Routing: none";
 		summary += "\n";
 		summary += "Trigger Slots: none";
