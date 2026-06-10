@@ -65,6 +65,14 @@ struct LIBARDOUR_API ReactiveTrackStateSummary {
 	std::string status;
 };
 
+struct LIBARDOUR_API ReactiveMixerSceneSummary {
+	size_t slot = 0;
+	std::string display_name;
+	bool valid = false;
+	bool last_touched = false;
+	std::string status;
+};
+
 class LIBARDOUR_API ReactiveSessionTarget : public ReactiveActionTarget {
 public:
 	explicit ReactiveSessionTarget (Session&);
@@ -92,6 +100,8 @@ public:
 	std::string format_session_state_summary () const;
 	std::vector<ReactiveTrackStateSummary> track_state_summary (size_t max_routes) const;
 	std::string format_track_state_summary (size_t max_routes) const;
+	std::vector<ReactiveMixerSceneSummary> mixer_scene_summary (size_t max_scenes) const;
+	std::string format_mixer_scene_summary (size_t max_scenes) const;
 
 protected:
 	ReactiveSessionTarget ();

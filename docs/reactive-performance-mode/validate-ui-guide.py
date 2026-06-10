@@ -53,6 +53,7 @@ REQUIRED_COPY = {
     "docs/reactive-performance-mode/ui-guide/index.html",
     "python3 docs/reactive-performance-mode/validate-ui-guide.py",
     "Screenshot Walkthrough",
+    "Scene State",
     "speed=0.00 record=off loop=off locate=idle",
     "Track State",
 }
