@@ -91,6 +91,7 @@
 #include "ardour/disk_reader.h"
 #include "ardour/disk_writer.h"
 #include "ardour/filesystem_paths.h"
+#include "ardour/location.h"
 #include "ardour/monitor_control.h"
 #include "ardour/midi_track.h"
 #include "ardour/port.h"
@@ -210,6 +211,32 @@ using namespace ArdourWidgets;
 using namespace Gtk;
 using namespace std;
 using namespace Editing;
+
+namespace {
+
+static vector<ReactiveMarkerObservation>
+reactive_marker_observations (Session& session)
+{
+	vector<ReactiveMarkerObservation> markers;
+
+	Locations const* locations = session.locations ();
+	if (!locations) {
+		return markers;
+	}
+
+	Locations::LocationList const& list = locations->list ();
+	for (Locations::LocationList::const_iterator location = list.begin (); location != list.end (); ++location) {
+		if (!*location || !(*location)->is_mark () || (*location)->is_hidden () || (*location)->name ().empty ()) {
+			continue;
+		}
+
+		markers.push_back (ReactiveMarkerObservation::at ((*location)->name (), (*location)->start_sample ()));
+	}
+
+	return markers;
+}
+
+} // namespace
 
 ARDOUR_UI *ARDOUR_UI::theArdourUI = 0;
 
@@ -3192,6 +3219,7 @@ ARDOUR_UI::load_reactive_action_document (bool report_success)
 
 	_reactive_action_document_load_result = load_result;
 	_reactive_action_document_session_path = session_path;
+	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 	if (report_success) {
 		info << ReactiveActionDocumentLoader::describe_load_result (load_result) << endmsg;
 	}
@@ -3209,6 +3237,7 @@ ARDOUR_UI::reload_reactive_action_document_from_disk (bool report_success)
 
 	_reactive_action_slots.clear ();
 	_reactive_action_document_session_path.clear ();
+	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 	return load_reactive_action_document (report_success);
 }
 
@@ -3234,6 +3263,7 @@ void
 ARDOUR_UI::toggle_reactive_performance_mode ()
 {
 	_reactive_action_slots.set_performance_enabled (!_reactive_action_slots.performance_enabled ());
+	_reactive_marker_crossing_detector.reset (_session ? _session->transport_sample () : 0);
 	info << _reactive_action_slots.format_performance_mode_status () << endmsg;
 	reactive_performance_changed ();
 }
@@ -3474,19 +3504,21 @@ ARDOUR_UI::trigger_reactive_midi_bytes (std::vector<unsigned char> message)
 bool
 ARDOUR_UI::poll_reactive_performance_queue ()
 {
+	bool changed = poll_reactive_performance_markers ();
+
 	if (!_session || _reactive_action_slots.queued_action_count () == 0) {
-		return false;
+		return changed;
 	}
 
 	if (!ensure_reactive_action_document ()) {
-		return false;
+		return changed;
 	}
 
 	size_t const queued_before = _reactive_action_slots.queued_action_count ();
 	ReactiveSessionTarget target (*_session);
 	ReactiveExecutionResult result = _reactive_action_slots.release_due_queued_actions (reactive_performance_bbt_now (), target);
 	size_t const queued_after = _reactive_action_slots.queued_action_count ();
-	bool const changed = queued_before != queued_after || result.commands_executed > 0 || !result.ok;
+	changed = changed || queued_before != queued_after || result.commands_executed > 0 || !result.ok;
 
 	if (!result.ok) {
 		warning << string_compose (_("Reactive queued action release failed: %1"), result.error) << endmsg;
@@ -3497,6 +3529,69 @@ ARDOUR_UI::poll_reactive_performance_queue ()
 	}
 
 	return changed;
+}
+
+bool
+ARDOUR_UI::poll_reactive_performance_markers ()
+{
+	if (!_session) {
+		_reactive_marker_crossing_detector.reset ();
+		return false;
+	}
+
+	if (!_reactive_action_slots.performance_enabled ()) {
+		_reactive_marker_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	if (!ensure_reactive_action_document ()) {
+		_reactive_marker_crossing_detector.reset (_session->transport_sample ());
+		return false;
+	}
+
+	vector<ReactiveMarkerObservation> const markers = reactive_marker_observations (*_session);
+	vector<ReactiveMarkerCrossing> const crossings = _reactive_marker_crossing_detector.poll (
+		_session->transport_sample (),
+		_session->transport_state_rolling (),
+		markers);
+
+	if (crossings.empty ()) {
+		return false;
+	}
+
+	bool changed = false;
+	ReactiveSessionTarget target (*_session);
+	Temporal::TempoMap::SharedPtr tmap (Temporal::TempoMap::use ());
+
+	for (vector<ReactiveMarkerCrossing>::const_iterator crossing = crossings.begin (); crossing != crossings.end (); ++crossing) {
+		ReactiveMarkerEvent const event = ReactiveMarkerEvent::named (crossing->name);
+		if (!_reactive_action_slots.preview_marker_event (event).available) {
+			continue;
+		}
+
+		ReactiveExecutionResult result = _reactive_action_slots.execute_or_queue_marker_event (
+			event,
+			target,
+			*tmap,
+			reactive_performance_bbt_now ());
+		changed = true;
+
+		if (!result.ok) {
+			warning << string_compose (_("Reactive marker trigger '%1' failed: %2"), crossing->name, result.error) << endmsg;
+		}
+	}
+
+	if (changed) {
+		reactive_performance_changed ();
+	}
+
+	return changed;
+}
+
+void
+ARDOUR_UI::reset_reactive_marker_crossing_detector (samplepos_t sample)
+{
+	_reactive_marker_crossing_detector.reset (sample);
 }
 
 void

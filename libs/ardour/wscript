@@ -198,6 +198,7 @@ libardour_sources = [
         'reactive_action_executor.cc',
         'reactive_action_slot_runner.cc',
         'reactive_rhythm_chance_source.cc',
+        'reactive_marker_crossing_detector.cc',
         'reactive_rhythm.cc',
         'reactive_rhythm_insertion_plan.cc',
         'reactive_rhythm_route_inserter.cc',
@@ -668,6 +669,7 @@ def build(bld):
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_scheduler', 'test_reactive_action_scheduler', ['test/reactive_action_scheduler_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_action_slot_runner', 'test_reactive_action_slot_runner', ['test/reactive_action_slot_runner_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_controller_feedback_midi_cache', 'test_reactive_controller_feedback_midi_cache', ['test/reactive_controller_feedback_midi_cache_test.cc'])
+            create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_marker_crossing_detector', 'test_reactive_marker_crossing_detector', ['test/reactive_marker_crossing_detector_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_midi_map', 'test_reactive_midi_map', ['test/reactive_midi_map_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_chance_source', 'test_reactive_rhythm_chance_source', ['test/reactive_rhythm_chance_source_test.cc'])
             create_ardour_test_program(bld, obj.includes, 'unit-test-reactive_rhythm_insertion_plan', 'test_reactive_rhythm_insertion_plan', ['test/reactive_rhythm_insertion_plan_test.cc'])
@@ -711,6 +713,7 @@ def build(bld):
             'test/reactive_action_scheduler_test.cc',
             'test/reactive_action_slot_runner_test.cc',
             'test/reactive_controller_feedback_midi_cache_test.cc',
+            'test/reactive_marker_crossing_detector_test.cc',
             'test/reactive_midi_map_test.cc',
             'test/reactive_rhythm_chance_source_test.cc',
             'test/reactive_rhythm_insertion_plan_test.cc',

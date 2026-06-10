@@ -67,6 +67,7 @@
 #include "ardour/utils.h"
 #include "ardour/plugin.h"
 #include "ardour/reactive_action_document_loader.h"
+#include "ardour/reactive_marker_crossing_detector.h"
 #include "ardour/reactive_action_slot_runner.h"
 #include "ardour/session_handle.h"
 #include "ardour/system_exec.h"
@@ -665,7 +666,10 @@ private:
 	bool load_reactive_action_document (bool report_success);
 	bool reload_reactive_action_document_from_disk (bool report_success);
 	Temporal::BBT_Time reactive_performance_bbt_now () const;
+	bool poll_reactive_performance_markers ();
+	void reset_reactive_marker_crossing_detector (ARDOUR::samplepos_t);
 	ARDOUR::ReactiveActionSlotRunner _reactive_action_slots;
+	ARDOUR::ReactiveMarkerCrossingDetector _reactive_marker_crossing_detector;
 	ARDOUR::ReactiveActionDocumentLoadResult _reactive_action_document_load_result;
 	std::string _reactive_action_document_session_path;
 	std::vector<ARDOUR::ReactiveControllerFeedbackBinding> _reactive_controller_feedback_bindings;
