@@ -73,6 +73,102 @@ format_bbt_offset (Temporal::BBT_Offset const& offset)
 	return text.str ();
 }
 
+static std::string
+format_preview_value (double value)
+{
+	std::ostringstream text;
+	text << value;
+	return text.str ();
+}
+
+static std::string
+format_preview_command (ReactiveCommand const& command)
+{
+	std::ostringstream text;
+
+	switch (command.type) {
+	case ReactiveCommand::Cue:
+		text << "cue row " << command.first;
+		return text.str ();
+	case ReactiveCommand::Trigger:
+		text << "trigger route " << command.first << " row " << command.second;
+		return text.str ();
+	case ReactiveCommand::TriggerStop:
+		text << "stop triggers on route " << command.first;
+		return text.str ();
+	case ReactiveCommand::StopAll:
+		return "stop all triggers";
+	case ReactiveCommand::TransportPlay:
+		return "transport play";
+	case ReactiveCommand::TransportStop:
+		text << "transport stop after " << format_bbt_offset (command.ramp);
+		return text.str ();
+	case ReactiveCommand::SceneApply:
+		text << "scene apply " << command.first;
+		return text.str ();
+	case ReactiveCommand::SceneStore:
+		text << "scene store " << command.first;
+		return text.str ();
+	case ReactiveCommand::Macro:
+		text << "macro " << command.name << " = " << format_preview_value (command.value) << " ramp " << format_bbt_offset (command.ramp);
+		return text.str ();
+	case ReactiveCommand::MacroSnapshotStore:
+		text << "macro snapshot store " << command.name;
+		return text.str ();
+	case ReactiveCommand::MacroSnapshotRecall:
+		text << "macro snapshot recall " << command.name << " ramp " << format_bbt_offset (command.ramp);
+		return text.str ();
+	case ReactiveCommand::MacroMorph:
+		text << "macro morph " << command.name << " -> " << command.text << " amount " << format_preview_value (command.value) << " ramp " << format_bbt_offset (command.ramp);
+		return text.str ();
+	case ReactiveCommand::State:
+		text << "state " << command.name << " = " << command.text;
+		return text.str ();
+	case ReactiveCommand::Harmony:
+		text << "harmony " << command.name << " = " << command.text;
+		return text.str ();
+	case ReactiveCommand::Rhythm:
+		text << "rhythm " << command.name << " = " << format_preview_value (command.value);
+		return text.str ();
+	case ReactiveCommand::RhythmRoute:
+		text << "rhythm route " << command.first << " " << command.name << " = " << format_preview_value (command.value);
+		return text.str ();
+	case ReactiveCommand::RhythmInsert:
+		text << "insert rhythm on route " << command.first;
+		return text.str ();
+	}
+
+	return "unknown command";
+}
+
+static std::vector<std::string>
+command_summaries_from_plan (std::vector<ReactiveCommand> const& commands)
+{
+	static size_t const max_preview_command_summaries = 4;
+
+	std::vector<std::string> summaries;
+	if (commands.empty ()) {
+		return summaries;
+	}
+
+	size_t const visible = commands.size () > max_preview_command_summaries ? max_preview_command_summaries - 1 : commands.size ();
+	summaries.reserve (std::min (commands.size (), max_preview_command_summaries));
+	for (size_t i = 0; i < visible; ++i) {
+		summaries.push_back (format_preview_command (commands[i]));
+	}
+
+	if (visible < commands.size ()) {
+		std::ostringstream more;
+		more << "... " << (commands.size () - visible) << " more command";
+		if ((commands.size () - visible) != 1) {
+			more << "s";
+		}
+		summaries.push_back (more.str ());
+	}
+
+	return summaries;
+}
+
 static ReactiveActionPreviewSummary
 preview_summary_from_plan (size_t slot, ReactiveAction const& action, ReactiveActionPlan const& plan)
 {
@@ -89,6 +185,7 @@ preview_summary_from_plan (size_t slot, ReactiveAction const& action, ReactiveAc
 	preview.quantize = format_bbt_offset (plan.quantize);
 	preview.quantize_offset = plan.quantize;
 	preview.command_count = plan.commands.size ();
+	preview.command_summaries = command_summaries_from_plan (plan.commands);
 	return preview;
 }
 
@@ -483,7 +580,7 @@ ReactiveActionSlotRunner::preview_midi_event (ReactiveMidiEvent const& event)
 		return ReactiveActionPreviewSummary ();
 	}
 
-	return preview_summary_from_plan (match.action_index, *match.action, _engine.preview_action (match.action->name));
+	return preview_summary_from_plan (match.action_index, *match.action, _engine.preview_action (match.action->name, &event));
 }
 
 ReactiveActionPreviewSummary
@@ -1417,6 +1514,12 @@ ReactiveActionSlotRunner::format_next_action_preview () const
 	if (_next_action_preview.command_count != 1) {
 		status << "s";
 	}
+	if (!_next_action_preview.command_summaries.empty ()) {
+		status << "\nCommands:";
+		for (std::vector<std::string>::const_iterator command = _next_action_preview.command_summaries.begin (); command != _next_action_preview.command_summaries.end (); ++command) {
+			status << "\n  - " << *command;
+		}
+	}
 
 	return status.str ();
 }
@@ -1462,6 +1565,17 @@ ReactiveActionSlotRunner::format_panel_summary (size_t max_items) const
 		}
 	} else {
 		text << "Next: none";
+	}
+
+	if (_next_action_preview.available && !_next_action_preview.command_summaries.empty () && max_items > 0) {
+		text << "\nCommands:";
+		size_t emitted = 0;
+		for (std::vector<std::string>::const_iterator i = _next_action_preview.command_summaries.begin (); i != _next_action_preview.command_summaries.end () && emitted < max_items; ++i, ++emitted) {
+			text << (emitted == 0 ? " " : ", ") << *i;
+		}
+		if (_next_action_preview.command_summaries.size () > emitted) {
+			text << ", ...";
+		}
 	}
 
 	std::vector<ReactiveMacroSlotSummary> const macros = macro_bank_summary (max_items);

@@ -95,6 +95,7 @@ struct LIBARDOUR_API ReactiveActionPreviewSummary {
 	std::string quantize;
 	Temporal::BBT_Offset quantize_offset;
 	size_t command_count = 0;
+	std::vector<std::string> command_summaries;
 };
 
 class LIBARDOUR_API ReactiveActionSlotRunner {

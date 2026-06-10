@@ -554,10 +554,11 @@ Phase 5t adds the matching panel read model for harmony state:
 Phase 5d adds the reusable next-action preview read model for that panel:
 
 - `ReactiveActionEngine::preview_action(...)` builds the same action-plan metadata as execution without running target commands, updating macro/state/harmony values, marking last action, or advancing sequential action chains.
-- `ReactiveActionSlotRunner` can preview a manual slot or the first matching MIDI event as slot index, action name, primary trigger label, chain mode, quantize label, and next command count.
+- `ReactiveActionSlotRunner` can preview a manual slot or the first matching MIDI event as slot index, action name, primary trigger label, chain mode, quantize label, next command count, and a bounded set of musician-readable command details.
+- MIDI-event previews pass the matched note/CC event into planning, so `midi-value` commands and macro morph amounts preview the current controller value instead of a stale literal default.
 - Preview planning refreshes the live transport-state provider first, so transport-gated actions appear unavailable while their `WHEN transport ...` condition is unmet.
-- After a slot or MIDI event is executed, the runner refreshes a cached next-action preview for the same control so repeated sequential actions show the next planned command count without consuming it.
-- The existing status dialog displays this compact next-action preview below the latest execution status.
+- After a slot or MIDI event is executed, the runner refreshes a cached next-action preview for the same control so repeated sequential actions show the next planned command count and command detail without consuming it.
+- The existing status dialog displays this next-action preview below the latest execution status, while the Cue-page panel shows a compact single-line command preview.
 
 Phase 5e adds the first visible reactive-routing read model:
 
