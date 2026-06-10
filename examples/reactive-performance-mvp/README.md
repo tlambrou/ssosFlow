@@ -8,6 +8,7 @@ This folder is a small demo asset for Reactive Performance Mode. It is not a ful
 
 - `reactive-actions.txt`: a valid session-local Reactive Performance action document. The template installs matching content into new demo sessions as `reactive-actions.txt`.
 - `share/scripts/reactive_performance_mvp_session.lua`: the bundled new-session template script that creates the demo's Cue-page visible MIDI route layout, seeds the `Breakdown` marker and `Breakdown Loop` timeline region, and installs the demo action document.
+- `docs/reactive-performance-mode/ui-guide/index.html`: a local static UI walkthrough with screenshot-style panels for running and smoke-testing the demo.
 
 ## Setup
 

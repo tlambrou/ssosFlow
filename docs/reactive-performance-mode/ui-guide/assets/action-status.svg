@@ -14,8 +14,8 @@
   <text x="104" y="235" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">/tmp/ssosflow-demo/reactive-mvp-cua/reactive-actions.txt</text>
   <g>
     <rect x="84" y="292" width="270" height="104" rx="6" fill="#20282c" stroke="#39444a"/>
-    <text x="108" y="328" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Slot actions</text>
-    <text x="108" y="362" fill="#eef3f2" font-family="Arial, sans-serif" font-size="30" font-weight="700">8</text>
+    <text x="108" y="328" fill="#50bfd5" font-family="Arial, sans-serif" font-size="19" font-weight="700">Actions loaded</text>
+    <text x="108" y="362" fill="#eef3f2" font-family="Arial, sans-serif" font-size="30" font-weight="700">12</text>
   </g>
   <g>
     <rect x="392" y="292" width="270" height="104" rx="6" fill="#20282c" stroke="#39444a"/>
@@ -38,6 +38,6 @@
   <text x="720" y="557" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">chord = i7</text>
   <rect x="84" y="582" width="886" height="42" rx="4" fill="#101416"/>
   <text x="106" y="609" fill="#ff6c5f" font-family="Arial, sans-serif" font-size="18" font-weight="700">scene 3</text>
-  <text x="356" y="609" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">demo.scene.row.3</text>
+  <text x="356" y="609" fill="#eef3f2" font-family="Arial, sans-serif" font-size="18">demo.scene.drop</text>
   <text x="720" y="609" fill="#aab4b0" font-family="Arial, sans-serif" font-size="18">macro snapshot</text>
 </svg>
