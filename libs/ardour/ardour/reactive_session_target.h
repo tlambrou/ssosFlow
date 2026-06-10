@@ -22,6 +22,18 @@ struct LIBARDOUR_API ReactiveRoutingSlotSummary {
 	std::string status;
 };
 
+struct LIBARDOUR_API ReactiveTriggerSlotSummary {
+	size_t route = 0;
+	size_t slot = 0;
+	std::string route_name;
+	std::string region_name;
+	bool has_triggerbox = false;
+	bool populated = false;
+	bool playable = false;
+	int follow_probability = 0;
+	std::string status;
+};
+
 class LIBARDOUR_API ReactiveSessionTarget : public ReactiveActionTarget {
 public:
 	explicit ReactiveSessionTarget (Session&);
@@ -43,6 +55,8 @@ public:
 	bool rhythm_insert (int route, std::string& error) override;
 	std::vector<ReactiveRoutingSlotSummary> routing_summary (size_t max_routes) const;
 	std::string format_routing_summary (size_t max_routes) const;
+	std::vector<ReactiveTriggerSlotSummary> trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const;
+	std::string format_trigger_slot_summary (size_t max_routes, size_t max_slots_per_route) const;
 
 protected:
 	ReactiveSessionTarget ();

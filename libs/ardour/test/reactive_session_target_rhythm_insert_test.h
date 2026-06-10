@@ -15,6 +15,8 @@ class ReactiveSessionTargetRhythmInsertTest : public TestNeedingSession
 	CPPUNIT_TEST (rhythmInsertReportsMissingRoute);
 	CPPUNIT_TEST (summarizeReactiveRhythmRoutingStatus);
 	CPPUNIT_TEST (formatEmptyReactiveRhythmRoutingStatus);
+	CPPUNIT_TEST (summarizeReactiveTriggerSlotStatus);
+	CPPUNIT_TEST (formatEmptyReactiveTriggerSlotStatus);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -26,4 +28,6 @@ public:
 	void rhythmInsertReportsMissingRoute ();
 	void summarizeReactiveRhythmRoutingStatus ();
 	void formatEmptyReactiveRhythmRoutingStatus ();
+	void summarizeReactiveTriggerSlotStatus ();
+	void formatEmptyReactiveTriggerSlotStatus ();
 };
