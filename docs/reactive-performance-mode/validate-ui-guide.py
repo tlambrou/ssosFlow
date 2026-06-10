@@ -11,19 +11,25 @@ INDEX = GUIDE / "index.html"
 DEMO = ROOT / "docs" / "reactive-performance-mode" / "demo-session.md"
 
 REQUIRED_ASSETS = {
+    "assets/local-launch.svg",
     "assets/audio-midi-setup.svg",
+    "assets/controller-smoke-check.svg",
     "assets/new-session-template.svg",
     "assets/reactive-session-open.svg",
     "assets/midi-map.svg",
     "assets/action-status.svg",
+    "assets/reactive-performance-panel.svg",
 }
 
 REQUIRED_SECTIONS = {
+    "launch",
     "audio-midi",
     "template",
     "session",
     "midi",
     "status",
+    "panel",
+    "smoke",
 }
 
 REQUIRED_CONTROLS = {
@@ -32,16 +38,20 @@ REQUIRED_CONTROLS = {
 }
 
 REQUIRED_SCREENSHOT_ALTS = {
+    "Local Launch",
     "Audio/MIDI Setup",
     "New Session",
     "Reactive session",
     "Generic MIDI",
     "Action document status",
+    "Reactive Performance panel",
+    "Controller smoke check",
 }
 
 REQUIRED_COPY = {
     "Open Locally",
     "docs/reactive-performance-mode/ui-guide/index.html",
+    "python3 docs/reactive-performance-mode/validate-ui-guide.py",
     "Screenshot Walkthrough",
     "Track State",
 }
