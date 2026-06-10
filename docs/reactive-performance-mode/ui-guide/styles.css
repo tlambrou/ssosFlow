@@ -130,6 +130,14 @@ button {
   padding: 20px;
 }
 
+.command-panel > *,
+.commands,
+.command,
+.step > *,
+.screenshot-card {
+  min-width: 0;
+}
+
 .commands {
   display: grid;
   gap: 12px;
