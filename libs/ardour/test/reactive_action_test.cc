@@ -232,6 +232,35 @@ ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
 }
 
 void
+ReactiveActionTest::parseRegionTrigger ()
+{
+	const char* src =
+		"ACTION region.drop\n"
+		"TRIGGER region Breakdown Loop\n"
+		"DO cue 3\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveTrigger::Region, result.document.actions ().front ().triggers.front ().type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("Breakdown Loop"), result.document.actions ().front ().triggers.front ().name);
+}
+
+void
+ReactiveActionTest::rejectInvalidRegionTrigger ()
+{
+	const char* missing_name =
+		"ACTION region.missing\n"
+		"TRIGGER region\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult missing = ReactiveActionDocument::parse (missing_name);
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("invalid region trigger") != std::string::npos);
+}
+
+void
 ReactiveActionTest::parseSceneTrigger ()
 {
 	const char* src =

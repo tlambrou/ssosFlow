@@ -32,6 +32,12 @@ struct LIBARDOUR_API ReactiveMarkerEvent {
 	std::string name;
 };
 
+struct LIBARDOUR_API ReactiveRegionEvent {
+	static ReactiveRegionEvent named (std::string const& name);
+
+	std::string name;
+};
+
 struct LIBARDOUR_API ReactiveSceneEvent {
 	static ReactiveSceneEvent numbered (int number);
 
@@ -62,6 +68,7 @@ public:
 	/* MVP helper: returns an allocating vector, so it is not yet suitable for a realtime MIDI path. */
 	std::vector<ReactiveActionMatch> match_midi_event (ReactiveMidiEvent const&) const;
 	std::vector<ReactiveActionMatch> match_marker_event (ReactiveMarkerEvent const&) const;
+	std::vector<ReactiveActionMatch> match_region_event (ReactiveRegionEvent const&) const;
 	std::vector<ReactiveActionMatch> match_scene_event (ReactiveSceneEvent const&) const;
 
 	ReactiveActionPlan preview_action (std::string const& name) const;
