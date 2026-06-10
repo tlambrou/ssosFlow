@@ -1,6 +1,6 @@
 # Reactive Performance MVP Example
 
-Issue: #109.
+Issue: #109, #154.
 
 This folder is a small demo asset for Reactive Performance Mode. It is not a full Ardour session archive yet; it is the source-controlled action document that the bundled `Reactive Performance MVP` session-template script installs into new demo sessions.
 
@@ -25,6 +25,7 @@ The bundled MVP map uses:
 - Channel 10 notes 36-43 for the first eight action slots in this file.
 - Channel 10 note 46 as a live document-level trigger for `demo.cue.when.rolling`.
 - Channel 1 CC 22 as a live document-level trigger for `demo.filter.sweep`, driving route 0 rhythm density and the `filter` macro read model.
+- A visible session marker named `Breakdown` as a live document-level trigger for `demo.marker.breakdown`.
 - Pads 36-39 also update harmony read-model values such as `key`, `scale`, and `chord`.
 - Channel 10 note 44 for status.
 - Channel 10 note 45 for reload.
@@ -33,13 +34,14 @@ The bundled MVP map uses:
 ## Smoke Check
 
 1. Open `Reactive/show-action-document-status`.
-2. Confirm the action document source is `session` and that nine actions are loaded.
+2. Confirm the action document source is `session` and that ten actions are loaded.
 3. Trigger note 36 and confirm route 0 receives `Reactive Rhythm State MVP`, resets rhythm parameters, updates the harmony bank to `key = C_minor`, `scale = aeolian`, `chord = i`, and launches cue row 0 if it exists.
 4. Trigger notes 37, 38, and 39 to change route 0 rhythm density, chance, priority, or rotation, and confirm the harmony bank moves through `iv`, `VI`, and `V`.
 5. While transport is stopped, trigger note 40 and confirm transport starts; while transport is rolling, trigger note 41 or live trigger note 46 and confirm cue row 4 launches if it exists.
 6. While transport is rolling, trigger note 42 and confirm transport stops; while stopped, trigger note 43 and confirm the state bank reports `transport = stopped-ready`.
 7. Move CC 22 on channel 1 and confirm route 0 rhythm density follows the controller value while the macro bank shows `filter` changing between `0.0` and `1.0`.
-8. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
+8. Add a visible session marker named `Breakdown`, locate before it, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
+9. If `Generic MIDI Control Out` is connected, confirm notes 36-43 reflect idle/latest/disabled feedback values.
 
 ## Current Limit
 

@@ -1,8 +1,8 @@
 # Reactive Performance MVP Demo Guide
 
-Issue: #63, #123.
+Issue: #63, #123, #154.
 
-This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, action/macro/state/harmony status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
+This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, a marker-trigger demo action, action/macro/state/harmony status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
 
 ## Build And Run
 
@@ -120,6 +120,8 @@ The packaged action file is also covered by `ReactiveActionDocumentLoaderTest::p
 
 When using the `Reactive Performance MVP` factory template, no manual copy is needed unless Lua file I/O is disabled for template scripts or you want to replace the installed document with an edited version.
 
+The packaged file also includes `demo.marker.breakdown`, a live marker-trigger action bound to a visible session marker named `Breakdown`. It is intentionally a demo action rather than a new controller binding: add the marker to the timeline, locate before it, roll transport across it, and Reactive Performance Mode will queue or execute the action through the same marker bridge used by ordinary session markers.
+
 ## Smoke Test
 
 Run this checklist after creating the session and loading the Generic MIDI map. If you use the manual existing-session fallback, copy `reactive-actions.txt` into that session first.
@@ -140,6 +142,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - Trigger pad 1 or 2, or press the matching Cue-page/status-panel slot button, and confirm the status panel reports the matching slot/action.
 - If Generic MIDI Control Out is connected to a controller or MIDI monitor, confirm the matching pad feedback changes after trigger, reload, and mode-toggle actions.
 - Move CC 22 on MIDI channel 1 and confirm route 0 rhythm density follows the controller value while the routing summary shows the density value and the macro bank shows `filter` tracking from `0.0` to `1.0`.
+- Add a visible session marker named `Breakdown`, locate before it, roll transport across it, and confirm the panel or status dialog reports `demo.marker.breakdown`, `section = breakdown`, `chord = bVII`, `filter = 0.25`, and route 0 rhythm density/chance changes.
 - If using the session-local file, route 0 rhythm controls change without changing rhythm inserts on other routes.
 - Utility note 45 triggers `Reactive/reload-action-document` and reports parse errors instead of silently falling back when the session file is invalid.
 
