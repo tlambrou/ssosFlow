@@ -399,6 +399,43 @@ ReactiveActionSlotRunnerTest::executeMarkerTriggerByDocumentOrder ()
 }
 
 void
+ReactiveActionSlotRunnerTest::executeSceneTriggerByDocumentOrder ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION pad.one\n"
+		"TRIGGER midi note ch=10 note=36\n"
+		"DO cue 9\n"
+		"END\n"
+		"ACTION first.scene\n"
+		"TRIGGER scene 3\n"
+		"DO cue 3\n"
+		"END\n"
+		"ACTION second.scene\n"
+		"TRIGGER scene 3\n"
+		"DO cue 4\n"
+		"END\n",
+		error));
+
+	ReactiveExecutionResult result = runner.execute_scene_event (ReactiveSceneEvent::numbered (3), target);
+
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), result.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:3"), target.calls[0]);
+	CPPUNIT_ASSERT_EQUAL (std::string ("first.scene"), runner.last_action ());
+	ReactiveActionSlotExecutionStatus const status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), status.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("first.scene"), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (true, status.result.ok);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("scene 3") != std::string::npos);
+}
+
+void
 ReactiveActionSlotRunnerTest::reportMidiEventWithoutLoadedDocumentOrMatch ()
 {
 	ReactiveActionSlotRunner runner;
@@ -445,6 +482,33 @@ ReactiveActionSlotRunnerTest::reportMarkerEventWithoutLoadedDocumentOrMatch ()
 
 	CPPUNIT_ASSERT_EQUAL (false, no_match.ok);
 	CPPUNIT_ASSERT (no_match.error.find ("no reactive action matched marker") != std::string::npos);
+	status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
+	CPPUNIT_ASSERT_EQUAL (false, status.result.ok);
+	CPPUNIT_ASSERT (target.calls.empty ());
+}
+
+void
+ReactiveActionSlotRunnerTest::reportSceneEventWithoutLoadedDocumentOrMatch ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+
+	ReactiveExecutionResult missing = runner.execute_scene_event (ReactiveSceneEvent::numbered (3), target);
+
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("no reactive action document loaded") != std::string::npos);
+	ReactiveActionSlotExecutionStatus status = runner.last_execution_status ();
+	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
+	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
+	CPPUNIT_ASSERT (target.calls.empty ());
+
+	load_two_action_document (runner);
+	ReactiveExecutionResult no_match = runner.execute_scene_event (ReactiveSceneEvent::numbered (3), target);
+
+	CPPUNIT_ASSERT_EQUAL (false, no_match.ok);
+	CPPUNIT_ASSERT (no_match.error.find ("no reactive action matched scene") != std::string::npos);
 	status = runner.last_execution_status ();
 	CPPUNIT_ASSERT_EQUAL (true, status.attempted);
 	CPPUNIT_ASSERT_EQUAL (std::string (), status.action_name);
@@ -1315,6 +1379,48 @@ ReactiveActionSlotRunnerTest::previewMarkerEventForPerformancePanel ()
 }
 
 void
+ReactiveActionSlotRunnerTest::previewSceneEventForPerformancePanel ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION first\n"
+		"TRIGGER scene 3\n"
+		"QUANTIZE 0|1|0\n"
+		"DO cue 3\n"
+		"DO state section drop\n"
+		"END\n"
+		"ACTION second\n"
+		"TRIGGER scene 3\n"
+		"DO cue 4\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveActionPreviewSummary preview = runner.preview_scene_event (ReactiveSceneEvent::numbered (3));
+
+	CPPUNIT_ASSERT_EQUAL (true, preview.available);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), preview.slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("first"), preview.action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("scene 3"), preview.primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("all"), preview.chain_mode);
+	CPPUNIT_ASSERT_EQUAL (std::string ("0|1|0"), preview.quantize);
+	CPPUNIT_ASSERT_EQUAL (size_t (2), preview.command_count);
+	CPPUNIT_ASSERT_EQUAL (std::string (), runner.state_value ("section"));
+	CPPUNIT_ASSERT_EQUAL (false, runner.last_execution_status ().attempted);
+
+	ReactiveActionPreviewSummary missing = runner.preview_scene_event (ReactiveSceneEvent::numbered (4));
+	CPPUNIT_ASSERT_EQUAL (false, missing.available);
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.execute_scene_event (ReactiveSceneEvent::numbered (3), target).ok);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("Next action preview: slot 0 (first)") != std::string::npos);
+	CPPUNIT_ASSERT (runner.format_next_action_preview ().find ("scene 3") != std::string::npos);
+	CPPUNIT_ASSERT_EQUAL (std::string ("drop"), runner.state_value ("section"));
+}
+
+void
 ReactiveActionSlotRunnerTest::formatCompactPanelSummaryForCuePage ()
 {
 	ReactiveActionSlotRunner runner;
@@ -1637,6 +1743,49 @@ ReactiveActionSlotRunnerTest::queueQuantizedMarkerActionUsingTempoMapClock ()
 	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
 	CPPUNIT_ASSERT_EQUAL (std::string ("drop.marker"), summary[0].action_name);
 	CPPUNIT_ASSERT_EQUAL (std::string ("marker Drop"), summary[0].primary_trigger);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1|1|120"), summary[0].requested_at);
+	CPPUNIT_ASSERT_EQUAL (std::string ("1|2|0"), summary[0].due_at);
+
+	ReactiveExecutionResult due = runner.release_due_queued_actions (Temporal::BBT_Time (1, 2, 0), target);
+	CPPUNIT_ASSERT_EQUAL (true, due.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), due.commands_executed);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), target.calls.size ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("cue:7"), target.calls[0]);
+}
+
+void
+ReactiveActionSlotRunnerTest::queueQuantizedSceneActionUsingTempoMapClock ()
+{
+	ReactiveActionSlotRunner runner;
+	RecordingTarget target;
+	Temporal::TempoMap map = simple_tempo_map ();
+	std::string error;
+
+	CPPUNIT_ASSERT_EQUAL (true, runner.load_source (
+		"ACTION drop.scene\n"
+		"TRIGGER scene 3\n"
+		"QUANTIZE 0|1|0\n"
+		"DO cue 7\n"
+		"END\n",
+		error));
+	CPPUNIT_ASSERT (error.empty ());
+
+	ReactiveExecutionResult queued = runner.execute_or_queue_scene_event (
+		ReactiveSceneEvent::numbered (3),
+		target,
+		map,
+		Temporal::BBT_Time (1, 1, 120));
+
+	CPPUNIT_ASSERT_EQUAL (true, queued.ok);
+	CPPUNIT_ASSERT_EQUAL (size_t (0), queued.commands_executed);
+	CPPUNIT_ASSERT (target.calls.empty ());
+	CPPUNIT_ASSERT_EQUAL (size_t (1), runner.queued_action_count ());
+
+	std::vector<ReactiveQueuedActionSummary> summary = runner.queued_action_summary (8, Temporal::BBT_Time (1, 1, 120));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), summary.size ());
+	CPPUNIT_ASSERT_EQUAL (size_t (0), summary[0].slot);
+	CPPUNIT_ASSERT_EQUAL (std::string ("drop.scene"), summary[0].action_name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("scene 3"), summary[0].primary_trigger);
 	CPPUNIT_ASSERT_EQUAL (std::string ("1|1|120"), summary[0].requested_at);
 	CPPUNIT_ASSERT_EQUAL (std::string ("1|2|0"), summary[0].due_at);
 

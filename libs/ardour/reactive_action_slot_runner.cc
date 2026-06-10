@@ -27,6 +27,9 @@ format_trigger_label (ReactiveTrigger const& trigger)
 	case ReactiveTrigger::Marker:
 		label << "marker " << trigger.name;
 		return label.str ();
+	case ReactiveTrigger::Scene:
+		label << "scene " << trigger.number;
+		return label.str ();
 	case ReactiveTrigger::None:
 		break;
 	}
@@ -501,6 +504,27 @@ ReactiveActionSlotRunner::preview_marker_event (ReactiveMarkerEvent const& event
 	return preview_summary_from_plan (match.action_index, *match.action, _engine.preview_action (match.action->name));
 }
 
+ReactiveActionPreviewSummary
+ReactiveActionSlotRunner::preview_scene_event (ReactiveSceneEvent const& event)
+{
+	if (!_loaded) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	refresh_transport_state ();
+	std::vector<ReactiveActionMatch> const matches = _engine.match_scene_event (event);
+	if (matches.empty ()) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	if (!match.action) {
+		return ReactiveActionPreviewSummary ();
+	}
+
+	return preview_summary_from_plan (match.action_index, *match.action, _engine.preview_action (match.action->name));
+}
+
 ReactiveExecutionResult
 ReactiveActionSlotRunner::execute_or_queue_slot (
 	size_t slot,
@@ -839,6 +863,113 @@ ReactiveActionSlotRunner::execute_or_queue_marker_event (
 }
 
 ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_scene_event (
+	ReactiveSceneEvent const& event,
+	ReactiveActionTarget& target,
+	Temporal::BBT_Time const& requested_at,
+	Temporal::BBT_Time const& due_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	std::vector<ReactiveActionMatch> matches = _engine.match_scene_event (event);
+	if (matches.empty ()) {
+		result.error = "no reactive action matched scene";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	std::string const name = match.action ? match.action->name : std::string ();
+	if (name.empty ()) {
+		result.error = "matched reactive scene action has no name";
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	if (!plan.ok) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, failed_plan_result (plan));
+	}
+
+	if (zero_quantize (plan.quantize)) {
+		result = ReactiveActionExecutor::execute (plan, target);
+		_next_action_preview = preview_scene_event (event);
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+	}
+
+	result = queue_plan (match.action_index, match.action ? primary_trigger_label (*match.action) : std::string (), plan, requested_at, due_at);
+	_next_action_preview = preview_scene_event (event);
+	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_or_queue_scene_event (
+	ReactiveSceneEvent const& event,
+	ReactiveActionTarget& target,
+	Temporal::TempoMap const& tempo_map,
+	Temporal::BBT_Time const& requested_at)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	std::vector<ReactiveActionMatch> matches = _engine.match_scene_event (event);
+	if (matches.empty ()) {
+		result.error = "no reactive action matched scene";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	std::string const name = match.action ? match.action->name : std::string ();
+	if (name.empty ()) {
+		result.error = "matched reactive scene action has no name";
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	if (!plan.ok) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, failed_plan_result (plan));
+	}
+
+	ReactiveActionClockPosition const position = ReactiveActionClock::quantize_bbt (tempo_map, requested_at, plan.quantize);
+	if (zero_quantize (plan.quantize)) {
+		result = ReactiveActionExecutor::execute (plan, target);
+		_next_action_preview = preview_scene_event (event);
+		return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+	}
+
+	result = queue_plan (match.action_index, match.action ? primary_trigger_label (*match.action) : std::string (), plan, position.requested_at, position.due_at);
+	_next_action_preview = preview_scene_event (event);
+	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
 ReactiveActionSlotRunner::execute_slot (size_t slot, ReactiveActionTarget& target)
 {
 	ReactiveExecutionResult result;
@@ -943,6 +1074,44 @@ ReactiveActionSlotRunner::execute_marker_event (ReactiveMarkerEvent const& event
 	ReactiveActionPlan plan = _engine.trigger_action (name);
 	result = ReactiveActionExecutor::execute (plan, target);
 	_next_action_preview = preview_marker_event (event);
+	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
+}
+
+ReactiveExecutionResult
+ReactiveActionSlotRunner::execute_scene_event (ReactiveSceneEvent const& event, ReactiveActionTarget& target)
+{
+	ReactiveExecutionResult result;
+
+	if (!_loaded) {
+		result.error = "no reactive action document loaded";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	std::vector<ReactiveActionMatch> matches = _engine.match_scene_event (event);
+	if (matches.empty ()) {
+		result.error = "no reactive action matched scene";
+		clear_next_action_preview ();
+		return record_execution_status (0, std::string (), result);
+	}
+
+	ReactiveActionMatch const& match = matches.front ();
+	std::string const name = match.action ? match.action->name : std::string ();
+	if (name.empty ()) {
+		result.error = "matched reactive scene action has no name";
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, std::string (), result);
+	}
+
+	if (!_performance_enabled) {
+		clear_next_action_preview ();
+		return record_execution_status (match.action_index, name, disabled_execution_result ());
+	}
+
+	refresh_transport_state ();
+	ReactiveActionPlan plan = _engine.trigger_action (name);
+	result = ReactiveActionExecutor::execute (plan, target);
+	_next_action_preview = preview_scene_event (event);
 	return record_execution_status (match.action_index, plan.action_name.empty () ? name : plan.action_name, result);
 }
 

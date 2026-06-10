@@ -119,6 +119,7 @@ public:
 	ReactiveActionPreviewSummary preview_slot (size_t slot);
 	ReactiveActionPreviewSummary preview_midi_event (ReactiveMidiEvent const&);
 	ReactiveActionPreviewSummary preview_marker_event (ReactiveMarkerEvent const&);
+	ReactiveActionPreviewSummary preview_scene_event (ReactiveSceneEvent const&);
 
 	ReactiveExecutionResult execute_or_queue_slot (size_t slot, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
 	ReactiveExecutionResult execute_or_queue_slot (size_t slot, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
@@ -127,10 +128,13 @@ public:
 	ReactiveExecutionResult execute_or_queue_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
 	ReactiveExecutionResult execute_or_queue_marker_event (ReactiveMarkerEvent const&, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
 	ReactiveExecutionResult execute_or_queue_marker_event (ReactiveMarkerEvent const&, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
+	ReactiveExecutionResult execute_or_queue_scene_event (ReactiveSceneEvent const&, ReactiveActionTarget&, Temporal::BBT_Time const& requested_at, Temporal::BBT_Time const& due_at);
+	ReactiveExecutionResult execute_or_queue_scene_event (ReactiveSceneEvent const&, ReactiveActionTarget&, Temporal::TempoMap const&, Temporal::BBT_Time const& requested_at);
 	ReactiveExecutionResult execute_slot (size_t slot, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_event (ReactiveMidiEvent const&, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_midi_bytes (unsigned char const* bytes, size_t size, ReactiveActionTarget&);
 	ReactiveExecutionResult execute_marker_event (ReactiveMarkerEvent const&, ReactiveActionTarget&);
+	ReactiveExecutionResult execute_scene_event (ReactiveSceneEvent const&, ReactiveActionTarget&);
 	ReactiveExecutionResult release_due_queued_actions (Temporal::BBT_Time const& now, ReactiveActionTarget&);
 	ReactiveActionSlotExecutionStatus const& last_execution_status () const { return _last_execution_status; }
 	ReactiveActionPreviewSummary const& next_action_preview () const { return _next_action_preview; }

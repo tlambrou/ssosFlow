@@ -22,7 +22,8 @@ struct LIBARDOUR_API ReactiveTrigger {
 		None,
 		MidiNote,
 		MidiCC,
-		Marker
+		Marker,
+		Scene
 	};
 
 	Type type = None;

@@ -85,6 +85,13 @@ DO trigger 3 4
 DO macro delay_send 0.65 ramp 1|0|0
 DO transport stop after 4|0|0
 END
+
+ACTION scene.drop
+TRIGGER scene 3
+QUANTIZE 0|1|0
+DO cue 3
+DO state section drop
+END
 ```
 
 Required MVP commands:
@@ -214,6 +221,8 @@ The backend runner can now execute a loaded document from a parsed `ReactiveMidi
 The backend runner can also execute loaded documents from a named `ReactiveMarkerEvent`. It matches exact `TRIGGER marker <name>` triggers through `ReactiveActionEngine::match_marker_event(...)`, uses the first matching action in document order, supports preview/status reporting, and can queue nonzero-quantized marker actions through the same scheduler path as manual slots and MIDI triggers.
 
 Live Ardour marker triggers are bridged by a narrow `Session`/`Location` adapter in GTK/session space. The adapter observes visible named location markers, detects forward transport crossings, resets on stop, locate, or backward movement, skips markers that have no matching reactive action, and delegates matched hits to the same marker runner API. It intentionally rides the existing Reactive Performance panel/queue poll loop for the MVP; native sample-accurate `SessionEvent` scheduling remains future work.
+
+The backend runner can now execute loaded documents from a numbered `ReactiveSceneEvent`. It parses `TRIGGER scene <index>` with a non-negative scene index, matches exact scene indexes through `ReactiveActionEngine::match_scene_event(...)`, reports readable `scene <index>` labels for previews, status, and queued summaries, and can execute or queue matching actions through the same scheduler path as manual slots, MIDI triggers, and marker triggers. This is backend scene-trigger support only; live Ardour Cue/scene row adapter wiring remains a follow-up.
 
 Phase 4e research found that the existing Generic MIDI surface already supports fixed controller-to-action mappings through `MIDIAction`, which is how `share/midi_maps/reactive-performance-mvp.map` launches stable `Reactive/trigger-action-N` slots. Document-level `TRIGGER midi ...` matching needed one more adapter because fixed action dispatch does not pass the original note/CC bytes to Reactive Performance.
 
@@ -465,6 +474,14 @@ Phase 4j bridges live Ardour markers to that backend path:
 - Delegate matching crossings to `ReactiveActionSlotRunner::execute_or_queue_marker_event(...)` so quantized marker actions reuse the existing scheduler.
 - Skip unmatched timeline markers so ordinary session markers do not produce noisy reactive failures.
 - Keep marker scanning, document lookup, and action planning outside realtime audio callbacks; exact sample-accurate native scheduling remains a later `SessionEvent` design.
+
+Phase 4k adds backend scene-trigger execution:
+
+- Parse `TRIGGER scene <index>` with non-negative scene indexes and clear validation errors.
+- Represent scene hits as numbered `ReactiveSceneEvent` values.
+- Match exact scene-index triggers in document order without affecting MIDI or marker matching.
+- Preview, execute, and quantize/queue the first matching scene action through `ReactiveActionSlotRunner`.
+- Keep live Ardour Cue row, mixer-scene, or TriggerBox adapter wiring as follow-up work so this slice remains backend-first and non-realtime.
 
 Phase 5: add minimal Reactive Performance UI panel.
 

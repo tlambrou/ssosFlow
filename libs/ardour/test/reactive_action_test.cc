@@ -232,6 +232,45 @@ ReactiveActionTest::parseMarkerTriggerAndTransportCommands ()
 }
 
 void
+ReactiveActionTest::parseSceneTrigger ()
+{
+	const char* src =
+		"ACTION drop.scene\n"
+		"TRIGGER scene 3\n"
+		"DO cue 3\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+	CPPUNIT_ASSERT_EQUAL (ReactiveTrigger::Scene, result.document.actions ().front ().triggers.front ().type);
+	CPPUNIT_ASSERT_EQUAL (3, result.document.actions ().front ().triggers.front ().number);
+}
+
+void
+ReactiveActionTest::rejectInvalidSceneTrigger ()
+{
+	const char* missing_index =
+		"ACTION scene.missing\n"
+		"TRIGGER scene\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult missing = ReactiveActionDocument::parse (missing_index);
+	CPPUNIT_ASSERT_EQUAL (false, missing.ok);
+	CPPUNIT_ASSERT (missing.error.find ("invalid scene trigger") != std::string::npos);
+
+	const char* negative_index =
+		"ACTION scene.negative\n"
+		"TRIGGER scene -1\n"
+		"DO cue 0\n"
+		"END\n";
+
+	ReactiveActionParseResult negative = ReactiveActionDocument::parse (negative_index);
+	CPPUNIT_ASSERT_EQUAL (false, negative.ok);
+	CPPUNIT_ASSERT (negative.error.find ("invalid scene trigger") != std::string::npos);
+}
+
+void
 ReactiveActionTest::parseSceneStateAndTriggerCommands ()
 {
 	const char* src =
