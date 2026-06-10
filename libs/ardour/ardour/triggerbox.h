@@ -903,6 +903,9 @@ class LIBARDOUR_API TriggerBox : public Processor, public std::enable_shared_fro
 	void set_from_path (uint32_t slot, std::string const & path);
 	void set_from_selection (uint32_t slot, std::shared_ptr<Region>);
 
+	/* Non-realtime setup helper for session/template initialization. */
+	bool set_region_for_setup (uint32_t slot, std::shared_ptr<Region>);
+
 	DataType data_type() const { return _data_type; }
 
 	void stop_all_immediately ();

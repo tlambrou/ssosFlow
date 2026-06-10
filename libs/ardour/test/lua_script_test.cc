@@ -15,6 +15,7 @@
 #include "ardour/plugin_insert.h"
 #include "ardour/region.h"
 #include "ardour/session.h"
+#include "ardour/triggerbox.h"
 
 #include "lua_script_test.h"
 
@@ -123,6 +124,27 @@ count_named_regions_on_route (Session& session, std::string const& route_name, s
 	return count;
 }
 
+static size_t
+count_named_trigger_regions_on_route (Session& session, std::string const& route_name, std::string const& region_name)
+{
+	std::shared_ptr<Route> route = session.route_by_name (route_name);
+	if (!route || !route->triggerbox ()) {
+		return 0;
+	}
+
+	size_t count = 0;
+	std::shared_ptr<TriggerBox> triggerbox = route->triggerbox ();
+	for (int slot = 0; slot < TriggerBox::default_triggers_per_box; ++slot) {
+		TriggerPtr trigger = triggerbox->trigger (slot);
+		std::shared_ptr<Region> region = trigger ? trigger->the_region () : std::shared_ptr<Region> ();
+		if (region && !region->hidden () && region->name () == region_name) {
+			++count;
+		}
+	}
+
+	return count;
+}
+
 static std::string
 reactive_template_path ()
 {
@@ -148,6 +170,7 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"created_tracks = {}\n"
 		"created_markers = {}\n"
 		"created_regions = {}\n"
+		"created_trigger_regions = {}\n"
 		"saved = false\n"
 		"ARDOUR = {\n"
 		"  LuaAPI = {\n"
@@ -165,6 +188,10 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"    end,\n"
 		"    ensure_session_midi_region = function (session, route_name, region_name, position, length)\n"
 		"      table.insert (created_regions, { route_name = route_name, region_name = region_name, position = position, length = length })\n"
+		"      return true\n"
+		"    end,\n"
+		"    ensure_session_midi_trigger_region = function (session, route_name, slot, region_name, length)\n"
+		"      table.insert (created_trigger_regions, { route_name = route_name, slot = slot, region_name = region_name, length = length })\n"
 		"      return true\n"
 		"    end\n"
 		"  },\n"
@@ -220,6 +247,15 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].region_name == 'Breakdown Loop', 'expected Breakdown Loop region')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].position:samples () > 0, 'expected positive region position')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_regions[1].length:samples () > 0, 'expected positive region length')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (#created_trigger_regions == 6, 'expected six seeded trigger clip regions')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[1].route_name == 'Reactive Rhythm Lane', 'expected first trigger on rhythm lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[1].slot == 0, 'expected first trigger in slot 0')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[1].region_name == 'Reactive Cue 0 Reset', 'expected cue 0 reset clip')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[4].route_name == 'Reactive Harmony Lane', 'expected fourth trigger on harmony lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[4].slot == 0, 'expected harmony trigger in slot 0')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[6].route_name == 'Reactive Macro Lane', 'expected final trigger on macro lane')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[6].slot == 1, 'expected final macro trigger in slot 1')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[6].length:samples () > 0, 'expected positive trigger clip length')"));
 	int const save_type = lua.do_command ("assert (saved == true, 'expected template to save session')");
 	CPPUNIT_ASSERT_EQUAL (0, save_type);
 }
@@ -400,6 +436,64 @@ LuaScriptTest::reactive_performance_lua_api_ensures_midi_region_test ()
 		false);
 	CPPUNIT_ASSERT_EQUAL (size_t (1), audio_tracks.size ());
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_region (Session, 'Audio Lane', 'Audio Region Rejected', Temporal.timepos_t (48000), Temporal.timecnt_t (48000)) == false)"));
+}
+
+void
+LuaScriptTest::reactive_performance_lua_api_ensures_midi_trigger_region_test ()
+{
+	LuaState lua (false, false);
+	LuaBindings::stddef (lua.getState ());
+	LuaBindings::common (lua.getState ());
+	LuaBindings::non_rt (lua.getState ());
+	LuaBindings::set_session (lua.getState (), _session);
+
+	std::list<std::shared_ptr<MidiTrack> > tracks = _session->new_midi_track (
+		ChanCount (DataType::MIDI, 1),
+		ChanCount (DataType::MIDI, 1),
+		false,
+		PluginInfoPtr (),
+		nullptr,
+		std::shared_ptr<RouteGroup> (),
+		1,
+		"Reactive Rhythm Lane",
+		PresentationInfo::max_order,
+		Normal,
+		false,
+		true);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), tracks.size ());
+
+	CPPUNIT_ASSERT_EQUAL (size_t (0), count_named_trigger_regions_on_route (*_session, "Reactive Rhythm Lane", "Reactive Cue 0 Reset"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Reactive Rhythm Lane', 0, 'Reactive Cue 0 Reset', Temporal.timecnt_t (48000 * 4)) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_trigger_regions_on_route (*_session, "Reactive Rhythm Lane", "Reactive Cue 0 Reset"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Reactive Rhythm Lane', 0, 'Reactive Cue 0 Reset', Temporal.timecnt_t (48000 * 8)) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_trigger_regions_on_route (*_session, "Reactive Rhythm Lane", "Reactive Cue 0 Reset"));
+
+	TriggerPtr trigger = tracks.front ()->triggerbox ()->trigger (0);
+	CPPUNIT_ASSERT (trigger);
+	CPPUNIT_ASSERT (trigger->the_region ());
+	CPPUNIT_ASSERT_EQUAL (std::string ("Reactive Cue 0 Reset"), trigger->the_region ()->name ());
+	CPPUNIT_ASSERT (trigger->playable ());
+	CPPUNIT_ASSERT (!tracks.front ()->triggerbox ()->empty ());
+
+	CPPUNIT_ASSERT (!ARDOUR::LuaAPI::ensure_session_midi_trigger_region (nullptr, "Reactive Rhythm Lane", 0, "Reactive Cue 0 Reset", Temporal::timecnt_t (48000)));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, '', 0, 'Missing Route Name', Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Reactive Rhythm Lane', 0, '', Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Reactive Rhythm Lane', -1, 'Bad Slot', Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Reactive Rhythm Lane', 999, 'Bad Slot', Temporal.timecnt_t (48000)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Reactive Rhythm Lane', 1, 'Bad Length', Temporal.timecnt_t (0)) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Missing Lane', 1, 'Missing Clip', Temporal.timecnt_t (48000)) == false)"));
+
+	AudioTrackList audio_tracks = _session->new_audio_track (
+		1,
+		1,
+		std::shared_ptr<RouteGroup> (),
+		1,
+		"Audio Lane",
+		PresentationInfo::max_order,
+		Normal,
+		false);
+	CPPUNIT_ASSERT_EQUAL (size_t (1), audio_tracks.size ());
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, 'Audio Lane', 0, 'Audio Trigger Rejected', Temporal.timecnt_t (48000)) == false)"));
 }
 
 void

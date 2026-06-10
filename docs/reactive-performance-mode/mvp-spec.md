@@ -729,7 +729,7 @@ Phase 7h makes the template-created lanes Cue-page visible:
 - `share/scripts/reactive_performance_mvp_session.lua` passes Ardour's `trigger_visibility=true` flag for `Reactive Rhythm Lane`, `Reactive Harmony Lane`, and `Reactive Macro Lane`.
 - The template still creates the same three named MIDI lanes and installs the same session-local demo action document, but the lanes now appear as trigger-visible Cue-page routes instead of ordinary hidden-from-Cues MIDI tracks.
 - `LuaScriptTest` records the `new_midi_track(...)` trigger-visibility argument in the SessionInit harness and verifies all three demo lanes request it.
-- Generated trigger clip/cue content remains a later demo-production step; this slice only makes the route layout ready for Cue-page interaction.
+- Full generated musical note content remains a later demo-production step; this slice only makes the route layout ready for Cue-page interaction.
 
 Phase 7i adds marker-trigger demo coverage:
 
@@ -758,7 +758,7 @@ Phase 7l seeds the first timeline landmark in the repeatable template:
 - The helper returns false for invalid inputs, creates the marker when missing, and avoids duplicate visible markers by name.
 - `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed a visible `Breakdown` marker for `demo.marker.breakdown` while preserving the three trigger-visible MIDI lanes and existing action-document install behavior.
 - `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's marker request in the fake-session harness.
-- A full `.ardour` session archive with generated clip/cue content remains a later demo-production step.
+- A full `.ardour` session archive with richer generated musical cue content remains a later demo-production step.
 
 Phase 7m seeds the first region-trigger landmark in the repeatable template:
 
@@ -766,7 +766,15 @@ Phase 7m seeds the first region-trigger landmark in the repeatable template:
 - The helper returns false for invalid inputs, missing routes, non-MIDI routes, or unavailable playlists; creates the region when missing; and avoids duplicate visible regions by name on the target route.
 - `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed a non-hidden `Breakdown Loop` timeline region on `Reactive Rhythm Lane` for `demo.region.breakdown.loop`, preserving the three trigger-visible MIDI lanes, `Breakdown` marker, and existing action-document install behavior.
 - `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's region request in the fake-session harness.
-- This is a timeline landmark, not generated musical clip content; a full `.ardour` session archive with generated trigger clips/cue contents remains a later demo-production step.
+- This is a timeline landmark, not generated musical note content; a full `.ardour` session archive remains a later demo-production step.
+
+Phase 7n seeds the first Cue-page trigger clip placeholders in the repeatable template:
+
+- `ARDOUR.LuaAPI.ensure_session_midi_trigger_region(...)` provides a non-realtime setup helper for SessionInit and other Lua scripts to create a named MIDI region in a named MIDI route's TriggerBox slot without exposing direct source/region ownership to Lua.
+- The helper returns false for invalid inputs, missing routes, non-MIDI routes, missing TriggerBoxes, invalid slots, or non-positive lengths; leaves an already-populated slot untouched; and uses a setup-only TriggerBox region path that updates active-slot bookkeeping immediately.
+- `share/scripts/reactive_performance_mvp_session.lua` uses the helper to seed `Reactive Cue 0 Reset`, `Reactive Cue 1 Tighten`, and `Reactive Cue 2 Sparse` on `Reactive Rhythm Lane`; `Reactive Harmony i` on `Reactive Harmony Lane`; and `Reactive Macro Filter` plus `Reactive Macro Texture` on `Reactive Macro Lane`.
+- `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's six trigger-region requests in the fake-session harness.
+- These are named Cue-page placeholders, not a full generated musical arrangement. A full `.ardour` session archive and richer generated note content remain later demo-production work.
 
 ## Acceptance Tests
 

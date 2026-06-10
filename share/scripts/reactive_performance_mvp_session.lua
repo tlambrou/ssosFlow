@@ -179,6 +179,23 @@ local function seed_demo_regions ()
 		Temporal.timecnt_t (sample_rate * 4))
 end
 
+local function seed_demo_trigger_clips ()
+	local sample_rate = 48000
+	local session_sample_rate = Session:nominal_sample_rate ()
+	if session_sample_rate and session_sample_rate > 0 then
+		sample_rate = session_sample_rate
+	end
+
+	local clip_length = Temporal.timecnt_t (sample_rate * 4)
+
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Rhythm Lane", 0, "Reactive Cue 0 Reset", clip_length)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Rhythm Lane", 1, "Reactive Cue 1 Tighten", clip_length)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Rhythm Lane", 2, "Reactive Cue 2 Sparse", clip_length)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Harmony Lane", 0, "Reactive Harmony i", clip_length)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Macro Lane", 0, "Reactive Macro Filter", clip_length)
+	ARDOUR.LuaAPI.ensure_session_midi_trigger_region (Session, "Reactive Macro Lane", 1, "Reactive Macro Texture", clip_length)
+end
+
 function factory () return function ()
 	local group = ARDOUR.RouteGroup ()
 	local input = ARDOUR.ChanCount (ARDOUR.DataType ("midi"), 1)
@@ -229,6 +246,7 @@ function factory () return function ()
 
 	seed_demo_markers ()
 	seed_demo_regions ()
+	seed_demo_trigger_clips ()
 	install_demo_action_document ()
 
 	Session:save_state ("")
