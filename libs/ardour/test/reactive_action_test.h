@@ -12,6 +12,7 @@ class ReactiveActionTest : public CppUnit::TestFixture
 	CPPUNIT_TEST (parseMidiCCTrigger);
 	CPPUNIT_TEST (parseMidiValueMacroCommand);
 	CPPUNIT_TEST (parseMacroSnapshotCommands);
+	CPPUNIT_TEST (parseMacroMorphCommand);
 	CPPUNIT_TEST (parseWhenConditions);
 	CPPUNIT_TEST (parseSequentialAndRandomChains);
 	CPPUNIT_TEST (parseRhythmInsertCommand);
@@ -38,6 +39,7 @@ public:
 	void parseMidiCCTrigger ();
 	void parseMidiValueMacroCommand ();
 	void parseMacroSnapshotCommands ();
+	void parseMacroMorphCommand ();
 	void parseWhenConditions ();
 	void parseSequentialAndRandomChains ();
 	void parseRhythmInsertCommand ();

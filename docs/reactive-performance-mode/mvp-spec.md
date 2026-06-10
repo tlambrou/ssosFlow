@@ -114,6 +114,7 @@ Required MVP commands:
 - `macro <name> <value|midi-value> [ramp <bbt-offset>]`
 - `macro snapshot store <name>`
 - `macro snapshot recall <name> [ramp <bbt-offset>]`
+- `macro morph <from-snapshot> <to-snapshot> [amount <0..1|midi-value>] [ramp <bbt-offset>]`
 - `state <name> <value>`
 - `harmony <name> <value>`
 - `rhythm <param> <value>`
@@ -242,6 +243,8 @@ Phase 4f adds that live adapter path for Generic MIDI note-on and control-change
 Phase 4g adds event-derived macro values. `DO macro <name> midi-value [ramp <bbt-offset>]` stores a macro command whose value is resolved from the MIDI event that triggered the action: CC values and note velocities are normalized from `0..127` to `0.0..1.0`, and the optional ramp is preserved. Literal macro commands such as `DO macro filter 0.80` are unchanged. Because manual slot execution has no originating controller value, `midi-value` actions should be triggered through a matching MIDI note/CC path.
 
 Phase 3h adds macro snapshot store/recall. `DO macro snapshot store <name>` captures the current Reactive macro values under a named snapshot after any earlier macro commands in the same action have been applied. `DO macro snapshot recall <name> [ramp <bbt-offset>]` expands the stored values back into normal macro commands, preserving the optional recall ramp so existing executor, controller feedback, and performance UI paths can apply the recalled values. Missing snapshots fail the action plan visibly instead of silently changing live macro state.
+
+Phase 3k adds first-class macro morphs. `DO macro morph <from-snapshot> <to-snapshot> [amount <0..1|midi-value>] [ramp <bbt-offset>]` expands shared macro values from two stored snapshots into ordinary macro commands by linear interpolation, defaulting to `amount 0.5`. Literal amounts are constrained to `0.0..1.0`; `midi-value` resolves from the triggering note velocity or CC value. Missing snapshots or snapshots with no shared macro names fail the action plan visibly without mutating live macro state or advancing last-action status.
 
 Phase 3j adds first-class harmony state actions. `DO harmony <name> <value>` updates a dedicated harmony read model, and `WHEN harmony <name> <value>` gates actions against that model without conflating harmonic state with general user state. The executor currently treats harmony as a non-session no-op target command, so this slice gives the UI, controller workflow, and action engine stable key/chord/scale values before any MIDI chord generation or clip mutation work.
 
@@ -394,7 +397,7 @@ Phase 6q adds route-scoped rhythm parameter actions:
 Phase 6r allows route-scoped rhythm commands to use controller-derived values:
 
 - `DO rhythm route <route-index> <param> midi-value` resolves the value from the MIDI event that triggered the action, using the same normalized `0.0..1.0` CC/velocity mapping as macro `midi-value`.
-- The MVP demo's CC 22 action inserts the route 0 rhythm module if needed, drives route 0 density from the controller value, and still updates the `filter` macro read model for UI feedback; the routing summary shows the resulting route 0 density.
+- The MVP demo's CC 22 action inserts the route 0 rhythm module if needed, drives route 0 density from the controller value, updates the `filter` macro read model for UI feedback, and morphs `texture`/`space` between stored macro snapshots; the routing summary shows the resulting route 0 density.
 - General macro-to-plugin or macro-to-Ardour-parameter routing remains a follow-up; this slice only connects controller values to existing route-scoped rhythm parameters.
 
 Parameters:
@@ -649,7 +652,7 @@ Phase 5p connects the scheduler to the runner without adding realtime session ev
 - `ReactiveActionSlotRunner::execute_or_queue_slot(...)` and `execute_or_queue_midi_event(...)` plan actions on the existing control/session-side runner boundary.
 - Nonzero-quantize plans are queued with caller-supplied requested/due BBT values and do not dispatch target commands until `release_due_queued_actions(...)` is called.
 - Zero-quantize plans still execute immediately through the existing executor path.
-- Queued MIDI-triggered plans preserve the matched action slot and event-derived values such as `DO macro <name> midi-value`.
+- Queued MIDI-triggered plans preserve the matched action slot and event-derived values such as `DO macro <name> midi-value` and `DO macro morph <from> <to> amount midi-value`.
 - The runner exposes bounded queued-action summaries and a compact formatter for future Cue-page/status UI display.
 - Clearing/replacing the action document and disabling Reactive Performance Mode clear pending queued actions, keeping disarm/reload behavior predictable under performance pressure.
 - This remains a non-realtime bridge. The next slice should compute due BBT from Ardour's `TempoMap` and poll/release due actions from a safe GTK/session clock context before any native `SessionEvent` design.
@@ -687,11 +690,11 @@ Phase 7b makes the MVP map more controller-first:
 - Bind note 44 to `Reactive/show-action-document-status`.
 - Bind note 45 to `Reactive/reload-action-document`.
 - Bind note 47 to `Reactive/toggle-performance-mode`.
-- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro and route-scoped rhythm examples in session-local action files.
+- Bind note 46 and CC 22 as live document-level `TRIGGER midi` examples through `reactive="trigger"`, including CC-driven `midi-value` macro, macro morph, and route-scoped rhythm examples in session-local action files.
 
 Phase 7c packages a small demo asset:
 
-- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, harmony-state updates, transport-gated actions, state changes, and a CC-derived macro action.
+- `examples/reactive-performance-mvp/reactive-actions.txt` is a source-controlled session-local action document with pad-triggered rhythm insertion/reset, route-scoped rhythm updates, harmony-state updates, transport-gated actions, state changes, a CC-derived macro action, and a CC-derived macro morph between stored texture snapshots.
 - `examples/reactive-performance-mvp/README.md` documents the manual session layout, controller map, feedback routing, and smoke checks.
 - `ReactiveActionDocumentLoaderTest::packagedDemoSessionActionFileLoads` loads the packaged action file as a session document so parser drift breaks automated tests.
 - A full `.ardour` session archive remains a follow-up because current session XML is generated, ID-heavy, and environment-dependent.
@@ -759,8 +762,8 @@ Phase 7m seeds the first region-trigger landmark in the repeatable template:
 
 ## Acceptance Tests
 
-- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, route-scoped rhythm `midi-value`, and harmony commands/conditions.
-- Engine tests cover action lookup, chain state, literal and event-derived macro state, harmony state and conditions, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
+- Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, macro snapshot/morph syntax, route-scoped rhythm `midi-value`, and harmony commands/conditions.
+- Engine tests cover action lookup, chain state, literal and event-derived macro state, macro snapshot recall, literal and MIDI-derived macro morphs, harmony state and conditions, route-scoped rhythm event values, and quantization calculation against a fixed TempoMap.
 - Scheduler tests cover queued-action summaries, deterministic due popping, zero-quantize immediate due behavior, and queue clearing.
 - Runner queue tests cover quantized slot/MIDI action queuing, explicit due release, zero-quantize immediate execution, clear/load queue reset, disabled-mode blocking, event-derived MIDI macro preservation, and route-scoped rhythm value dispatch.
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.

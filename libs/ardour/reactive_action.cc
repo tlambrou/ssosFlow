@@ -388,6 +388,41 @@ parse_command (std::vector<std::string> const& tokens, size_t line_number, React
 				return false;
 			}
 			command.name = tokens[4];
+		} else if (tokens.size () >= 5 && tokens[2] == "morph") {
+			if (tokens.size () != 5 && tokens.size () != 7 && tokens.size () != 9) {
+				result.error = line_error (line_number, "invalid macro morph command");
+				return false;
+			}
+
+			command.type = ReactiveCommand::MacroMorph;
+			command.name = tokens[3];
+			command.text = tokens[4];
+			command.value = 0.5;
+
+			bool seen_amount = false;
+			bool seen_ramp = false;
+			for (size_t index = 5; index < tokens.size (); index += 2) {
+				if (tokens[index] == "amount") {
+					if (seen_amount || !parse_command_value (tokens[index + 1], command)) {
+						result.error = line_error (line_number, "invalid macro morph amount");
+						return false;
+					}
+					if (command.value_source == ReactiveCommand::LiteralValue && (command.value < 0.0 || command.value > 1.0)) {
+						result.error = line_error (line_number, "invalid macro morph amount");
+						return false;
+					}
+					seen_amount = true;
+				} else if (tokens[index] == "ramp") {
+					if (seen_ramp || !parse_bbt_offset (tokens[index + 1], command.ramp)) {
+						result.error = line_error (line_number, "invalid macro morph ramp");
+						return false;
+					}
+					seen_ramp = true;
+				} else {
+					result.error = line_error (line_number, "invalid macro morph command");
+					return false;
+				}
+			}
 		} else if (tokens.size () != 4 && tokens.size () != 6) {
 			result.error = line_error (line_number, "invalid macro command");
 			return false;

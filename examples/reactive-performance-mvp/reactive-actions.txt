@@ -77,6 +77,13 @@ TRIGGER midi cc ch=1 cc=22
 DO rhythm insert 0
 DO rhythm route 0 density midi-value
 DO macro filter midi-value ramp 0|1|0
+DO macro texture 0.20
+DO macro space 0.80
+DO macro snapshot store texture_low
+DO macro texture 0.80
+DO macro space 0.25
+DO macro snapshot store texture_high
+DO macro morph texture_low texture_high amount midi-value ramp 0|1|0
 DO state macro filter
 END
 

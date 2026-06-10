@@ -30,6 +30,9 @@ execute_command (ReactiveCommand const& command, ReactiveActionTarget& target, s
 	case ReactiveCommand::MacroSnapshotRecall:
 		error = "unexpanded macro snapshot command";
 		return false;
+	case ReactiveCommand::MacroMorph:
+		error = "unexpanded macro morph command";
+		return false;
 	case ReactiveCommand::State:
 		return target.state (command.name, command.text, error);
 	case ReactiveCommand::Harmony:

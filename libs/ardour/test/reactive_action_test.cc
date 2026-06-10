@@ -114,6 +114,38 @@ ReactiveActionTest::parseMacroSnapshotCommands ()
 }
 
 void
+ReactiveActionTest::parseMacroMorphCommand ()
+{
+	const char* src =
+		"ACTION morphs\n"
+		"TRIGGER midi cc ch=1 cc=22\n"
+		"DO macro morph verse chorus amount 0.25 ramp 0|2|0\n"
+		"DO macro morph chorus breakdown amount midi-value\n"
+		"DO macro morph breakdown outro\n"
+		"END\n";
+
+	ReactiveActionParseResult result = ReactiveActionDocument::parse (src);
+	CPPUNIT_ASSERT_EQUAL (true, result.ok);
+
+	ReactiveAction const& action = result.document.actions ().front ();
+	CPPUNIT_ASSERT_EQUAL (size_t (3), action.commands.size ());
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MacroMorph, action.commands[0].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("verse"), action.commands[0].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chorus"), action.commands[0].text);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.25, action.commands[0].value, 0.0001);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::LiteralValue, action.commands[0].value_source);
+	CPPUNIT_ASSERT_EQUAL (2, action.commands[0].ramp.beats);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MacroMorph, action.commands[1].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("chorus"), action.commands[1].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), action.commands[1].text);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MidiEventValue, action.commands[1].value_source);
+	CPPUNIT_ASSERT_EQUAL (ReactiveCommand::MacroMorph, action.commands[2].type);
+	CPPUNIT_ASSERT_EQUAL (std::string ("breakdown"), action.commands[2].name);
+	CPPUNIT_ASSERT_EQUAL (std::string ("outro"), action.commands[2].text);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL (0.5, action.commands[2].value, 0.0001);
+}
+
+void
 ReactiveActionTest::parseWhenConditions ()
 {
 	const char* src =
