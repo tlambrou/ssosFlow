@@ -793,6 +793,14 @@ Phase 7o seeds first-note content into the demo trigger clips:
 - `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's six trigger-note requests in the fake-session harness.
 - This is deliberately simple monophonic note content, not a polished generated arrangement or full `.ardour` session archive.
 
+Phase 7p makes the generated demo clips more musical without committing session XML:
+
+- `ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes(...)` provides a non-realtime setup helper that creates a named MIDI TriggerBox region and inserts a Lua table of notes while the slot is empty.
+- The helper rejects empty note tables, invalid note timing, invalid channel/note/velocity values, missing fields, missing routes, invalid slots, and nonpositive clip lengths before creating a region.
+- If the slot already has any region, it returns true without overwriting or appending to existing performer content.
+- `share/scripts/reactive_performance_mvp_session.lua` keeps the first three rhythm clips monophonic and seeds the harmony/macro clips with triads: 48/51/55, 60/64/67, and 67/72/74.
+- `LuaScriptTest` covers both the real helper against an Ardour test session and the SessionInit template's 12 seeded note requests in the fake-session harness.
+
 ## Acceptance Tests
 
 - Parser unit tests cover valid actions, duplicate names, invalid commands, invalid quantize values, random/sequential chain modes, MIDI note triggers, MIDI CC triggers, literal macro ramps, `midi-value` macro ramps, macro snapshot/morph syntax, route-scoped rhythm `midi-value`, TriggerBox follow-probability commands, and harmony commands/conditions.
@@ -802,6 +810,7 @@ Phase 7o seeds first-note content into the demo trigger clips:
 - Clock bridge tests cover zero, bar, beat, and sample-derived BBT quantize calculations plus runner TempoMap-backed slot and MIDI-byte queuing.
 - Session-target tests cover route-scoped rhythm insertion, parameter writes, TriggerBox follow-probability dispatch, missing-target errors, and routing summaries with live rhythm parameter values.
 - Controller-feedback tests cover idle/latest/queued/disabled values and MIDI byte generation for queued quantized actions.
+- Lua template tests cover the repeatable demo session template, installed action-document drift, idempotent marker/region/TriggerBox helper behavior, and the 12 seeded demo trigger-clip notes.
 - Manual smoke test can trigger one cue row, one harmony-state update, and one CC-derived macro from a MIDI map.
 - UI smoke test can toggle mode, load a file, show validation errors, and preview a queued action.
 - Reactive rhythm tests and demo confirm density 0 mutes note-ons, density 1 passes them, chance 0 drops them, note-off handling avoids stuck notes, and non-note MIDI passes unchanged.

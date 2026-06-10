@@ -1,6 +1,7 @@
 #include <list>
 #include <fstream>
 #include <glibmm.h>
+#include <vector>
 
 #include "ardour/audio_track.h"
 #include "ardour/audioengine.h"
@@ -188,6 +189,22 @@ first_note_number_in_named_trigger_region (Session& session, std::string const& 
 	return (*region->model ()->notes ().begin ())->note ();
 }
 
+static std::vector<int>
+note_numbers_in_named_trigger_region (Session& session, std::string const& route_name, std::string const& region_name)
+{
+	std::vector<int> notes;
+	std::shared_ptr<MidiRegion> region = named_trigger_midi_region_on_route (session, route_name, region_name);
+	if (!region || !region->model ()) {
+		return notes;
+	}
+
+	for (MidiModel::Notes::const_iterator note = region->model ()->notes ().begin (); note != region->model ()->notes ().end (); ++note) {
+		notes.push_back ((*note)->note ());
+	}
+
+	return notes;
+}
+
 static std::string
 reactive_template_path ()
 {
@@ -241,6 +258,13 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 		"    ensure_session_midi_trigger_region_with_note = function (session, route_name, slot, region_name, length, note_start, note_length, channel, note, velocity)\n"
 		"      table.insert (created_trigger_regions, { route_name = route_name, slot = slot, region_name = region_name, length = length })\n"
 		"      table.insert (created_trigger_notes, { route_name = route_name, slot = slot, region_name = region_name, length = length, note_start = note_start, note_length = note_length, channel = channel, note = note, velocity = velocity })\n"
+		"      return true\n"
+		"    end,\n"
+		"    ensure_session_midi_trigger_region_with_notes = function (session, route_name, slot, region_name, length, notes)\n"
+		"      table.insert (created_trigger_regions, { route_name = route_name, slot = slot, region_name = region_name, length = length })\n"
+		"      for _, seeded_note in ipairs (notes) do\n"
+		"        table.insert (created_trigger_notes, { route_name = route_name, slot = slot, region_name = region_name, length = length, note_start = seeded_note.start, note_length = seeded_note.length, channel = seeded_note.channel, note = seeded_note.note, velocity = seeded_note.velocity })\n"
+		"      end\n"
 		"      return true\n"
 		"    end\n"
 		"  },\n"
@@ -306,7 +330,7 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[6].route_name == 'Reactive Macro Lane', 'expected final trigger on macro lane')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[6].slot == 1, 'expected final macro trigger in slot 1')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_regions[6].length:samples () > 0, 'expected positive trigger clip length')"));
-	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (#created_trigger_notes == 6, 'expected six seeded trigger clip notes')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (#created_trigger_notes == 12, 'expected twelve seeded trigger clip notes')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[1].route_name == 'Reactive Rhythm Lane', 'expected first note on rhythm lane')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[1].slot == 0, 'expected first note in slot 0')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[1].region_name == 'Reactive Cue 0 Reset', 'expected first note in cue 0 reset clip')"));
@@ -317,8 +341,11 @@ run_reactive_template_with_fake_session (std::string const& session_path, bool f
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[1].velocity > 0, 'expected positive note velocity')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[4].region_name == 'Reactive Harmony i', 'expected harmony clip note')"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[4].note == 48, 'expected harmony clip root note')"));
-	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[6].region_name == 'Reactive Macro Texture', 'expected texture clip note')"));
-	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[6].note == 67, 'expected texture clip note')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[5].note == 51, 'expected harmony clip third')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[6].note == 55, 'expected harmony clip fifth')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[10].region_name == 'Reactive Macro Texture', 'expected texture clip note')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[10].note == 67, 'expected texture clip root note')"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (created_trigger_notes[12].note == 74, 'expected texture clip color note')"));
 	int const save_type = lua.do_command ("assert (saved == true, 'expected template to save session')");
 	CPPUNIT_ASSERT_EQUAL (0, save_type);
 }
@@ -535,6 +562,31 @@ LuaScriptTest::reactive_performance_lua_api_ensures_midi_trigger_region_test ()
 	CPPUNIT_ASSERT_EQUAL (size_t (1), count_notes_in_named_trigger_region (*_session, "Reactive Rhythm Lane", "Reactive Cue 0 Reset"));
 	CPPUNIT_ASSERT_EQUAL (36, first_note_number_in_named_trigger_region (*_session, "Reactive Rhythm Lane", "Reactive Cue 0 Reset"));
 
+	CPPUNIT_ASSERT_EQUAL (size_t (0), count_named_trigger_regions_on_route (*_session, "Reactive Rhythm Lane", "Reactive Harmony i"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command (
+		"assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, 'Reactive Rhythm Lane', 1, 'Reactive Harmony i', Temporal.timecnt_t (48000 * 4), {\n"
+		"  { start = Temporal.Beats.from_double (0), length = Temporal.Beats.from_double (1), channel = 0, note = 48, velocity = 96 },\n"
+		"  { start = Temporal.Beats.from_double (0), length = Temporal.Beats.from_double (1), channel = 0, note = 51, velocity = 90 },\n"
+		"  { start = Temporal.Beats.from_double (0), length = Temporal.Beats.from_double (1), channel = 0, note = 55, velocity = 90 }\n"
+		"}) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_trigger_regions_on_route (*_session, "Reactive Rhythm Lane", "Reactive Harmony i"));
+	CPPUNIT_ASSERT_EQUAL (size_t (3), count_notes_in_named_trigger_region (*_session, "Reactive Rhythm Lane", "Reactive Harmony i"));
+	std::vector<int> chord_notes = note_numbers_in_named_trigger_region (*_session, "Reactive Rhythm Lane", "Reactive Harmony i");
+	CPPUNIT_ASSERT_EQUAL (size_t (3), chord_notes.size ());
+	CPPUNIT_ASSERT_EQUAL (48, chord_notes[0]);
+	CPPUNIT_ASSERT_EQUAL (51, chord_notes[1]);
+	CPPUNIT_ASSERT_EQUAL (55, chord_notes[2]);
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command (
+		"assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, 'Reactive Rhythm Lane', 1, 'Reactive Harmony i', Temporal.timecnt_t (48000 * 8), {\n"
+		"  { start = Temporal.Beats.from_double (0), length = Temporal.Beats.from_double (1), channel = 0, note = 60, velocity = 96 }\n"
+		"}) == true)"));
+	CPPUNIT_ASSERT_EQUAL (size_t (1), count_named_trigger_regions_on_route (*_session, "Reactive Rhythm Lane", "Reactive Harmony i"));
+	CPPUNIT_ASSERT_EQUAL (size_t (3), count_notes_in_named_trigger_region (*_session, "Reactive Rhythm Lane", "Reactive Harmony i"));
+	chord_notes = note_numbers_in_named_trigger_region (*_session, "Reactive Rhythm Lane", "Reactive Harmony i");
+	CPPUNIT_ASSERT_EQUAL (48, chord_notes[0]);
+	CPPUNIT_ASSERT_EQUAL (51, chord_notes[1]);
+	CPPUNIT_ASSERT_EQUAL (55, chord_notes[2]);
+
 	TriggerPtr trigger = tracks.front ()->triggerbox ()->trigger (0);
 	CPPUNIT_ASSERT (trigger);
 	CPPUNIT_ASSERT (trigger->the_region ());
@@ -554,6 +606,8 @@ LuaScriptTest::reactive_performance_lua_api_ensures_midi_trigger_region_test ()
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, 'Reactive Rhythm Lane', 1, 'Bad Channel', Temporal.timecnt_t (48000), Temporal.Beats.from_double (0), Temporal.Beats.from_double (1), 16, 36, 100) == false)"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, 'Reactive Rhythm Lane', 1, 'Bad Note Number', Temporal.timecnt_t (48000), Temporal.Beats.from_double (0), Temporal.Beats.from_double (1), 0, 128, 100) == false)"));
 	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_note (Session, 'Reactive Rhythm Lane', 1, 'Bad Velocity', Temporal.timecnt_t (48000), Temporal.Beats.from_double (0), Temporal.Beats.from_double (1), 0, 36, 0) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, 'Reactive Rhythm Lane', 2, 'Empty Note Table', Temporal.timecnt_t (48000), {}) == false)"));
+	CPPUNIT_ASSERT_EQUAL (0, lua.do_command ("assert (ARDOUR.LuaAPI.ensure_session_midi_trigger_region_with_notes (Session, 'Reactive Rhythm Lane', 2, 'Bad Chord Note', Temporal.timecnt_t (48000), { { start = Temporal.Beats.from_double (0), length = Temporal.Beats.from_double (1), channel = 0, note = 128, velocity = 100 } }) == false)"));
 
 	AudioTrackList audio_tracks = _session->new_audio_track (
 		1,

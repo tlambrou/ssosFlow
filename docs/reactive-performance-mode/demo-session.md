@@ -1,8 +1,8 @@
 # Reactive Performance MVP Demo Guide
 
-Issue: #63, #123, #154, #162, #166, #170, #184, #188, #190.
+Issue: #63, #123, #154, #162, #166, #170, #184, #188, #190, #192.
 
-This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, seeded marker-trigger and region-trigger demo landmarks, first Cue-page trigger clips with simple MIDI note content, scene-trigger demo actions, action/macro/state/harmony status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
+This guide sets up the current Reactive Performance Mode vertical slice: the bundled demo-session template, eight Generic MIDI pad actions, session-local action loading, seeded marker-trigger and region-trigger demo landmarks, first Cue-page trigger clips with simple rhythm notes and harmony/macro triads, scene-trigger demo actions, action/macro/state/harmony status read models, status-panel trigger controls, cached Generic MIDI controller feedback, and the Reactive Rhythm State MVP LuaProc insertion path.
 
 For a browser-based walkthrough of the setup screens and expected demo landmarks, open `docs/reactive-performance-mode/ui-guide/index.html`.
 
@@ -36,16 +36,16 @@ The template also seeds a visible timeline marker named `Breakdown`, which is us
 
 The template also seeds a non-hidden MIDI timeline region named `Breakdown Loop` on `Reactive Rhythm Lane`, which is used by the packaged `demo.region.breakdown.loop` action. The region helper is idempotent and leaves an existing visible region with that name on the lane untouched instead of creating duplicates.
 
-The template also seeds the first small named MIDI TriggerBox regions so the Cue page opens with visible, launchable single-note clips instead of empty lanes. The helper is idempotent by slot: it leaves any existing trigger-region content untouched and only fills empty slots.
+The template also seeds the first small named MIDI TriggerBox regions so the Cue page opens with visible, launchable MIDI clips instead of empty lanes. The helpers are idempotent by slot: they leave any existing trigger-region content untouched and only fill empty slots.
 
-| Lane | Slot | Seeded trigger region | MIDI note |
+| Lane | Slot | Seeded trigger region | MIDI notes |
 | --- | --- | --- | --- |
 | `Reactive Rhythm Lane` | 0 | `Reactive Cue 0 Reset` | 36 |
 | `Reactive Rhythm Lane` | 1 | `Reactive Cue 1 Tighten` | 38 |
 | `Reactive Rhythm Lane` | 2 | `Reactive Cue 2 Sparse` | 41 |
-| `Reactive Harmony Lane` | 0 | `Reactive Harmony i` | 48 |
-| `Reactive Macro Lane` | 0 | `Reactive Macro Filter` | 60 |
-| `Reactive Macro Lane` | 1 | `Reactive Macro Texture` | 67 |
+| `Reactive Harmony Lane` | 0 | `Reactive Harmony i` | 48, 51, 55 |
+| `Reactive Macro Lane` | 0 | `Reactive Macro Filter` | 60, 64, 67 |
+| `Reactive Macro Lane` | 1 | `Reactive Macro Texture` | 67, 72, 74 |
 
 Manual fallback: create or open any small session with the Cue page available.
 
@@ -149,7 +149,7 @@ It also includes `demo.scene.drop`, a live scene-trigger action bound to Cue row
 Run this checklist after creating the session and loading the Generic MIDI map. If you use the manual existing-session fallback, copy `reactive-actions.txt` into that session first.
 
 - App boots from `gtk2_ardour/ardev`.
-- A template-created session contains Cue-page visible `Reactive Rhythm Lane`, `Reactive Harmony Lane`, `Reactive Macro Lane`, a visible `Breakdown` marker, a non-hidden `Breakdown Loop` region on the rhythm lane, and the six named single-note trigger clips listed above; a manually created session has at least one MIDI route in controller-facing route slot 0.
+- A template-created session contains Cue-page visible `Reactive Rhythm Lane`, `Reactive Harmony Lane`, `Reactive Macro Lane`, a visible `Breakdown` marker, a non-hidden `Breakdown Loop` region on the rhythm lane, and the six named trigger clips listed above; a manually created session has at least one MIDI route in controller-facing route slot 0.
 - The Cue page shows a Reactive Performance panel above the trigger strip grid, with slot labels sourced from the loaded action document.
 - Empty Cue-page panel slots are disabled, and disarming Reactive Performance Mode disables slot buttons while leaving Mode, Reload, and Status available.
 - Utility note 44 opens `Reactive/show-action-document-status` with either the session file path or `built-in MVP fallback`.
@@ -176,7 +176,7 @@ Run this checklist after creating the session and loading the Generic MIDI map. 
 - The MVP map binds eight pad notes, matching pad feedback declarations, three utility notes, and live document-level note/CC trigger examples. libardour can turn Reactive slot feedback into note/CC feedback bytes, and Generic MIDI now writes those cached bytes through its output port when feedback is enabled. CC-derived values can drive route-scoped rhythm parameters, TriggerBox follow probabilities, and macro morph amounts; general macro-to-plugin parameter routing remains follow-up work.
 - The Cue-page panel refreshes after its own slot, Mode, Reload, Status, and external MIDI/controller-triggered Reactive actions. It shows a compact next-command preview and queued command details, but richer layout remains follow-up work. Controller LED behavior depends on the selected controller, MIDI routing, and feedback mode configuration.
 - The status panel is a compact diagnostic dialog with first reusable control, action-bank, macro-bank, state-bank, harmony-bank, next-action command preview, queued-action command details, and routing read models.
-- The repo packages a repeatable `Reactive Performance MVP` SessionInit template plus a session-local action document under `examples/reactive-performance-mvp/`. The template installs the demo action document into new sessions without overwriting an existing `reactive-actions.txt` when Lua file I/O is available, seeds the `Breakdown` marker plus `Breakdown Loop` timeline region without duplicating existing visible landmarks, and fills the first six empty Cue-page trigger slots with named single-note MIDI clips. This repo does not yet package a full `.ardour` demo session archive or polished generated arrangement.
+- The repo packages a repeatable `Reactive Performance MVP` SessionInit template plus a session-local action document under `examples/reactive-performance-mvp/`. The template installs the demo action document into new sessions without overwriting an existing `reactive-actions.txt` when Lua file I/O is available, seeds the `Breakdown` marker plus `Breakdown Loop` timeline region without duplicating existing visible landmarks, and fills the first six empty Cue-page trigger slots with named MIDI clips containing 12 total notes. This repo does not yet package a full `.ardour` demo session archive or polished generated arrangement.
 - Live scene triggers currently cover Cue-page row launches and the registered Trigger Page row actions. Generic MIDI fixed slot actions, lower-level BasicUI/control-surface cue calls, and native session observation remain follow-up work.
 - Route-scoped rhythm actions require the target route to already contain `Reactive Rhythm State MVP`, except for the explicit `DO rhythm insert <route-index>` setup command.
 - Harmony commands are currently a reactive read model only. They expose key/chord/scale state to the panel and conditions, but they do not yet generate chords, alter clips, or route MIDI notes.
